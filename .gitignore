@@ -1,0 +1,8 @@
+*.psd
+*.pyc
++exclude.lst
+*.log
+__pycache__/
++OLD/
+Building_Blocks/
+z_*.py

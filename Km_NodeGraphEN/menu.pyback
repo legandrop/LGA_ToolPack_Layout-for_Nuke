@@ -1,0 +1,12 @@
+import nuke
+import Km_NodeGraph_Easy_Navigate
+import model
+
+settings = model.Settings().Load()
+menu = nuke.menu("Nuke")
+Km_NGJ = menu.addMenu("TPL")
+Km_NGJ.addCommand("  Easy Navigate/Show Panel","Km_NodeGraph_Easy_Navigate.ShowMainWindow()",settings["shortcut"],shortcutContext=2)
+Km_NGJ.addCommand("  Easy Navigate/Settings | Help","Km_NodeGraph_Easy_Navigate.ShowSettings()","")
+Km_NGJ.addCommand("  Easy Navigate/Edit Bookmarks","Km_NodeGraph_Easy_Navigate.ShowEditBookmarksWindow()","")
+Km_NGJ.addCommand("  Easy Navigate/Templates","Km_NodeGraph_Easy_Navigate.ShowTemplatesWindow()","")
+Km_NGJ.addCommand("  Easy Navigate/Survive (Reset Bookmarks)","Km_NodeGraph_Easy_Navigate.Survive()","")

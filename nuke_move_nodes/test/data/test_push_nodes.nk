@@ -1,0 +1,161 @@
+BackdropNode {
+ inputs 0
+ name backdrop_above
+ xpos -499
+ ypos -678
+ bdwidth 778
+ bdheight 324
+}
+BackdropNode {
+ inputs 0
+ name backdrop_below
+ xpos -499
+ ypos 954
+ bdwidth 778
+ bdheight 324
+}
+BackdropNode {
+ inputs 0
+ name backdrop_left
+ xpos -1120
+ ypos 32
+ bdwidth 300
+ bdheight 560
+}
+BackdropNode {
+ inputs 0
+ name backdrop_right
+ xpos 600
+ ypos 32
+ bdwidth 300
+ bdheight 560
+}
+BackdropNode {
+ inputs 0
+ name backdrop_parent_center
+ tile_color 0x886d71ff
+ xpos -497
+ ypos 31
+ bdwidth 774
+ bdheight 560
+ z_order 1
+}
+BackdropNode {
+ inputs 0
+ name backdrop_sibling
+ tile_color 0x5a8866ff
+ xpos 36
+ ypos 143
+ bdwidth 148
+ bdheight 385
+ z_order 2
+}
+BackdropNode {
+ inputs 0
+ name surrounding_pivot_1
+ tile_color 0x5a8866ff
+ xpos -184
+ ypos 143
+ bdwidth 148
+ bdheight 385
+ z_order 2
+}
+BackdropNode {
+ inputs 0
+ name surrounding_pivot_2
+ tile_color 0x506688ff
+ xpos -399
+ ypos 143
+ bdwidth 148
+ bdheight 385
+ z_order 2
+}
+Dot {
+ inputs 0
+ name dot_right_detached_upper
+ label "\[value name]\n\n"
+ note_font_size 16
+ xpos 744
+ ypos 162
+}
+Dot {
+ name dot_right_detached_lower
+ label "\[value name]\n\n"
+ note_font_size 16
+ xpos 744
+ ypos 489
+}
+Dot {
+ inputs 0
+ name dot_inside_backdrop_above
+ label "\[value name]\n\n"
+ note_font_size 16
+ xpos -116
+ ypos -594
+}
+Dot {
+ name dot_above_pivot_1
+ label "\[value name]\n\n"
+ note_font_size 16
+ xpos -116
+ ypos 90
+}
+Dot {
+ name dot_pivot_1_center
+ label "\[value name]\n\n"
+ note_font_size 20
+ xpos -116
+ ypos 282
+}
+set Neee7b800 [stack 0]
+Dot {
+ name dot_left_of_pivot_1
+ label "\[value name]\n\n"
+ note_font_size 22
+ xpos -336
+ ypos 282
+}
+Dot {
+ name dot_pivot_2_left
+ label "\[value name]\n\n"
+ note_font_size 22
+ xpos -976
+ ypos 282
+}
+Dot {
+ name dot_below_pivot_2
+ label "\[value name]\n\n"
+ note_font_size 16
+ xpos -976
+ ypos 450
+}
+push $Neee7b800
+Dot {
+ name dot_below_pivot_1
+ label "\[value name]\n\n"
+ note_font_size 16
+ xpos -116
+ ypos 498
+}
+Dot {
+ name dot_inside_backdrop_below
+ label "\[value name]\n\n"
+ note_font_size 16
+ xpos -116
+ ypos 1158
+}
+push $Neee7b800
+Dot {
+ name dot_right_of_pivot_1
+ label "\[value name]\n\n"
+ note_font_size 16
+ xpos 104
+ ypos 282
+}
+Dot {
+ name dot_below_right_pivot_1
+ label "\[value name]\n\n"
+ note_font_size 16
+ xpos 104
+ ypos 494
+}

@@ -1,0 +1,403 @@
+import os
+import nuke
+from nukescripts import panels
+from PySide2 import QtWidgets, QtCore, QtGui
+
+app = QtWidgets.QApplication.instance()  # Obtiene la instancia actual de la aplicación
+if not app:  # Si la aplicación no existe, crea una nueva instancia
+    app = QtWidgets.QApplication([])
+
+# Aquí estableces el estilo de los tooltips
+app.setStyleSheet("""
+    QToolTip {
+        color: #ffffff;  /* Text color */
+        background-color: #5781ab;  /* Background color */
+        border: 0px solid white;  /* Border color and width */
+        font-size: 10pt;  /* Adjust the font size here */
+    }
+""")
+
+
+
+# Asumiendo que estamos dentro de un archivo .py, usa __file__ para obtener la ruta del script actual
+script_path = os.path.dirname(__file__)
+
+# Elige entre PySide y PySide2 en función de la versión de Nuke
+if nuke.NUKE_VERSION_MAJOR < 11:
+    from PySide import QtGui, QtCore
+    QtWidgets = QtGui
+else:
+    from PySide2 import QtWidgets, QtCore, QtGui
+
+def showToolTip(widget, text):
+    QtCore.QTimer.singleShot(1, lambda: QtWidgets.QToolTip.showText(QtGui.QCursor.pos(), text, widget))
+
+def selectConnectedNodes(direction):
+    pos_tolerance = 30  # Tolerancia para la posición en X y Y
+
+    selected_nodes = nuke.selectedNodes()
+    if not selected_nodes:
+        return
+
+    current_node = selected_nodes[0]
+    if current_node.Class() == 'Root':
+        return
+
+    while current_node:
+        # Calcula el centro del nodo actual
+        current_node_center_x = current_node.xpos() + (current_node.screenWidth() / 2)
+        current_node_center_y = current_node.ypos() + (current_node.screenHeight() / 2)
+
+        current_node['selected'].setValue(True)
+
+        # Lista para mantener los nodos conectados tanto aguas arriba como aguas abajo
+        search_nodes = [current_node.input(i) for i in range(current_node.inputs()) if current_node.input(i)]
+        search_nodes += current_node.dependent(nuke.INPUTS | nuke.HIDDEN_INPUTS)
+        search_nodes = list(set(search_nodes))  # Elimina duplicados y None
+
+        connected_node = None
+        for node in search_nodes:
+            if node.Class() == 'Root':
+                continue
+
+            # Calcula el centro del nodo conectado
+            node_center_x = node.xpos() + (node.screenWidth() / 2)
+            node_center_y = node.ypos() + (node.screenHeight() / 2)
+
+            # Verifica la dirección y si el nodo conectado está dentro de la tolerancia y en la dirección correcta
+            if direction == 'l' and abs(node_center_y - current_node_center_y) <= pos_tolerance and node_center_x < current_node_center_x:
+                connected_node = node
+            elif direction == 'r' and abs(node_center_y - current_node_center_y) <= pos_tolerance and node_center_x > current_node_center_x:
+                connected_node = node
+            elif direction == 't' and abs(node_center_x - current_node_center_x) <= pos_tolerance and node_center_y < current_node_center_y:
+                connected_node = node
+            elif direction == 'b' and abs(node_center_x - current_node_center_x) <= pos_tolerance and node_center_y > current_node_center_y:
+                connected_node = node
+
+        if connected_node:
+            connected_node['selected'].setValue(True)
+            current_node = connected_node
+        else:
+            break
+
+
+def selectNodes(direction):
+    pos_tolerance = 30  # Tolerancia para la posición en X y Y
+
+    # Comenzar con el nodo seleccionado actualmente
+    selected_nodes = nuke.selectedNodes()
+    if not selected_nodes:
+        nuke.message('No hay ningún nodo seleccionado.')
+        return
+
+    # Obtener el nodo seleccionado actualmente
+    current_node = selected_nodes[0]
+
+    # Asegurarse de que el nodo actual no sea el nodo raíz
+    if current_node.Class() == 'Root':
+        nuke.message('No puedes ejecutar este script en el nodo raíz.')
+        return
+
+    # Calcular el centro del nodo actual
+    current_node_center_x = current_node.xpos() + (current_node.screenWidth() / 2)
+    current_node_center_y = current_node.ypos() + (current_node.screenHeight() / 2)
+
+    # Obtener todos los nodos que no sean el nodo raíz ni el nodo seleccionado actualmente
+    all_nodes = [n for n in nuke.allNodes() if n != current_node and n.Class() != 'Root']
+
+    for node in all_nodes:
+        # Calcular el centro del nodo
+        node_center_x = node.xpos() + (node.screenWidth() / 2)
+        node_center_y = node.ypos() + (node.screenHeight() / 2)
+
+        # Verificar la posición del nodo en relación al nodo seleccionado y la tolerancia
+        if direction == 'l' and abs(node_center_y - current_node_center_y) <= pos_tolerance and node_center_x < current_node_center_x:
+            node['selected'].setValue(True)
+        elif direction == 'r' and abs(node_center_y - current_node_center_y) <= pos_tolerance and node_center_x > current_node_center_x:
+            node['selected'].setValue(True)
+        elif direction == 't' and abs(node_center_x - current_node_center_x) <= pos_tolerance and node_center_y < current_node_center_y:
+            node['selected'].setValue(True)
+        elif direction == 'b' and abs(node_center_x - current_node_center_x) <= pos_tolerance and node_center_y > current_node_center_y:
+            node['selected'].setValue(True)
+
+
+class SelectNodesPanel(QtWidgets.QWidget):
+
+
+
+    def __init__(self):
+        super(SelectNodesPanel, self).__init__()
+        self.setWindowTitle('Select Connected Nodes')
+        self.connectedMode = False
+        self.moving = False  # Initialize 'moving'
+
+        # Configuraciones de ventana: sin bordes y siempre en primer plano
+        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint | QtCore.Qt.FramelessWindowHint)
+        # Hacer el fondo del widget transparente
+        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+
+        # Establecer el tamaño mínimo del panel
+        self.setMinimumSize(200, 40)
+
+        # Layout principal
+        mainLayout = QtWidgets.QVBoxLayout(self)
+        self.setLayout(mainLayout)
+        # Eliminar los márgenes para que el layout ocupe todo el widget
+        mainLayout.setContentsMargins(0, 5, 0, 5)
+
+        # Layout para los botones
+        buttonLayout = QtWidgets.QGridLayout()
+        # Añadir el layout de botones al layout principal
+        mainLayout.addLayout(buttonLayout)
+
+        # Añadir botones de dirección
+        self.upButton = self.createButton("icons/down_arrow.png", 't', buttonLayout, 1, 1, rotation_angle=180)
+        self.leftButton = self.createButton("icons/down_arrow.png", 'l', buttonLayout, 2, 0, rotation_angle=90)
+        self.rightButton = self.createButton("icons/down_arrow.png", 'r', buttonLayout, 2, 2, rotation_angle=270)
+        self.downButton = self.createButton("icons/down_arrow.png", 'b', buttonLayout, 3, 1)
+        self.centerButton = self.createCenterButton("icons/connectedOFF.png", buttonLayout, 2, 1)
+
+        # Añadir botón de ayuda al lado del botón de flecha hacia arriba
+        self.helpButton = self.createHelpButton("icons/help.png")
+        buttonLayout.addWidget(self.helpButton, 1, 2, QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+
+        # Crear atajos de teclado
+        self.createShortcuts()
+
+
+
+    def createHelpButton(self, icon_name):
+        button = QtWidgets.QLabel()
+        pixmap = QtGui.QPixmap(os.path.join(script_path, icon_name))
+        button.setPixmap(pixmap)
+        button.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTop)
+        app.setStyleSheet("""
+            QToolTip {
+                color: #ffffff;  /* Text color */
+                background-color: #5781ab;  /* Background color */
+                border: 0px solid white;  /* Border color and width */
+                font-size: 10pt;  /* Adjust the font size here */
+                padding: 4px;  /* Increase padding for more space inside the tooltip */
+            }
+        """)
+       
+
+        helpText = (
+            "Shortcuts for Node Selection:\n"
+            "Activate Panel: Meta + 5\n\n"
+            "From Node Graph (without panel):\n"
+            "  Alt+4: Select Nodes Left\n"
+            "  Alt+6: Select Nodes Right\n"
+            "  Alt+8: Select Nodes Up\n"
+            "  Alt+2: Select Nodes Down\n"
+            "  Meta+4: Select Connected Nodes Left\n"
+            "  Meta+6: Select Connected Nodes Right\n"
+            "  Meta+8: Select Connected Nodes Up\n"
+            "  Meta+2: Select Connected Nodes Down\n\n"
+            "Within Panel:\n"
+            "  4: Select Nodes Left\n"
+            "  6: Select Nodes Right\n"
+            "  8: Select Nodes Up\n"
+            "  2: Select Nodes Down"
+        )
+
+        # Use the custom function to display the tooltip
+        button.enterEvent = lambda event: showToolTip(button, helpText)
+        
+        # Forzar el estilo del tooltip para este botón
+        button.setToolTip(helpText)  # Define el texto del tooltip
+        button.setStyleSheet("""
+            QToolTip {
+                color: #ffffff;  /* Text color */
+                background-color: #5781ab;  /* Background color */
+                border: 0px solid white;  /* Border color and width */
+                font-size: 10pt;  /* Adjust the font size here */
+            }
+        """)
+
+        return button
+      
+    def mousePressEvent(self, event):
+        if event.button() == QtCore.Qt.LeftButton:
+            self.moving = True
+            self.offset = event.pos()
+
+    def mouseMoveEvent(self, event):
+        if self.moving:  # Ahora 'moving' siempre estará definido
+            self.move(event.globalPos() - self.offset)
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == QtCore.Qt.LeftButton:
+            self.moving = False        
+
+    def paintEvent(self, event):
+        painter = QtGui.QPainter(self)
+        painter.setOpacity(.9)  # Ajusta la opacidad aquí (0.0 completamente transparente, 1.0 completamente opaco)
+        painter.setBrush(QtGui.QColor(69,84, 92))  # Ajusta el color del fondo aquí
+        #painter.setPen(QtGui.QPen(QtGui.QColor(0, 0, 0)))  # Ajusta el color del borde aquí si es necesario
+        #painter.drawRect(self.rect())
+
+        painter.setRenderHint(QtGui.QPainter.Antialiasing)  # Para bordes suavizados
+        painter.setPen(QtCore.Qt.NoPen)  # Sin borde
+
+        rect = self.rect()
+        roundness = 8  # Elige el grado de redondez
+        painter.drawRoundedRect(rect, roundness, roundness)
+
+
+
+    def createButton(self, icon_name, direction, layout, row, col, rotation_angle=0):
+        button = QtWidgets.QLabel()
+        pixmap = QtGui.QPixmap(os.path.join(script_path, icon_name))
+        
+        if rotation_angle != 0:
+            transform = QtGui.QTransform().rotate(rotation_angle)
+            pixmap = pixmap.transformed(transform, QtCore.Qt.SmoothTransformation)
+        
+        button.setPixmap(pixmap)
+        button.setAlignment(QtCore.Qt.AlignCenter)
+        button.mousePressEvent = lambda event, d=direction: self.closeAfterSelecting(d)
+        button.setStyleSheet("""
+            QLabel {
+                border: none;  /* No border */
+                background-color: transparent;  /* Transparent background */
+                border-radius: 10px;  /* Redondeo de las esquinas */
+            }
+        """)
+
+        # Configuración del tooltip
+        tooltipText = ""
+        if direction == 't':
+            tooltipText = "Select nodes above\nShortcut: numpad 8"
+        elif direction == 'l':
+            tooltipText = "Select nodes to the left\nShortcut: numpad 4"
+        elif direction == 'r':
+            tooltipText = "Select nodes to the right\nShortcut: numpad 6"
+        elif direction == 'b':
+            tooltipText = "Select nodes below\nShortcut: numpad 2"
+
+        # Usar la función personalizada para mostrar el tooltip
+        button.enterEvent = lambda event: showToolTip(button, tooltipText)
+        
+        layout.addWidget(button, row, col)
+        return button
+
+
+
+
+    def createCenterButton(self, icon_name, layout, row, col):
+        button = QtWidgets.QLabel()
+        button.setPixmap(QtGui.QPixmap(os.path.join(script_path, icon_name)))
+        button.setAlignment(QtCore.Qt.AlignCenter)
+        button.mousePressEvent = self.toggleConnectedMode
+        button.setStyleSheet("""
+            QLabel {
+                border: none;  /* No border */
+                background-color: transparent;  /* Transparent background */
+            }
+        """)
+
+        # Usar la función personalizada para mostrar el tooltip
+        def updateToolTip(event):
+            if self.connectedMode:
+                showToolTip(button, "Switch to disconnected nodes selection\nShortcut: 5")
+            else:
+                showToolTip(button, "Switch to connected nodes selection\nShortcut: 5")
+
+        button.enterEvent = updateToolTip
+        
+        layout.addWidget(button, row, col)
+        return button
+
+
+    def shortcutHandler(self, direction):
+        if self.connectedMode:
+            selectConnectedNodes(direction)
+        else:
+            selectNodes(direction)
+        self.close()
+
+
+    def createShortcuts(self):
+        self.shortcut_left = QtWidgets.QShortcut(QtGui.QKeySequence("4"), self)
+        self.shortcut_left.activated.connect(lambda: self.shortcutHandler('l'))
+        
+        self.shortcut_up = QtWidgets.QShortcut(QtGui.QKeySequence("8"), self)
+        self.shortcut_up.activated.connect(lambda: self.shortcutHandler('t'))
+        
+        self.shortcut_right = QtWidgets.QShortcut(QtGui.QKeySequence("6"), self)
+        self.shortcut_right.activated.connect(lambda: self.shortcutHandler('r'))
+        
+        self.shortcut_down = QtWidgets.QShortcut(QtGui.QKeySequence("2"), self)
+        self.shortcut_down.activated.connect(lambda: self.shortcutHandler('b'))
+        
+        # Shortcut para el botón central - Cambiar estado con la tecla "5"
+        self.shortcut_center = QtWidgets.QShortcut(QtGui.QKeySequence("5"), self)
+        self.shortcut_center.activated.connect(self.toggleConnectedMode)
+        
+        # Cerrar el panel con la tecla Esc
+        self.shortcut_esc = QtWidgets.QShortcut(QtGui.QKeySequence("Esc"), self)
+        self.shortcut_esc.activated.connect(self.close)
+
+        # Conectar los shortcuts para cerrar después de seleccionar
+        self.shortcut_left.activated.connect(lambda: self.closeAfterSelecting('l'))
+        self.shortcut_up.activated.connect(lambda: self.closeAfterSelecting('t'))
+        self.shortcut_right.activated.connect(lambda: self.closeAfterSelecting('r'))
+        self.shortcut_down.activated.connect(lambda: self.closeAfterSelecting('b'))
+
+    def closeAfterSelecting(self, direction):
+        if self.connectedMode:
+            selectConnectedNodes(direction)
+        else:
+            selectNodes(direction)
+        self.close()
+
+
+
+    def toggleConnectedMode(self, event=None):  # Asegúrate de que event tenga un valor por defecto
+        self.connectedMode = not self.connectedMode
+        icon_name = "icons/connectedON.png" if self.connectedMode else "icons/connectedOFF.png"
+        self.centerButton.setPixmap(QtGui.QPixmap(os.path.join(script_path, icon_name)))
+
+
+    def selectNodes(self, direction):
+        selectNodes(direction)  # Asumiendo que selectNodes es una función definida fuera de esta clase
+        self.close()
+
+
+    def focusOutEvent(self, event):
+        # Cuando el widget pierde el foco, se cierra
+        self.close()
+
+
+
+    def mousePressEvent(self, event):
+        if event.button() == QtCore.Qt.LeftButton:
+            self.moving = True
+            self.offset = event.pos()
+
+    def mouseMoveEvent(self, event):
+        if self.moving:
+            self.move(event.globalPos() - self.offset)
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == QtCore.Qt.LeftButton:
+            self.moving = False
+
+
+def show_select_nodes_panel():
+    global select_nodes_panel
+    select_nodes_panel = SelectNodesPanel()
+
+    # Obtener la posición actual del cursor
+    cursor_pos = QtGui.QCursor.pos()
+
+    # Mostrar el panel primero para calcular las dimensiones
+    select_nodes_panel.show()
+
+    # Ahora mover el panel a la posición del cursor ajustada para centrar
+    select_nodes_panel.move(
+        cursor_pos.x() - (select_nodes_panel.width() // 2),
+        cursor_pos.y() - (select_nodes_panel.height() // 2)
+    )
+
