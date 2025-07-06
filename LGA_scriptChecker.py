@@ -1,7 +1,7 @@
 """
 ________________________________________________________________________________
 
-  LGA_scriptChecker v0.6 | Lega
+  LGA_scriptChecker v0.7 | Lega
   Script para verificar si los inputs de los nodos estan correctamente posicionados
   segun las reglas de posicion definidas.
 ________________________________________________________________________________
@@ -221,6 +221,8 @@ class ScriptCheckerWindow(QWidget):
 
     def initUI(self):
         self.setWindowTitle("Script Checker Results")
+        # Asegura que la ventana permanezca en primer plano
+        self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
         layout = QVBoxLayout(self)
 
         # Crear la tabla con 5 columnas
@@ -232,6 +234,9 @@ class ScriptCheckerWindow(QWidget):
         self.table.verticalHeader().setVisible(False)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setSelectionMode(QTableWidget.NoSelection)
+
+        # Conectar la señal de click de la tabla al metodo go_to_node
+        self.table.cellClicked.connect(self.go_to_node)
 
         # Cargar datos en la tabla
         self.load_data()
@@ -357,6 +362,33 @@ class ScriptCheckerWindow(QWidget):
             self.close()
         else:
             super(ScriptCheckerWindow, self).keyPressEvent(event)
+
+    def go_to_node(self, row, column):
+        """Selecciona y centra el nodo en el Node Graph de Nuke al hacer clic en la tabla."""
+        node_name_item = self.table.item(
+            row, 0
+        )  # La primera columna es el nombre del nodo
+        if node_name_item:
+            node_name = node_name_item.text()
+            debug_print(f"Intentando ir al nodo: {node_name}")
+            node = nuke.toNode(node_name)
+            if node:
+                # Deseleccionar todos los nodos
+                nuke.selectAll()
+                nuke.invertSelection()
+                # Seleccionar y centrar el nodo
+                node.setSelected(True)
+                nuke.zoomToFitSelected()
+                node.showControlPanel()
+                debug_print(f"Nodo {node_name} seleccionado y en foco.")
+
+                # Traer la ventana de vuelta al frente
+                self.activateWindow()
+                self.raise_()
+
+            else:
+                debug_print(f"El nodo {node_name} no existe en Nuke.")
+                nuke.message(f"El nodo '{node_name}' no se encontró en Nuke.")
 
 
 app = None
