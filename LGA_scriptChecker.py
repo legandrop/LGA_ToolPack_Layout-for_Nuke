@@ -1,7 +1,7 @@
 """
 ________________________________________________________________________________
 
-  LGA_scriptChecker v0.5 | Lega
+  LGA_scriptChecker v0.6 | Lega
   Script para verificar si los inputs de los nodos estan correctamente posicionados
   segun las reglas de posicion definidas.
 ________________________________________________________________________________
@@ -25,6 +25,9 @@ from PySide2.QtCore import Qt
 # Variable global para activar o desactivar los prints
 DEBUG = True
 
+# Variable para mostrar solo nodos con errores
+ShowOnlyWrong = True
+
 # Variables de configuracion de posicion
 # Para nodos especiales (Merge2, Keymix)
 inputA_special = "left"
@@ -38,7 +41,13 @@ inputA = "top"
 inputA_mergeMaskStencil = "right"
 
 # Lista de nodos que tienen inputs B, A y Mask
-NODES_WITH_SPECIAL_INPUTS = ["Merge2", "Keymix"]
+NODES_WITH_SPECIAL_INPUTS = ["Merge2", "Keymix", "Dissolve"]
+
+# Lista de nodos que no se chequean
+NODES_TO_SKIP = ["Dot", "AppendClip", "CopyCat", "PostageStamp"]
+
+# Lista de nodos con inputs invertidos (A=top, B=left)
+NODES_INVERTED_INPUTS = ["VectorDistort"]
 
 
 def debug_print(*message):
@@ -99,6 +108,9 @@ def check_node_inputs(node):
         "inputA_position": None,
         "inputB_position": None,
         "inputMask_position": None,
+        "inputA_error": None,
+        "inputB_error": None,
+        "inputMask_error": None,
         "status": "OK",
     }
 
@@ -117,6 +129,15 @@ def check_node_inputs(node):
         if node.input(2):  # Input Mask
             result["inputMask"] = node.input(2)
             result["inputMask_position"] = get_relative_position(node, node.input(2))
+    elif node_class in NODES_INVERTED_INPUTS:
+        # Nodos con inputs invertidos A(0), B(1)
+        if node.input(0):  # Input A
+            result["inputA"] = node.input(0)
+            result["inputA_position"] = get_relative_position(node, node.input(0))
+
+        if node.input(1):  # Input B
+            result["inputB"] = node.input(1)
+            result["inputB_position"] = get_relative_position(node, node.input(1))
     else:
         # Nodos regulares con Input A(0) y Mask(1)
         if node.input(0):  # Input A
@@ -146,23 +167,41 @@ def check_node_inputs(node):
                 expected_inputA = inputA_special
         else:
             expected_inputA = inputA_special
+    elif node_class in NODES_INVERTED_INPUTS:
+        expected_inputA = "left"  # Para nodos invertidos, Input A debe ser left
 
     # Verificar Input A
     if result["inputA"] and result["inputA_position"] != expected_inputA:
-        errors.append(
+        error_msg = (
             f"Input A should be {expected_inputA}, but is {result['inputA_position']}"
         )
+        errors.append(error_msg)
+        result["inputA_error"] = (
+            f"({result['inputA_position']} / should be {expected_inputA})"
+        )
 
-    # Verificar Input B (solo para nodos especiales)
-    if result["inputB"] and result["inputB_position"] != inputB_special:
-        errors.append(
-            f"Input B should be {inputB_special}, but is {result['inputB_position']}"
+    # Verificar Input B
+    expected_inputB = inputB_special  # Por defecto para nodos especiales
+    if node_class in NODES_INVERTED_INPUTS:
+        expected_inputB = "top"  # Para nodos invertidos, Input B debe ser top
+
+    if result["inputB"] and result["inputB_position"] != expected_inputB:
+        error_msg = (
+            f"Input B should be {expected_inputB}, but is {result['inputB_position']}"
+        )
+        errors.append(error_msg)
+        result["inputB_error"] = (
+            f"({result['inputB_position']} / should be {expected_inputB})"
         )
 
     # Verificar Input Mask
     if result["inputMask"] and result["inputMask_position"] != inputMask:
-        errors.append(
+        error_msg = (
             f"Input Mask should be {inputMask}, but is {result['inputMask_position']}"
+        )
+        errors.append(error_msg)
+        result["inputMask_error"] = (
+            f"({result['inputMask_position']} / should be {inputMask})"
         )
 
     if errors:
@@ -232,6 +271,8 @@ class ScriptCheckerWindow(QWidget):
             # Columna 1: Input A
             if result["inputA"]:
                 input_text = f"{result['inputA'].name()} ({result['inputA_position']})"
+                if result["inputA_error"]:
+                    input_text += f" {result['inputA_error']}"
             else:
                 input_text = "-"
             input_a_item = QTableWidgetItem(input_text)
@@ -242,6 +283,8 @@ class ScriptCheckerWindow(QWidget):
             # Columna 2: Input B
             if result["inputB"]:
                 input_text = f"{result['inputB'].name()} ({result['inputB_position']})"
+                if result["inputB_error"]:
+                    input_text += f" {result['inputB_error']}"
             else:
                 input_text = "-"
             input_b_item = QTableWidgetItem(input_text)
@@ -254,6 +297,8 @@ class ScriptCheckerWindow(QWidget):
                 input_text = (
                     f"{result['inputMask'].name()} ({result['inputMask_position']})"
                 )
+                if result["inputMask_error"]:
+                    input_text += f" {result['inputMask_error']}"
             else:
                 input_text = "-"
             input_mask_item = QTableWidgetItem(input_text)
@@ -263,6 +308,7 @@ class ScriptCheckerWindow(QWidget):
 
             # Columna 4: Status
             status_item = QTableWidgetItem(result["status"])
+            status_item.setTextAlignment(Qt.AlignCenter)  # Centrar el texto
             if result["status"] == "OK":
                 status_item.setBackground(QColor(0, 255, 0))  # Verde
                 status_item.setForeground(QBrush(QColor(0, 0, 0)))  # Texto negro
@@ -299,9 +345,12 @@ class ScriptCheckerWindow(QWidget):
         # Ajustar el tamano de la ventana
         self.resize(width, height)
 
-        # Centrar la ventana en la posicion del cursor
-        cursor_pos = QCursor.pos()
-        self.move(cursor_pos.x() - width // 2, cursor_pos.y() - height // 2)
+        # Centrar la ventana en la pantalla
+        screen = QApplication.primaryScreen()
+        screen_geometry = screen.geometry()
+        x = (screen_geometry.width() - width) // 2
+        y = (screen_geometry.height() - height) // 2
+        self.move(x, y)
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
@@ -330,14 +379,22 @@ def main():
     # Verificar cada nodo
     results = []
     for node in nodes_to_check:
-        # Solo verificar nodos que tienen inputs
-        if node.inputs() > 0:
+        # Solo verificar nodos que tienen inputs y no estan en la lista de exclusion
+        if node.inputs() > 0 and node.Class() not in NODES_TO_SKIP:
             result = check_node_inputs(node)
             results.append(result)
 
     if not results:
         nuke.message("No se encontraron nodos con inputs para verificar")
         return
+
+    # Filtrar resultados si ShowOnlyWrong esta activado
+    if ShowOnlyWrong:
+        wrong_results = [result for result in results if result["status"] == "Wrong"]
+        if not wrong_results:
+            nuke.message("All checked nodes are positioned correctly!")
+            return
+        results = wrong_results
 
     # Check if there's already an instance of QApplication
     app = QApplication.instance() or QApplication([])
