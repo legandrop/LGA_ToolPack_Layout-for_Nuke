@@ -1,0 +1,351 @@
+"""
+________________________________________________________________________________
+
+  LGA_scriptChecker v0.5 | Lega
+  Script para verificar si los inputs de los nodos estan correctamente posicionados
+  segun las reglas de posicion definidas.
+________________________________________________________________________________
+
+"""
+
+import nuke
+from PySide2.QtWidgets import (
+    QApplication,
+    QWidget,
+    QVBoxLayout,
+    QTableWidget,
+    QTableWidgetItem,
+    QHeaderView,
+    QPushButton,
+    QHBoxLayout,
+)
+from PySide2.QtGui import QColor, QBrush, QCursor
+from PySide2.QtCore import Qt
+
+# Variable global para activar o desactivar los prints
+DEBUG = True
+
+# Variables de configuracion de posicion
+# Para nodos especiales (Merge2, Keymix)
+inputA_special = "left"
+inputB_special = "top"
+inputMask = "right"
+
+# Para nodos regulares
+inputA = "top"
+
+# Para nodos Merge en modo mask/stencil
+inputA_mergeMaskStencil = "right"
+
+# Lista de nodos que tienen inputs B, A y Mask
+NODES_WITH_SPECIAL_INPUTS = ["Merge2", "Keymix"]
+
+
+def debug_print(*message):
+    if DEBUG:
+        print(*message)
+
+
+def convert_color(value):
+    """Convierte el valor de color de Nuke a RGB"""
+    r = int((value & 0xFF000000) >> 24)
+    g = int((value & 0x00FF0000) >> 16)
+    b = int((value & 0x0000FF00) >> 8)
+    return r, g, b
+
+
+def get_node_color(node):
+    """Obtiene el color del nodo"""
+    if "tile_color" in node.knobs():
+        color_value = node["tile_color"].value()
+        if color_value == 0:
+            node_class = node.Class()
+            default_color_value = nuke.defaultNodeColor(node_class)
+            return convert_color(default_color_value)
+        else:
+            return convert_color(color_value)
+    else:
+        return 255, 255, 255
+
+
+def is_color_light(r, g, b):
+    """Determina si el color es claro"""
+    brightness = r * 0.299 + g * 0.587 + b * 0.114
+    return brightness > 126
+
+
+def get_relative_position(node1, node2):
+    """Determina la posicion relativa de node2 respecto a node1"""
+    x1, y1 = node1.xpos(), node1.ypos()
+    x2, y2 = node2.xpos(), node2.ypos()
+
+    dx = x2 - x1
+    dy = y2 - y1
+
+    # Determinar la direccion principal
+    if abs(dx) > abs(dy):
+        return "right" if dx > 0 else "left"
+    else:
+        return "bottom" if dy > 0 else "top"
+
+
+def check_node_inputs(node):
+    """Verifica los inputs de un nodo y retorna la informacion"""
+    result = {
+        "node": node,
+        "inputA": None,
+        "inputB": None,
+        "inputMask": None,
+        "inputA_position": None,
+        "inputB_position": None,
+        "inputMask_position": None,
+        "status": "OK",
+    }
+
+    node_class = node.Class()
+
+    if node_class in NODES_WITH_SPECIAL_INPUTS:
+        # Nodos con inputs B(0), A(1), Mask(2)
+        if node.input(0):  # Input B
+            result["inputB"] = node.input(0)
+            result["inputB_position"] = get_relative_position(node, node.input(0))
+
+        if node.input(1):  # Input A
+            result["inputA"] = node.input(1)
+            result["inputA_position"] = get_relative_position(node, node.input(1))
+
+        if node.input(2):  # Input Mask
+            result["inputMask"] = node.input(2)
+            result["inputMask_position"] = get_relative_position(node, node.input(2))
+    else:
+        # Nodos regulares con Input A(0) y Mask(1)
+        if node.input(0):  # Input A
+            result["inputA"] = node.input(0)
+            result["inputA_position"] = get_relative_position(node, node.input(0))
+
+        if node.input(1):  # Input Mask
+            result["inputMask"] = node.input(1)
+            result["inputMask_position"] = get_relative_position(node, node.input(1))
+
+    # Verificar si las posiciones son correctas
+    errors = []
+
+    # Determinar que variable usar para Input A
+    expected_inputA = inputA  # Por defecto para nodos regulares
+
+    if node_class in NODES_WITH_SPECIAL_INPUTS:
+        # Verificar si es un Merge en modo mask/stencil
+        if node_class == "Merge2" and "operation" in node.knobs():
+            operation = node["operation"].value()
+            if operation in ["mask", "stencil"]:
+                expected_inputA = inputA_mergeMaskStencil
+                debug_print(
+                    f"Node {node.name()} is Merge2 in {operation} mode, using inputA_mergeMaskStencil"
+                )
+            else:
+                expected_inputA = inputA_special
+        else:
+            expected_inputA = inputA_special
+
+    # Verificar Input A
+    if result["inputA"] and result["inputA_position"] != expected_inputA:
+        errors.append(
+            f"Input A should be {expected_inputA}, but is {result['inputA_position']}"
+        )
+
+    # Verificar Input B (solo para nodos especiales)
+    if result["inputB"] and result["inputB_position"] != inputB_special:
+        errors.append(
+            f"Input B should be {inputB_special}, but is {result['inputB_position']}"
+        )
+
+    # Verificar Input Mask
+    if result["inputMask"] and result["inputMask_position"] != inputMask:
+        errors.append(
+            f"Input Mask should be {inputMask}, but is {result['inputMask_position']}"
+        )
+
+    if errors:
+        result["status"] = "Wrong"
+        result["errors"] = errors
+
+    debug_print(f"Node {node.name()}: {result['status']}")
+
+    return result
+
+
+class ScriptCheckerWindow(QWidget):
+    def __init__(self, results, parent=None):
+        super(ScriptCheckerWindow, self).__init__(parent)
+        self.results = results
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle("Script Checker Results")
+        layout = QVBoxLayout(self)
+
+        # Crear la tabla con 5 columnas
+        self.table = QTableWidget(len(self.results), 5, self)
+        self.table.setHorizontalHeaderLabels(
+            ["Node", "Input A", "Input B", "Input Mask", "Status"]
+        )
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.table.verticalHeader().setVisible(False)
+        self.table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.table.setSelectionMode(QTableWidget.NoSelection)
+
+        # Cargar datos en la tabla
+        self.load_data()
+
+        layout.addWidget(self.table)
+
+        # Crear boton de cerrar
+        button_layout = QHBoxLayout()
+        close_button = QPushButton("Close")
+        close_button.clicked.connect(self.close)
+        button_layout.addWidget(close_button)
+
+        layout.addLayout(button_layout)
+        self.setLayout(layout)
+
+        # Ajustar tamano de ventana
+        self.adjust_window_size()
+
+    def load_data(self):
+        for row, result in enumerate(self.results):
+            node = result["node"]
+            r, g, b = get_node_color(node)
+            node_qcolor = QColor(r, g, b)
+
+            # Determinar color del texto
+            if is_color_light(r, g, b):
+                text_color = QColor(0, 0, 0)
+            else:
+                text_color = QColor(255, 255, 255)
+
+            # Columna 0: Node
+            node_item = QTableWidgetItem(node.name())
+            node_item.setBackground(node_qcolor)
+            node_item.setForeground(QBrush(text_color))
+            self.table.setItem(row, 0, node_item)
+
+            # Columna 1: Input A
+            if result["inputA"]:
+                input_text = f"{result['inputA'].name()} ({result['inputA_position']})"
+            else:
+                input_text = "-"
+            input_a_item = QTableWidgetItem(input_text)
+            input_a_item.setBackground(node_qcolor)
+            input_a_item.setForeground(QBrush(text_color))
+            self.table.setItem(row, 1, input_a_item)
+
+            # Columna 2: Input B
+            if result["inputB"]:
+                input_text = f"{result['inputB'].name()} ({result['inputB_position']})"
+            else:
+                input_text = "-"
+            input_b_item = QTableWidgetItem(input_text)
+            input_b_item.setBackground(node_qcolor)
+            input_b_item.setForeground(QBrush(text_color))
+            self.table.setItem(row, 2, input_b_item)
+
+            # Columna 3: Input Mask
+            if result["inputMask"]:
+                input_text = (
+                    f"{result['inputMask'].name()} ({result['inputMask_position']})"
+                )
+            else:
+                input_text = "-"
+            input_mask_item = QTableWidgetItem(input_text)
+            input_mask_item.setBackground(node_qcolor)
+            input_mask_item.setForeground(QBrush(text_color))
+            self.table.setItem(row, 3, input_mask_item)
+
+            # Columna 4: Status
+            status_item = QTableWidgetItem(result["status"])
+            if result["status"] == "OK":
+                status_item.setBackground(QColor(0, 255, 0))  # Verde
+                status_item.setForeground(QBrush(QColor(0, 0, 0)))  # Texto negro
+            else:
+                status_item.setBackground(QColor(255, 0, 0))  # Rojo
+                status_item.setForeground(QBrush(QColor(255, 255, 255)))  # Texto blanco
+            self.table.setItem(row, 4, status_item)
+
+        self.table.resizeColumnsToContents()
+
+    def adjust_window_size(self):
+        # Desactivar temporalmente el estiramiento de la ultima columna
+        self.table.horizontalHeader().setStretchLastSection(False)
+
+        # Ajustar las columnas al contenido
+        self.table.resizeColumnsToContents()
+
+        # Calcular el ancho de la ventana
+        width = self.table.verticalHeader().width()
+        for i in range(self.table.columnCount()):
+            width += self.table.columnWidth(i) + 10
+
+        # Calcular la altura
+        height = self.table.horizontalHeader().height() + 20
+        for i in range(self.table.rowCount()):
+            height += self.table.rowHeight(i)
+
+        # Agregar espacio para el boton
+        height += 50
+
+        # Reactivar el estiramiento de la ultima columna
+        self.table.horizontalHeader().setStretchLastSection(True)
+
+        # Ajustar el tamano de la ventana
+        self.resize(width, height)
+
+        # Centrar la ventana en la posicion del cursor
+        cursor_pos = QCursor.pos()
+        self.move(cursor_pos.x() - width // 2, cursor_pos.y() - height // 2)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.close()
+        else:
+            super(ScriptCheckerWindow, self).keyPressEvent(event)
+
+
+app = None
+window = None
+
+
+def main():
+    global app, window
+    # Obtener nodos a verificar
+    selected_nodes = nuke.selectedNodes()
+
+    if not selected_nodes:
+        # Si no hay nodos seleccionados, usar todos los nodos
+        nodes_to_check = nuke.allNodes()
+        debug_print("No hay nodos seleccionados, verificando todos los nodos")
+    else:
+        nodes_to_check = selected_nodes
+        debug_print(f"Verificando {len(selected_nodes)} nodos seleccionados")
+
+    # Verificar cada nodo
+    results = []
+    for node in nodes_to_check:
+        # Solo verificar nodos que tienen inputs
+        if node.inputs() > 0:
+            result = check_node_inputs(node)
+            results.append(result)
+
+    if not results:
+        nuke.message("No se encontraron nodos con inputs para verificar")
+        return
+
+    # Check if there's already an instance of QApplication
+    app = QApplication.instance() or QApplication([])
+    window = ScriptCheckerWindow(results)
+    window.show()
+
+    debug_print(f"Ventana mostrada con {len(results)} resultados")
+
+
+if __name__ == "__main__":
+    main()

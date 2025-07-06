@@ -77,6 +77,17 @@ n.addSeparator()
 # Define el icono para los items B
 icon_LTPB = _get_icon("LTPB")
 
+# Importar el LGA_scriptChecker
+import LGA_scriptChecker
+
+n.addCommand(
+    "  Script Checker",
+    "LGA_scriptChecker.main()",
+    "Ctrl+Alt+h",
+    shortcutContext=2,
+    icon=icon_LTPB,
+)
+
 
 # Importar el LGA_StickyNote
 import LGA_StickyNote
