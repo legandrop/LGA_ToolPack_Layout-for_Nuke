@@ -1,7 +1,7 @@
 """
 ________________________________________________________________________________
 
-  LGA_scriptChecker v0.7 | Lega
+  LGA_scriptChecker v0.8 | Lega
   Script para verificar si los inputs de los nodos estan correctamente posicionados
   segun las reglas de posicion definidas.
 ________________________________________________________________________________
@@ -18,12 +18,13 @@ from PySide2.QtWidgets import (
     QHeaderView,
     QPushButton,
     QHBoxLayout,
+    QStyledItemDelegate,
 )
 from PySide2.QtGui import QColor, QBrush, QCursor
-from PySide2.QtCore import Qt
+from PySide2.QtCore import Qt, QRect, QMargins
 
 # Variable global para activar o desactivar los prints
-DEBUG = True
+DEBUG = False
 
 # Variable para mostrar solo nodos con errores
 ShowOnlyWrong = True
@@ -44,7 +45,7 @@ inputA_mergeMaskStencil = "right"
 NODES_WITH_SPECIAL_INPUTS = ["Merge2", "Keymix", "Dissolve"]
 
 # Lista de nodos que no se chequean
-NODES_TO_SKIP = ["Dot", "AppendClip", "CopyCat", "PostageStamp"]
+NODES_TO_SKIP = ["Dot", "AppendClip", "CopyCat", "PostageStamp", "Viewer"]
 
 # Lista de nodos con inputs invertidos (A=top, B=left)
 NODES_INVERTED_INPUTS = ["VectorDistort"]
@@ -213,6 +214,40 @@ def check_node_inputs(node):
     return result
 
 
+class CustomItemDelegate(QStyledItemDelegate):
+    def paint(self, painter, option, index):
+        # Obtener el QTableWidgetItem directamente del QTableWidget (option.widget)
+        table_widget = option.widget
+        if isinstance(table_widget, QTableWidget):
+            item = table_widget.item(index.row(), index.column())
+            if item and item.background() and item.background().color().isValid():
+                painter.fillRect(
+                    option.rect, item.background()
+                )  # Rellenar todo el rectangulo con el color de fondo
+
+        # Ajustar el rectángulo para crear padding izquierdo
+        padded_rect = QRect(option.rect)
+        padding_left = 5
+        padded_rect.adjust(
+            padding_left, 0, 0, 0
+        )  # Mover a la derecha por el padding_left
+
+        # Crear una nueva opción con el rectángulo ajustado
+        new_option = option
+        new_option.rect = padded_rect
+
+        # Llamar al método paint de la clase base con la opción ajustada
+        super(CustomItemDelegate, self).paint(painter, new_option, index)
+
+    def sizeHint(self, option, index):
+        """Ajusta el tamano de la sugerencia para incluir el padding"""
+        original_size = super(CustomItemDelegate, self).sizeHint(option, index)
+        padding_left = 5
+        return original_size.grownBy(
+            QMargins(padding_left, 0, 5, 0)  # Anadir padding izquierdo y derecho
+        )
+
+
 class ScriptCheckerWindow(QWidget):
     def __init__(self, results, parent=None):
         super(ScriptCheckerWindow, self).__init__(parent)
@@ -235,8 +270,8 @@ class ScriptCheckerWindow(QWidget):
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setSelectionMode(QTableWidget.NoSelection)
 
-        # Conectar la señal de click de la tabla al metodo go_to_node
-        self.table.cellClicked.connect(self.go_to_node)
+        # Aplicar el delegado personalizado para el padding
+        self.table.setItemDelegate(CustomItemDelegate(self.table))
 
         # Cargar datos en la tabla
         self.load_data()
@@ -318,7 +353,7 @@ class ScriptCheckerWindow(QWidget):
                 status_item.setBackground(QColor(0, 255, 0))  # Verde
                 status_item.setForeground(QBrush(QColor(0, 0, 0)))  # Texto negro
             else:
-                status_item.setBackground(QColor(255, 0, 0))  # Rojo
+                status_item.setBackground(QColor(125, 0, 0))  # Rojo
                 status_item.setForeground(QBrush(QColor(255, 255, 255)))  # Texto blanco
             self.table.setItem(row, 4, status_item)
 
