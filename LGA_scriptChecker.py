@@ -1,7 +1,7 @@
 """
 ________________________________________________________________________________
 
-  LGA_scriptChecker v0.83 | Lega
+  LGA_scriptChecker v0.84 | Lega
   Script para verificar si los inputs de los nodos estan correctamente posicionados
   segun las reglas de posicion definidas.
 ________________________________________________________________________________
@@ -45,7 +45,17 @@ inputA_mergeMaskStencil = "right"
 NODES_WITH_SPECIAL_INPUTS = ["Merge2", "Keymix", "Dissolve", "Copy"]
 
 # Lista de nodos que no se chequean
-NODES_TO_SKIP = ["Dot", "AppendClip", "CopyCat", "PostageStamp", "Viewer"]
+NODES_TO_SKIP = [
+    "Dot",
+    "AppendClip",
+    "CopyCat",
+    "PostageStamp",
+    "Viewer",
+    "Switch",
+    "keylight_v201",
+    "Write",
+    "IBKGizmoV3",
+]
 
 # Lista de nodos con inputs invertidos (A=top, B=left)
 NODES_INVERTED_INPUTS = ["VectorDistort"]
@@ -85,12 +95,17 @@ def is_color_light(r, g, b):
 
 
 def get_relative_position(node1, node2):
-    """Determina la posicion relativa de node2 respecto a node1"""
-    x1, y1 = node1.xpos(), node1.ypos()
-    x2, y2 = node2.xpos(), node2.ypos()
+    """Determina la posicion relativa de node2 respecto a node1 usando los puntos centrales."""
+    # Obtener las coordenadas del centro de node1
+    x1_center = node1.xpos() + node1.screenWidth() / 2
+    y1_center = node1.ypos() + node1.screenHeight() / 2
 
-    dx = x2 - x1
-    dy = y2 - y1
+    # Obtener las coordenadas del centro de node2
+    x2_center = node2.xpos() + node2.screenWidth() / 2
+    y2_center = node2.ypos() + node2.screenHeight() / 2
+
+    dx = x2_center - x1_center
+    dy = y2_center - y1_center
 
     # Determinar la direccion principal
     if abs(dx) > abs(dy):
@@ -426,6 +441,57 @@ class ScriptCheckerWindow(QWidget):
                 node.setSelected(True)
                 nuke.zoomToFitSelected()
                 node.showControlPanel()
+
+                # Obtener la informacion completa del nodo para debug
+                # Asegurarse de que el objeto 'result' este disponible en 'go_to_node'
+                # Para esto, necesitamos pasar el 'result' completo o el indice de la fila
+                # al conectar la senal. Actualmente, cellClicked solo pasa (row, column).
+                # La forma mas sencilla es obtener la informacion del nodo nuevamente o acceder a ella desde self.results
+
+                # Encontrar el 'result' correspondiente en la lista self.results
+                current_result = None
+                for res in self.results:
+                    if res["node"].name() == node_name:
+                        current_result = res
+                        break
+
+                if current_result:
+                    # Calcular coordenadas del centro para el nodo enfocado
+                    node_x_center = node.xpos() + node.screenWidth() / 2
+                    node_y_center = node.ypos() + node.screenHeight() / 2
+
+                    debug_msg = f"Nodo enfocado: {node.name()} (X: {node.xpos()}, Y: {node.ypos()}) Centro (X: {node_x_center:.2f}, Y: {node_y_center:.2f})\n"
+
+                    if current_result["inputA"]:
+                        input_a_node = current_result["inputA"]
+                        input_a_x_center = (
+                            input_a_node.xpos() + input_a_node.screenWidth() / 2
+                        )
+                        input_a_y_center = (
+                            input_a_node.ypos() + input_a_node.screenHeight() / 2
+                        )
+                        debug_msg += f"  Input A: {input_a_node.name()} (X: {input_a_node.xpos()}, Y: {input_a_node.ypos()}) Centro (X: {input_a_x_center:.2f}, Y: {input_a_y_center:.2f})\n"
+                    if current_result["inputB"]:
+                        input_b_node = current_result["inputB"]
+                        input_b_x_center = (
+                            input_b_node.xpos() + input_b_node.screenWidth() / 2
+                        )
+                        input_b_y_center = (
+                            input_b_node.ypos() + input_b_node.screenHeight() / 2
+                        )
+                        debug_msg += f"  Input B: {input_b_node.name()} (X: {input_b_node.xpos()}, Y: {input_b_node.ypos()}) Centro (X: {input_b_x_center:.2f}, Y: {input_b_y_center:.2f})\n"
+                    if current_result["inputMask"]:
+                        input_mask_node = current_result["inputMask"]
+                        input_mask_x_center = (
+                            input_mask_node.xpos() + input_mask_node.screenWidth() / 2
+                        )
+                        input_mask_y_center = (
+                            input_mask_node.ypos() + input_mask_node.screenHeight() / 2
+                        )
+                        debug_msg += f"  Input Mask: {input_mask_node.name()} (X: {input_mask_node.xpos()}, Y: {input_mask_node.ypos()}) Centro (X: {input_mask_x_center:.2f}, Y: {input_mask_y_center:.2f})\n"
+
+                    debug_print(debug_msg)
+
                 debug_print(f"Nodo {node_name} seleccionado y en foco.")
 
                 # Traer la ventana de vuelta al frente
