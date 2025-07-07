@@ -1,7 +1,7 @@
 """
 ________________________________________________________________________________
 
-  LGA_scriptChecker v0.81 | Lega
+  LGA_scriptChecker v0.83 | Lega
   Script para verificar si los inputs de los nodos estan correctamente posicionados
   segun las reglas de posicion definidas.
 ________________________________________________________________________________
@@ -42,7 +42,7 @@ inputA = "top"
 inputA_mergeMaskStencil = "right"
 
 # Lista de nodos que tienen inputs B, A y Mask
-NODES_WITH_SPECIAL_INPUTS = ["Merge2", "Keymix", "Dissolve"]
+NODES_WITH_SPECIAL_INPUTS = ["Merge2", "Keymix", "Dissolve", "Copy"]
 
 # Lista de nodos que no se chequean
 NODES_TO_SKIP = ["Dot", "AppendClip", "CopyCat", "PostageStamp", "Viewer"]
@@ -269,6 +269,10 @@ class ScriptCheckerWindow(QWidget):
         self.table.verticalHeader().setVisible(False)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setSelectionMode(QTableWidget.NoSelection)
+
+        # Conectar la señal de clic de la celda al metodo go_to_node
+        self.table.cellClicked.connect(self.go_to_node)
+        debug_print("Señal cellClicked conectada a go_to_node.")
 
         # Aplicar el delegado personalizado para el padding
         self.table.setItemDelegate(CustomItemDelegate(self.table))
