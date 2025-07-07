@@ -1,7 +1,7 @@
 """
 ________________________________________________________________________________
 
-  LGA_scriptChecker v0.85 | Lega
+  LGA_scriptChecker v0.86 | Lega
   Script para verificar si los inputs de los nodos estan correctamente posicionados
   segun las reglas de posicion definidas.
 ________________________________________________________________________________
@@ -22,6 +22,8 @@ from PySide2.QtWidgets import (
 )
 from PySide2.QtGui import QColor, QBrush, QCursor, QFontMetrics
 from PySide2.QtCore import Qt, QRect, QMargins
+
+import time
 
 # Variable global para activar o desactivar los prints
 DEBUG = False
@@ -354,9 +356,9 @@ class CustomItemDelegate(QStyledItemDelegate):
 
 
 class ScriptCheckerWindow(QWidget):
-    def __init__(self, results, parent=None):
+    def __init__(self, initial_results, parent=None):
         super(ScriptCheckerWindow, self).__init__(parent)
-        self.results = results
+        self.results = initial_results
         self.initUI()
 
     def initUI(self):
@@ -393,6 +395,11 @@ class ScriptCheckerWindow(QWidget):
         close_button.clicked.connect(self.close)
         button_layout.addWidget(close_button)
 
+        # Anadir boton de Refresh
+        refresh_button = QPushButton("Refresh")
+        refresh_button.clicked.connect(self.refresh_data)
+        button_layout.addWidget(refresh_button)
+
         layout.addLayout(button_layout)
         self.setLayout(layout)
 
@@ -400,6 +407,9 @@ class ScriptCheckerWindow(QWidget):
         self.adjust_window_size()
 
     def load_data(self):
+        self.table.setRowCount(
+            len(self.results)
+        )  # Asegurarse de que la tabla tenga el numero correcto de filas
         for row, result in enumerate(self.results):
             node = result["node"]
             r, g, b = get_node_color(node)
@@ -527,21 +537,45 @@ class ScriptCheckerWindow(QWidget):
 
     def go_to_node(self, row, column):
         """Selecciona y centra el nodo en el Node Graph de Nuke al hacer clic en la tabla."""
+        start_time = time.time()
         node_name_item = self.table.item(
             row, 0
         )  # La primera columna es el nombre del nodo
         if node_name_item:
             node_name = node_name_item.text()
-            debug_print(f"Intentando ir al nodo: {node_name}")
+            debug_print(
+                f"[{time.time() - start_time:.4f}s] Intentando ir al nodo: {node_name}"
+            )
+
+            node_get_time_start = time.time()
             node = nuke.toNode(node_name)
+            debug_print(
+                f"[{time.time() - node_get_time_start:.4f}s] nuke.toNode('{node_name}') completado."
+            )
+
             if node:
-                # Deseleccionar todos los nodos
-                nuke.selectAll()
-                nuke.invertSelection()
-                # Seleccionar y centrar el nodo
+                # Deseleccionar todos los nodos existentes para asegurar que solo el nodo de interes este seleccionado.
+                # Esto es mas eficiente que nuke.selectAll() y nuke.invertSelection().
+                for n in nuke.selectedNodes():
+                    n.setSelected(False)
+
+                node_select_time_start = time.time()
                 node.setSelected(True)
+                debug_print(
+                    f"[{time.time() - node_select_time_start:.4f}s] node.setSelected(True) completado."
+                )
+
+                zoom_time_start = time.time()
                 nuke.zoomToFitSelected()
+                debug_print(
+                    f"[{time.time() - zoom_time_start:.4f}s] nuke.zoomToFitSelected() completado."
+                )
+
+                panel_time_start = time.time()
                 node.showControlPanel()
+                debug_print(
+                    f"[{time.time() - panel_time_start:.4f}s] node.showControlPanel() completado."
+                )
 
                 # Obtener la informacion completa del nodo para debug
                 # Asegurarse de que el objeto 'result' este disponible en 'go_to_node'
@@ -593,15 +627,60 @@ class ScriptCheckerWindow(QWidget):
 
                     debug_print(debug_msg)
 
-                debug_print(f"Nodo {node_name} seleccionado y en foco.")
+                debug_print(
+                    f"[{time.time() - start_time:.4f}s] Nodo {node_name} seleccionado y en foco. Total time."
+                )
 
                 # Traer la ventana de vuelta al frente
                 self.activateWindow()
                 self.raise_()
 
             else:
-                debug_print(f"El nodo {node_name} no existe en Nuke.")
+                debug_print(
+                    f"[{time.time() - start_time:.4f}s] El nodo {node_name} no existe en Nuke."
+                )
                 nuke.message(f"El nodo '{node_name}' no se encontró en Nuke.")
+
+    def refresh_data(self):
+        debug_print("Refreshing data...")
+        # Limpiar la tabla actual
+        self.table.clearContents()
+        self.table.setRowCount(0)
+
+        # Obtener los nuevos resultados
+        self.results = self._get_checked_nodes()
+
+        if not self.results:
+            nuke.message(
+                "No se encontraron nodos con inputs para verificar despues del refresco."
+            )
+            self.close()  # Cerrar la ventana si no hay resultados para mostrar
+            return
+
+        # Cargar los nuevos datos en la tabla
+        self.load_data()
+        # Ajustar el tamano de la ventana y centrarla de nuevo
+        self.adjust_window_size()
+        debug_print("Data refreshed and window adjusted.")
+
+    def _get_checked_nodes(self):
+        """Obtiene y verifica los nodos segun la seleccion actual o todos los nodos."""
+        # Siempre verificar todos los nodos, ignorando la seleccion.
+        nodes_to_check = nuke.allNodes()
+        debug_print("Verificando todos los nodos del script.")
+
+        checked_results = []
+        for node in nodes_to_check:
+            if node.inputs() > 0 and node.Class() not in NODES_TO_SKIP:
+                result = check_node_inputs(node)
+                checked_results.append(result)
+
+        if ShowOnlyWrong:
+            checked_results = [
+                result for result in checked_results if result["status"] == "Wrong"
+            ]
+
+        return checked_results
 
 
 app = None
@@ -610,43 +689,28 @@ window = None
 
 def main():
     global app, window
-    # Obtener nodos a verificar
-    selected_nodes = nuke.selectedNodes()
+    # Crear una instancia de la ventana, que internamente llamara a _get_checked_nodes
+    # para obtener los datos iniciales.
+    # Obtener los resultados iniciales para pasarselos al constructor
+    initial_results = []
+    # Crear un objeto temporal para llamar a _get_checked_nodes antes de crear la ventana completa
+    temp_checker = ScriptCheckerWindow(
+        initial_results
+    )  # initial_results es una lista vacia temporalmente
+    initial_results = temp_checker._get_checked_nodes()
 
-    if not selected_nodes:
-        # Si no hay nodos seleccionados, usar todos los nodos
-        nodes_to_check = nuke.allNodes()
-        debug_print("No hay nodos seleccionados, verificando todos los nodos")
-    else:
-        nodes_to_check = selected_nodes
-        debug_print(f"Verificando {len(selected_nodes)} nodos seleccionados")
-
-    # Verificar cada nodo
-    results = []
-    for node in nodes_to_check:
-        # Solo verificar nodos que tienen inputs y no estan en la lista de exclusion
-        if node.inputs() > 0 and node.Class() not in NODES_TO_SKIP:
-            result = check_node_inputs(node)
-            results.append(result)
-
-    if not results:
-        nuke.message("No se encontraron nodos con inputs para verificar")
+    if not initial_results:
+        nuke.message(
+            "No se encontraron nodos con inputs para verificar o todos estan correctos."
+        )
         return
-
-    # Filtrar resultados si ShowOnlyWrong esta activado
-    if ShowOnlyWrong:
-        wrong_results = [result for result in results if result["status"] == "Wrong"]
-        if not wrong_results:
-            nuke.message("All checked nodes are positioned correctly!")
-            return
-        results = wrong_results
 
     # Check if there's already an instance of QApplication
     app = QApplication.instance() or QApplication([])
-    window = ScriptCheckerWindow(results)
+    window = ScriptCheckerWindow(initial_results)
     window.show()
 
-    debug_print(f"Ventana mostrada con {len(results)} resultados")
+    debug_print(f"Ventana mostrada con {len(initial_results)} resultados")
 
 
 if __name__ == "__main__":
