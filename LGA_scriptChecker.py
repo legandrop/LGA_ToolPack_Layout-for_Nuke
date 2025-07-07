@@ -1,7 +1,7 @@
 """
 ________________________________________________________________________________
 
-  LGA_scriptChecker v0.8 | Lega
+  LGA_scriptChecker v0.81 | Lega
   Script para verificar si los inputs de los nodos estan correctamente posicionados
   segun las reglas de posicion definidas.
 ________________________________________________________________________________
@@ -24,7 +24,7 @@ from PySide2.QtGui import QColor, QBrush, QCursor
 from PySide2.QtCore import Qt, QRect, QMargins
 
 # Variable global para activar o desactivar los prints
-DEBUG = False
+DEBUG = True
 
 # Variable para mostrar solo nodos con errores
 ShowOnlyWrong = True
@@ -371,13 +371,21 @@ class ScriptCheckerWindow(QWidget):
         for i in range(self.table.columnCount()):
             width += self.table.columnWidth(i) + 10
 
-        # Calcular la altura
-        height = self.table.horizontalHeader().height() + 20
+        # Calcular la altura de la tabla y anadir el espacio para el boton
+        table_height = self.table.horizontalHeader().height()
         for i in range(self.table.rowCount()):
-            height += self.table.rowHeight(i)
+            table_height += self.table.rowHeight(i)
 
-        # Agregar espacio para el boton
-        height += 50
+        # Anadir un padding para que no este todo tan justo
+        height = table_height + 50
+
+        # Limitar la altura maxima al 90% de la altura de la pantalla
+        screen = QApplication.primaryScreen()
+        screen_geometry = screen.geometry()
+        max_height = int(screen_geometry.height() * 0.80)
+
+        if height > max_height:
+            height = max_height
 
         # Reactivar el estiramiento de la ultima columna
         self.table.horizontalHeader().setStretchLastSection(True)
@@ -386,10 +394,9 @@ class ScriptCheckerWindow(QWidget):
         self.resize(width, height)
 
         # Centrar la ventana en la pantalla
-        screen = QApplication.primaryScreen()
-        screen_geometry = screen.geometry()
+
         x = (screen_geometry.width() - width) // 2
-        y = (screen_geometry.height() - height) // 2
+        y = (screen_geometry.height() - height) // 2 - 20
         self.move(x, y)
 
     def keyPressEvent(self, event):
