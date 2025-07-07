@@ -63,6 +63,7 @@ NODES_TO_SKIP = [
     "ScanlineRender",
     "Scene",
     "RayRender",
+    "NoOp",
 ]
 
 # Lista de nodos con inputs invertidos (A=top, B=left)
