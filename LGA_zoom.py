@@ -1,7 +1,7 @@
 """
 _____________________________________________________________________________
 
-  LGA_zoom v2.1 | 2025 | Lega
+  LGA_zoom v2.2 | 2025 | Lega
 
   Alterna entre el zoom actual y un zoom que muestra todo el DAG.
   Permite volver al nivel de zoom anterior usando la posición del cursor
@@ -224,6 +224,17 @@ class MiddleClickInterceptor(QtCore.QObject):
         self.start_pos = None
 
     def eventFilter(self, obj, event):
+        # Añadir un print más detallado para depuración
+        # print(f"DEBUG: eventFilter llamado. obj tipo: {type(obj)}, event tipo: {type(event)}")
+
+        # Verificar que el evento sea una instancia de QEvent antes de llamar a .type()
+        if not isinstance(event, QtCore.QEvent):
+            # Si no es un QEvent, simplemente ignorarlo o loguearlo y pasarlo
+            # print(f"DEBUG: Objeto inesperado pasado como evento: {type(event)}")
+            return (
+                False  # No procesar y dejar que otros filtros o el propio Qt lo manejen
+            )
+
         if event.type() == QtCore.QEvent.MouseButtonPress:
             if event.button() == QtCore.Qt.MiddleButton:
                 widget = QtWidgets.QApplication.instance().widgetAt(QtGui.QCursor.pos())

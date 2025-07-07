@@ -1,7 +1,7 @@
 """
 ________________________________________________________________________________
 
-  LGA_scriptChecker v0.84 | Lega
+  LGA_scriptChecker v0.85 | Lega
   Script para verificar si los inputs de los nodos estan correctamente posicionados
   segun las reglas de posicion definidas.
 ________________________________________________________________________________
@@ -20,11 +20,11 @@ from PySide2.QtWidgets import (
     QHBoxLayout,
     QStyledItemDelegate,
 )
-from PySide2.QtGui import QColor, QBrush, QCursor
+from PySide2.QtGui import QColor, QBrush, QCursor, QFontMetrics
 from PySide2.QtCore import Qt, QRect, QMargins
 
 # Variable global para activar o desactivar los prints
-DEBUG = True
+DEBUG = False
 
 # Variable para mostrar solo nodos con errores
 ShowOnlyWrong = True
@@ -52,9 +52,15 @@ NODES_TO_SKIP = [
     "PostageStamp",
     "Viewer",
     "Switch",
-    "keylight_v201",
+    "OFXuk.co.thefoundry.keylight.keylight_v201",
     "Write",
     "IBKGizmoV3",
+    "PointsTo3D",
+    "MergeGeo",
+    "Project3D2",
+    "ScanlineRender",
+    "Scene",
+    "RayRender",
 ]
 
 # Lista de nodos con inputs invertidos (A=top, B=left)
@@ -233,33 +239,117 @@ class CustomItemDelegate(QStyledItemDelegate):
     def paint(self, painter, option, index):
         # Obtener el QTableWidgetItem directamente del QTableWidget (option.widget)
         table_widget = option.widget
-        if isinstance(table_widget, QTableWidget):
-            item = table_widget.item(index.row(), index.column())
-            if item and item.background() and item.background().color().isValid():
-                painter.fillRect(
-                    option.rect, item.background()
-                )  # Rellenar todo el rectangulo con el color de fondo
+        item = table_widget.item(index.row(), index.column())
 
-        # Ajustar el rectángulo para crear padding izquierdo
+        if not item:
+            super(CustomItemDelegate, self).paint(painter, option, index)
+            return
+
+        # Rellenar todo el rectangulo con el color de fondo
+        if item.background() and item.background().color().isValid():
+            painter.fillRect(option.rect, item.background())
+
+        # Determinar el color del texto base (negro o blanco) basado en el color de fondo
+        bg_color = item.background().color()
+        r, g, b = bg_color.red(), bg_color.green(), bg_color.blue()
+        if is_color_light(r, g, b):
+            base_text_color = QColor(0, 0, 0)  # Negro
+            error_text_color = QColor(150, 0, 0)  # Rojo oscuro
+        else:
+            base_text_color = QColor(255, 255, 255)  # Blanco
+            error_text_color = QColor(255, 150, 150)  # Rojo claro
+
+        # Manejo especial para la columna de Status (columna 4)
+        if index.column() == 4:
+            painter.setPen(base_text_color)
+            status_text = item.text()
+            metrics = QFontMetrics(painter.font())
+
+            # Calcular la posicion para centrar el texto manualmente
+            text_width = metrics.horizontalAdvance(status_text)
+            x_centered = option.rect.x() + (option.rect.width() - text_width) / 2
+
+            # Ajustar para centrado vertical
+            text_y = (
+                option.rect.top()
+                + (option.rect.height() - metrics.height()) / 2
+                + metrics.ascent()
+            )
+
+            debug_print(
+                f"Columna 4 - Item: {status_text}, Rect: {option.rect}, Calc X: {x_centered:.2f}, Calc Y: {text_y:.2f}"
+            )
+            painter.drawText(x_centered, text_y, status_text)
+            return  # Salir del metodo paint para esta columna
+
+        metrics = QFontMetrics(painter.font())
+
+        # Ajustar el rectangulo para crear padding izquierdo
         padded_rect = QRect(option.rect)
         padding_left = 5
+        padding_right = 5  # Anadir padding derecho
         padded_rect.adjust(
-            padding_left, 0, 0, 0
-        )  # Mover a la derecha por el padding_left
+            padding_left, 0, -padding_right, 0
+        )  # Ajustar el rectangulo con ambos paddings
 
-        # Crear una nueva opción con el rectángulo ajustado
-        new_option = option
-        new_option.rect = padded_rect
+        # Calcular la posicion vertical para centrar el texto
+        text_y = (
+            padded_rect.top()
+            + (padded_rect.height() - metrics.height()) / 2
+            + metrics.ascent()
+        )
+        current_x = padded_rect.left()
 
-        # Llamar al método paint de la clase base con la opción ajustada
-        super(CustomItemDelegate, self).paint(painter, new_option, index)
+        error_pattern = " / should be "
+        if error_pattern in item.text():
+            index_error_start = item.text().find(error_pattern)
+
+            # Parte 1: Texto antes del patron de error (ej., "Blur14 (right")
+            main_part = item.text()[:index_error_start]
+            painter.setPen(base_text_color)
+            painter.drawText(current_x, text_y, main_part)
+            current_x += metrics.horizontalAdvance(main_part)
+
+            # Parte 2 y 3: El texto de error y el parentesis final (si existe y esta al final)
+            last_paren_index_in_full_text = item.text().rfind(")")
+
+            if (
+                last_paren_index_in_full_text != -1
+                and last_paren_index_in_full_text == len(item.text()) - 1
+                and index_error_start < last_paren_index_in_full_text
+            ):
+                # El parentesis final pertenece a la parte no-error
+                actual_error_text = item.text()[
+                    index_error_start:last_paren_index_in_full_text
+                ]
+                closing_paren_text = item.text()[last_paren_index_in_full_text:]
+            else:
+                # No hay parentesis final a separar, o no esta al final
+                actual_error_text = item.text()[index_error_start:]
+                closing_paren_text = ""  # No hay parentesis de cierre separado para dibujar en color base
+
+            painter.setPen(error_text_color)
+            painter.drawText(current_x, text_y, actual_error_text)
+            current_x += metrics.horizontalAdvance(actual_error_text)
+
+            # Parte 3: El parentesis de cierre (si se separo)
+            if closing_paren_text:
+                painter.setPen(base_text_color)
+                painter.drawText(current_x, text_y, closing_paren_text)
+        else:
+            # Si no hay patron de error, dibujar todo el texto con el color base
+            painter.setPen(base_text_color)
+            painter.drawText(padded_rect, option.displayAlignment, item.text())
 
     def sizeHint(self, option, index):
         """Ajusta el tamano de la sugerencia para incluir el padding"""
         original_size = super(CustomItemDelegate, self).sizeHint(option, index)
         padding_left = 5
+        padding_right = 5  # Usar el mismo padding derecho que en paint
         return original_size.grownBy(
-            QMargins(padding_left, 0, 5, 0)  # Anadir padding izquierdo y derecho
+            QMargins(
+                padding_left, 0, padding_right, 0
+            )  # Anadir padding izquierdo y derecho
         )
 
 
@@ -285,9 +375,9 @@ class ScriptCheckerWindow(QWidget):
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setSelectionMode(QTableWidget.NoSelection)
 
-        # Conectar la señal de clic de la celda al metodo go_to_node
+        # Conectar la senal de clic de la celda al metodo go_to_node
         self.table.cellClicked.connect(self.go_to_node)
-        debug_print("Señal cellClicked conectada a go_to_node.")
+        debug_print("Senal cellClicked conectada a go_to_node.")
 
         # Aplicar el delegado personalizado para el padding
         self.table.setItemDelegate(CustomItemDelegate(self.table))
@@ -329,40 +419,51 @@ class ScriptCheckerWindow(QWidget):
 
             # Columna 1: Input A
             if result["inputA"]:
-                input_text = f"{result['inputA'].name()} ({result['inputA_position']})"
                 if result["inputA_error"]:
-                    input_text += f" {result['inputA_error']}"
+                    input_text = f"{result['inputA'].name()} {result['inputA_error']}"
+                else:
+                    input_text = (
+                        f"{result['inputA'].name()} ({result['inputA_position']})"
+                    )
             else:
                 input_text = "-"
             input_a_item = QTableWidgetItem(input_text)
             input_a_item.setBackground(node_qcolor)
-            input_a_item.setForeground(QBrush(text_color))
+            input_a_item.setForeground(
+                QBrush(text_color)
+            )  # Mantener para fallback si el delegado falla
             self.table.setItem(row, 1, input_a_item)
 
             # Columna 2: Input B
             if result["inputB"]:
-                input_text = f"{result['inputB'].name()} ({result['inputB_position']})"
                 if result["inputB_error"]:
-                    input_text += f" {result['inputB_error']}"
+                    input_text = f"{result['inputB'].name()} {result['inputB_error']}"
+                else:
+                    input_text = (
+                        f"{result['inputB'].name()} ({result['inputB_position']})"
+                    )
             else:
                 input_text = "-"
             input_b_item = QTableWidgetItem(input_text)
             input_b_item.setBackground(node_qcolor)
-            input_b_item.setForeground(QBrush(text_color))
+            input_b_item.setForeground(QBrush(text_color))  # Mantener para fallback
             self.table.setItem(row, 2, input_b_item)
 
             # Columna 3: Input Mask
             if result["inputMask"]:
-                input_text = (
-                    f"{result['inputMask'].name()} ({result['inputMask_position']})"
-                )
                 if result["inputMask_error"]:
-                    input_text += f" {result['inputMask_error']}"
+                    input_text = (
+                        f"{result['inputMask'].name()} {result['inputMask_error']}"
+                    )
+                else:
+                    input_text = (
+                        f"{result['inputMask'].name()} ({result['inputMask_position']})"
+                    )
             else:
                 input_text = "-"
             input_mask_item = QTableWidgetItem(input_text)
             input_mask_item.setBackground(node_qcolor)
-            input_mask_item.setForeground(QBrush(text_color))
+            input_mask_item.setForeground(QBrush(text_color))  # Mantener para fallback
             self.table.setItem(row, 3, input_mask_item)
 
             # Columna 4: Status
@@ -391,7 +492,7 @@ class ScriptCheckerWindow(QWidget):
             width += self.table.columnWidth(i) + 10
 
         # Calcular la altura de la tabla y anadir el espacio para el boton
-        table_height = self.table.horizontalHeader().height()
+        table_height = self.table.horizontalHeader().height() + 4
         for i in range(self.table.rowCount()):
             table_height += self.table.rowHeight(i)
 
