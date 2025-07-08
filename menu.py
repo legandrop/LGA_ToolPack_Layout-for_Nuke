@@ -101,23 +101,35 @@ n.addCommand(
 )
 
 
-# Importar el oz_backdrop
-nuke.pluginAddPath("./oz_backdrop")
+# Flag para elegir entre LGA_backdrop o oz_backdrop
+USE_LGA_BACKDROP = True  # Cambiar a False para usar oz_backdrop
 
+if USE_LGA_BACKDROP:
+    # Importar el LGA_backdrop
+    nuke.pluginAddPath("./LGA_backdrop")
+    import LGA_backdrop
 
-# Importar y asignar el atajo de teclado para LGA_oz_backdrop
-# import LGA_oz_backdrop
-# n.addCommand("  Create Oz_Backdrop", "LGA_oz_backdrop.create_oz_backdrop()", "Shift+b", shortcutContext=2, icon=icon_LTPB)
-import oz_backdrop
+    nukescripts.autoBackdrop = LGA_backdrop.autoBackdrop
+    n.addCommand(
+        "  Create LGA_Backdrop",
+        "LGA_backdrop.autoBackdrop()",
+        "Shift+b",
+        shortcutContext=2,
+        icon=icon_LTPB,
+    )
+else:
+    # Importar el oz_backdrop
+    nuke.pluginAddPath("./oz_backdrop")
+    import oz_backdrop
 
-nukescripts.autoBackdrop = oz_backdrop.autoBackdrop
-n.addCommand(
-    "  Create Oz_Backdrop",
-    "oz_backdrop.autoBackdrop()",
-    "Shift+b",
-    shortcutContext=2,
-    icon=icon_LTPB,
-)
+    nukescripts.autoBackdrop = oz_backdrop.autoBackdrop
+    n.addCommand(
+        "  Create Oz_Backdrop",
+        "oz_backdrop.autoBackdrop()",
+        "Shift+b",
+        shortcutContext=2,
+        icon=icon_LTPB,
+    )
 
 
 # Importar el LGA_oz_backdropReplacer
