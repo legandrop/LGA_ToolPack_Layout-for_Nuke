@@ -1,7 +1,7 @@
 """
 _____________________________________________________________________________
 
-  LGA_zoom v2.2 | 2025 | Lega
+  LGA_zoom v2.21 | 2025 | Lega
 
   Alterna entre el zoom actual y un zoom que muestra todo el DAG.
   Permite volver al nivel de zoom anterior usando la posición del cursor
@@ -13,7 +13,6 @@ _____________________________________________________________________________
 """
 
 import nuke
-from PySide2 import QtWidgets, QtCore, QtGui
 import time
 from PySide2.QtGui import QCursor, QMouseEvent
 from PySide2.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout
@@ -25,6 +24,7 @@ from PySide2.QtCore import (
     QPropertyAnimation,
     QEasingCurve,
     Property,
+    QObject,
 )
 
 # Estado del zoom
@@ -218,7 +218,7 @@ def zoom_toggle():
             show_message("Zoom In")
 
 
-class MiddleClickInterceptor(QtCore.QObject):
+class MiddleClickInterceptor(QObject):
     def __init__(self):
         super().__init__()
         self.start_pos = None
@@ -228,24 +228,24 @@ class MiddleClickInterceptor(QtCore.QObject):
         # print(f"DEBUG: eventFilter llamado. obj tipo: {type(obj)}, event tipo: {type(event)}")
 
         # Verificar que el evento sea una instancia de QEvent antes de llamar a .type()
-        if not isinstance(event, QtCore.QEvent):
+        if not isinstance(event, QEvent):
             # Si no es un QEvent, simplemente ignorarlo o loguearlo y pasarlo
             # print(f"DEBUG: Objeto inesperado pasado como evento: {type(event)}")
             return (
                 False  # No procesar y dejar que otros filtros o el propio Qt lo manejen
             )
 
-        if event.type() == QtCore.QEvent.MouseButtonPress:
-            if event.button() == QtCore.Qt.MiddleButton:
-                widget = QtWidgets.QApplication.instance().widgetAt(QtGui.QCursor.pos())
+        if event.type() == QEvent.MouseButtonPress:
+            if event.button() == Qt.MiddleButton:
+                widget = QApplication.instance().widgetAt(QCursor.pos())
                 if not self.is_dag_widget(widget):
                     return False
                 self.start_pos = event.pos()
                 return False
 
-        elif event.type() == QtCore.QEvent.MouseButtonRelease:
-            if event.button() == QtCore.Qt.MiddleButton and self.start_pos:
-                widget = QtWidgets.QApplication.instance().widgetAt(QtGui.QCursor.pos())
+        elif event.type() == QEvent.MouseButtonRelease:
+            if event.button() == Qt.MiddleButton and self.start_pos:
+                widget = QApplication.instance().widgetAt(QCursor.pos())
                 if not self.is_dag_widget(widget):
                     self.start_pos = None
                     return False
@@ -254,8 +254,8 @@ class MiddleClickInterceptor(QtCore.QObject):
 
                 if distance < 5:
                     self.start_pos = None
-                    QtCore.QTimer.singleShot(10, self.force_mouse_release)
-                    QtCore.QTimer.singleShot(50, zoom_toggle)
+                    QTimer.singleShot(10, self.force_mouse_release)
+                    QTimer.singleShot(50, zoom_toggle)
                     return True
 
                 self.start_pos = None
@@ -264,16 +264,16 @@ class MiddleClickInterceptor(QtCore.QObject):
         return False
 
     def force_mouse_release(self):
-        widget = QtWidgets.QApplication.instance().widgetAt(QtGui.QCursor.pos())
+        widget = QApplication.instance().widgetAt(QCursor.pos())
         if widget:
-            release_event = QtGui.QMouseEvent(
-                QtCore.QEvent.MouseButtonRelease,
-                QtGui.QCursor.pos(),
-                QtCore.Qt.MiddleButton,
-                QtCore.Qt.NoButton,
-                QtCore.Qt.NoModifier,
+            release_event = QMouseEvent(
+                QEvent.MouseButtonRelease,
+                QCursor.pos(),
+                Qt.MiddleButton,
+                Qt.NoButton,
+                Qt.NoModifier,
             )
-            QtWidgets.QApplication.sendEvent(widget, release_event)
+            QApplication.sendEvent(widget, release_event)
 
     def is_dag_widget(self, widget):
         """Devuelve True si el widget es el DAG o un hijo del DAG."""
@@ -290,7 +290,7 @@ def install_middle_click_interceptor():
 
     # Solo instalamos si no existe ya
     if _interceptor is None:
-        app = QtWidgets.QApplication.instance()
+        app = QApplication.instance()
         if app:
             _interceptor = MiddleClickInterceptor()
             app.installEventFilter(_interceptor)
@@ -299,7 +299,7 @@ def install_middle_click_interceptor():
 def onScriptLoad():
     """Función que se ejecuta cuando Nuke ha cargado completamente el script"""
     # Usamos un pequeño retraso para asegurarnos que la GUI está lista
-    QtCore.QTimer.singleShot(1000, install_middle_click_interceptor)
+    QTimer.singleShot(1000, install_middle_click_interceptor)
 
 
 def main():
@@ -314,7 +314,7 @@ def main():
 # Registramos una función para que se ejecute cuando la GUI de Nuke esté lista
 # Este es el punto clave para asegurar que nuestro interceptor se instale correctamente
 nuke.addOnCreate(
-    lambda: QtCore.QTimer.singleShot(100, install_middle_click_interceptor),
+    lambda: QTimer.singleShot(100, install_middle_click_interceptor),
     nodeClass="Root",
 )
 
