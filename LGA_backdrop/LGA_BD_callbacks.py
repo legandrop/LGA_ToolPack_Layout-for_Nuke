@@ -40,29 +40,16 @@ elif knob.name() == 'z_order':
 
 elif knob.name() == 'lga_label':
     # Sincronizar el label personalizado con el knob label nativo del BackdropNode
-    # Aplicar formato completo (bold + alignment)
+    # Aplicar solo formato de alignment ya que bold/italic ahora se manejan nativamente
     text_value = knob.value()
     debug_print(f"[DEBUG] lga_label changed to: '{text_value}'")
     
-    # Obtener estado actual de bold, italic y alignment
-    is_bold = False
-    if 'lga_bold_state' in node.knobs(): # Cambiado a lga_bold_state
-        is_bold = node['lga_bold_state'].value()
-    
-    is_italic = False
-    if 'lga_italic_state' in node.knobs():
-        is_italic = node['lga_italic_state'].value()
-        
     alignment = "left"
     if 'lga_margin' in node.knobs():
         alignment = node['lga_margin'].value()
     
-    # Aplicar formato completo (bold + italic + alignment, sin color HTML)
+    # Aplicar solo alignment (sin bold/italic ya que se manejan nativamente)
     formatted_text = text_value
-    if is_bold:
-        formatted_text = '<b>' + formatted_text + '</b>'
-    if is_italic:
-        formatted_text = '<i>' + formatted_text + '</i>'
     
     if alignment == "center":
         formatted_text = '<div align="center">' + formatted_text + '</div>'
@@ -80,21 +67,8 @@ elif knob.name() == 'lga_margin':
     debug_print(f"[DEBUG] lga_margin changed to: {knob.value()}")
     debug_print(f"[DEBUG] Current lga_label text: '{current_text}'")
     
-    # Obtener bold e italic actual si existen
-    is_bold = False
-    if 'lga_bold_state' in node.knobs():
-        is_bold = node['lga_bold_state'].value()
-    
-    is_italic = False
-    if 'lga_italic_state' in node.knobs():
-        is_italic = node['lga_italic_state'].value()
-    
-    # Aplicar formato completo (bold + italic + alignment, sin color HTML)
+    # Aplicar solo alignment (sin bold/italic ya que se manejan nativamente)
     formatted_text = current_text
-    if is_bold:
-        formatted_text = '<b>' + formatted_text + '</b>'
-    if is_italic:
-        formatted_text = '<i>' + formatted_text + '</i>'
     
     if knob.value() == "center":
         formatted_text = '<div align="center">' + formatted_text + '</div>'
@@ -126,10 +100,10 @@ def add_knobs_to_existing_backdrops():
             user_text = node["label"].value()
             debug_print(f"[DEBUG] Using native label value: '{user_text}'")
 
-            # Obtener el valor actual del font size
+        # Obtener el valor actual del font size
         current_font_size = node["note_font_size"].getValue()
 
-        # Detectar y limpiar formato del texto (bold + alignment + color)
+        # Detectar y limpiar formato del texto (solo alignment, no bold/italic)
         clean_text = user_text
 
         # Detectar y remover div alignment tags
@@ -142,15 +116,7 @@ def add_knobs_to_existing_backdrops():
         ):
             clean_text = clean_text[19:-6]  # Remover <div align="right"> y </div>
 
-        # Ya no necesitamos detectar font color tags HTML porque usamos note_font_color
-
-        # Detectar bold y italic tags de forma más robusta
-        has_bold = "<b>" in clean_text and "</b>" in clean_text
-        has_italic = "<i>" in clean_text and "</i>" in clean_text
-        debug_print(f"[DEBUG] Text has bold: {has_bold}")
-        debug_print(f"[DEBUG] Text has italic: {has_italic}")
-
-        # Remover tags HTML de forma robusta
+        # Remover tags HTML residuales si existen (de implementaciones anteriores)
         import re
 
         clean_text = re.sub(r"</?[bi]>", "", clean_text)
@@ -159,8 +125,8 @@ def add_knobs_to_existing_backdrops():
 
         debug_print(f"[DEBUG] Calling add_all_knobs for node: {node.name()}")
         LGA_BD_knobs.add_all_knobs(
-            node, clean_text, current_font_size, has_bold, has_italic
-        )
+            node, clean_text, current_font_size
+        )  # Ya no pasamos parámetros bold/italic
         debug_print(f"[DEBUG] Finished processing node: {node.name()}")
 
     debug_print(f"[DEBUG] add_knobs_to_existing_backdrops completed")

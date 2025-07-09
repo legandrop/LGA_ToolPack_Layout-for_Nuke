@@ -40,13 +40,13 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 
 ### Problemas Resueltos
 1. **Altura Multilínea**: Los `Multiline_Eval_String_Knob` en Nuke pierden su altura visual después de guardar y recargar scripts
-2. **Valores de Knobs**: Font size, margin slider, bold, italic y alignment se resetean al valor por defecto al recargar scripts
+2. **Valores de Knobs**: Font size, margin slider, bold, italic, Z-order y alignment se resetean al valor por defecto al recargar scripts
 3. **Separación de Presentación**: Los tags HTML para bold, italic y alignment no deben aparecer en el campo de entrada del usuario
 
 ### Soluciones Implementadas
 - **Bandera RESIZABLE**: Se aplica automáticamente a todos los `lga_label` knobs usando `setFlag(0x0008)`
 - **Callback onScriptLoad**: Detecta backdrops existentes al cargar scripts y preserva valores existentes
-- **Recreación inteligente**: Solo recrea knobs cuando es necesario, preservando valores de font size, margin slider, bold, italic y alignment
+- **Recreación inteligente**: Solo recrea knobs cuando es necesario, preservando valores de font size, margin slider, bold, italic, Z-order y alignment
 - **Separación de capas**: `lga_label` contiene texto limpio, `label` nativo contiene HTML con formato
 - **Detección automática**: Al cargar scripts, detecta automáticamente si el texto tiene bold, italic y alignment, configurando los knobs apropiados
 - **Callbacks sincronizados**: Maneja cambios aplicando formato HTML completo (bold + italic + alignment) solo al label nativo
@@ -100,6 +100,25 @@ El backdrop usa las mismas funciones de cálculo que oz_backdrop:
 - **calculate_min_horizontal()**: Calcula ancho mínimo basado en el texto más largo
 - Se ejecuta tanto al crear el backdrop como al usar "Encompass"
 
+## Cálculo Automático de Z-Order
+
+El sistema incluye lógica inteligente para determinar el Z-order al crear nuevos backdrops:
+
+### Reglas de Z-Order
+1. **Backdrops seleccionados**: Si hay backdrops seleccionados, el nuevo se coloca inmediatamente detrás del más lejano (Z menor)
+2. **Nodos dentro de backdrops**: Si los nodos seleccionados están dentro de backdrops existentes, el nuevo se coloca al frente de ellos (Z mayor)
+3. **Backdrops contenidos**: **NUEVO** - Si el nuevo backdrop contendrá otros backdrops completos dentro de sus límites, se le asigna un Z más bajo que el mínimo de los contenidos
+
+### Evaluación de Contención
+- Al crear un backdrop, se evalúan todos los backdrops existentes
+- Se verifica si alguno está completamente contenido dentro de los límites del nuevo backdrop
+- Si se encuentran backdrops contenidos, el nuevo backdrop recibe: `Z = min_contained_z - 1`
+- Esto asegura que el backdrop "padre" quede automáticamente detrás de sus "hijos"
+
+### Preservación de Z-Order
+- El valor del slider Z-order se preserva al guardar/cargar scripts, igual que otros valores (bold, italic, font size, etc.)
+- La sincronización entre el slider `zorder` y el knob nativo `z_order` funciona en ambas direcciones
+
 ## Comparación con oz_backdrop
 
 ### Ventana de diálogo
@@ -113,7 +132,7 @@ El backdrop usa las mismas funciones de cálculo que oz_backdrop:
 - ✅ **Creación básica de backdrop**: Implementada
 - ✅ **Manejo de texto del usuario**: Implementada  
 - ✅ **Cálculo de límites**: Implementada (con funciones de oz_backdrop)
-- ✅ **Z-order management**: Implementada
+- ✅ **Z-order management**: Implementada con cálculo automático y preservación de valores
 - ✅ **Knobs personalizados**: Implementados (modulares)
 - ✅ **Colores básicos**: Implementados (8 colores + random)
 - ✅ **Resize functions**: Implementadas (grow, shrink, encompass)
@@ -121,6 +140,8 @@ El backdrop usa las mismas funciones de cálculo que oz_backdrop:
 - ✅ **Bold toggle button**: Implementado con preservación de estado
 - ✅ **Italic toggle button**: Implementado con preservación de estado
 - ✅ **Margin alignment**: Implementado en la misma línea que Bold e Italic
+- ✅ **Z-order automático**: Implementado con evaluación de contención de backdrops
+- ✅ **Preservación de Z-order**: Implementado igual que otros valores personalizados
 - ✅ **Label estilo Nuke**: Implementado con altura multilínea persistente
 
 ## Uso
@@ -142,10 +163,10 @@ USE_LGA_BACKDROP = True  # Cambiar a False para usar oz_backdrop
 
 ## Archivos
 
-- `LGA_backdrop.py`: Implementación principal y ventana de diálogo
-- `LGA_BD_knobs.py`: Manejo modular de knobs personalizados y sistema de altura multilínea
+- `LGA_backdrop.py`: Implementación principal, ventana de diálogo y cálculo automático de Z-order
+- `LGA_BD_knobs.py`: Manejo modular de knobs personalizados, sistema de altura multilínea y preservación de valores
 - `LGA_BD_fit.py`: Funciones de cálculo de tamaño y encompass
-- `LGA_BD_callbacks.py`: Callbacks, eventos y preservación de altura multilínea
+- `LGA_BD_callbacks.py`: Callbacks, eventos, preservación de altura multilínea y detección de formato HTML
 - `README.md`: Este archivo de documentación
 
 ## Notas técnicas

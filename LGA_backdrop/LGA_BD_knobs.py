@@ -51,156 +51,22 @@ def create_font_size_knob(default_size=42):
 
 
 def create_font_bold_section(bold_value=False, italic_value=False):
-    """Crea la seccion de font bold e italic (toggle buttons con estilo)"""
+    """Crea la seccion de font bold e italic usando botones nativos de Nuke"""
     knobs = []
 
     # Espacio antes del boton Bold
     bold_space = nuke.Text_Knob("bold_space", "", "    ")
 
-    # Boton toggle para bold con estilo de icono cuadrado
-    # Estado inicial determinado por bold_value
-    if bold_value:
-        initial_label = '<span style="background-color:#505050;border:1px solid #707070;padding:2px;color:white;font-weight:bold;font-family:monospace;width:16px;height:16px;display:inline-block;text-align:center;">B</span>'
-    else:
-        initial_label = '<span style="background-color:#303030;border:1px solid #505050;padding:2px;color:#cccccc;font-weight:bold;font-family:monospace;width:16px;height:16px;display:inline-block;text-align:center;">B</span>'
-
-    bold_button = nuke.PyScript_Knob(
-        "lga_bold_button",
-        initial_label,
-        """
-node = nuke.thisNode()
-current_text = node['lga_label'].value()
-
-alignment = "left"
-if 'lga_margin' in node.knobs():
-    alignment = node['lga_margin'].value()
-
-# Obtener el estado actual del knob hidden
-current_bold_state = False
-if 'lga_bold_state' in node.knobs():
-    current_bold_state = node['lga_bold_state'].value()
-
-# Obtener el estado actual de italic
-current_italic_state = False
-if 'lga_italic_state' in node.knobs():
-    current_italic_state = node['lga_italic_state'].value()
-
-# Alternar el estado
-new_bold_state = not current_bold_state
-
-# Actualizar el texto aplicando formato completo (bold + italic)
-formatted_text = current_text
-if new_bold_state:
-    formatted_text = '<b>' + formatted_text + '</b>'
-if current_italic_state:
-    formatted_text = '<i>' + formatted_text + '</i>'
-
-# Aplicar alignment
-if alignment == "center":
-    formatted_text = '<div align="center">' + formatted_text + '</div>'
-elif alignment == "right":
-    formatted_text = '<div align="right">' + formatted_text + '</div>'
-
-# Actualizar el label nativo
-node['label'].setValue(formatted_text)
-
-# Actualizar el estado hidden
-node['lga_bold_state'].setValue(new_bold_state)
-
-# Actualizar la apariencia del boton para reflejar el estado toggle
-if new_bold_state:
-    # Estado ON - boton presionado (más claro)
-    node['lga_bold_button'].setLabel('<span style="background-color:#505050;border:1px solid #707070;padding:2px;color:white;font-weight:bold;font-family:monospace;width:16px;height:16px;display:inline-block;text-align:center;">B</span>')
-else:
-    # Estado OFF - boton normal (más oscuro)
-    node['lga_bold_button'].setLabel('<span style="background-color:#303030;border:1px solid #505050;padding:2px;color:#cccccc;font-weight:bold;font-family:monospace;width:16px;height:16px;display:inline-block;text-align:center;">B</span>')
-
-print(f"[DEBUG] Bold toggle. New bold state: {new_bold_state}")
-""",
-    )
-    bold_button.setTooltip("Toggle bold text")
-
-    # Knob hidden para almacenar el estado de bold
-    bold_state_knob = nuke.Boolean_Knob("lga_bold_state", "")
-    bold_state_knob.setValue(bold_value)
-    bold_state_knob.setVisible(False)  # Oculto
-
-    # Boton toggle para italic con estilo de icono cuadrado
-    # Estado inicial determinado por italic_value
-    if italic_value:
-        initial_italic_label = '<span style="background-color:#505050;border:1px solid #707070;padding:2px;color:white;font-weight:bold;font-family:monospace;width:16px;height:16px;display:inline-block;text-align:center;font-style:italic;">I</span>'
-    else:
-        initial_italic_label = '<span style="background-color:#303030;border:1px solid #505050;padding:2px;color:#cccccc;font-weight:bold;font-family:monospace;width:16px;height:16px;display:inline-block;text-align:center;font-style:italic;">I</span>'
-
-    italic_button = nuke.PyScript_Knob(
-        "lga_italic_button",
-        initial_italic_label,
-        """
-node = nuke.thisNode()
-current_text = node['lga_label'].value()
-
-alignment = "left"
-if 'lga_margin' in node.knobs():
-    alignment = node['lga_margin'].value()
-
-# Obtener el estado actual del knob hidden
-current_italic_state = False
-if 'lga_italic_state' in node.knobs():
-    current_italic_state = node['lga_italic_state'].value()
-
-# Obtener el estado actual de bold
-current_bold_state = False
-if 'lga_bold_state' in node.knobs():
-    current_bold_state = node['lga_bold_state'].value()
-
-# Alternar el estado de italic
-new_italic_state = not current_italic_state
-
-# Actualizar el texto aplicando formato completo (bold + italic)
-formatted_text = current_text
-if current_bold_state:
-    formatted_text = '<b>' + formatted_text + '</b>'
-if new_italic_state:
-    formatted_text = '<i>' + formatted_text + '</i>'
-
-# Aplicar alignment
-if alignment == "center":
-    formatted_text = '<div align="center">' + formatted_text + '</div>'
-elif alignment == "right":
-    formatted_text = '<div align="right">' + formatted_text + '</div>'
-
-# Actualizar el label nativo
-node['label'].setValue(formatted_text)
-
-# Actualizar el estado hidden
-node['lga_italic_state'].setValue(new_italic_state)
-
-# Actualizar la apariencia del boton para reflejar el estado toggle
-if new_italic_state:
-    # Estado ON - boton presionado (más claro)
-    node['lga_italic_button'].setLabel('<span style="background-color:#505050;border:1px solid #707070;padding:2px;color:white;font-weight:bold;font-family:monospace;width:16px;height:16px;display:inline-block;text-align:center;font-style:italic;">I</span>')
-else:
-    # Estado OFF - boton normal (más oscuro)
-    node['lga_italic_button'].setLabel('<span style="background-color:#303030;border:1px solid #505050;padding:2px;color:#cccccc;font-weight:bold;font-family:monospace;width:16px;height:16px;display:inline-block;text-align:center;font-style:italic;">I</span>')
-
-print(f"[DEBUG] Italic toggle. New italic state: {new_italic_state}")
-""",
-    )
-    italic_button.setTooltip("Toggle italic text")
-
-    # Knob hidden para almacenar el estado de italic
-    italic_state_knob = nuke.Boolean_Knob("lga_italic_state", "")
-    italic_state_knob.setValue(italic_value)
-    italic_state_knob.setVisible(False)  # Oculto
+    # Link al knob note_font nativo que incluye botones Bold/Italic nativos
+    font_link = nuke.Link_Knob("note_font_link", "font")
+    # El link se configurará cuando se agregue al nodo
+    font_link.clearFlag(nuke.STARTLINE)  # En la misma línea que font size
 
     # Configurar para que aparezcan en la misma linea
     bold_space.clearFlag(nuke.STARTLINE)
-    bold_button.clearFlag(nuke.STARTLINE)
-    italic_button.clearFlag(nuke.STARTLINE)
+    font_link.clearFlag(nuke.STARTLINE)
 
-    knobs.extend(
-        [bold_space, bold_button, bold_state_knob, italic_button, italic_state_knob]
-    )
+    knobs.extend([bold_space, font_link])
 
     return knobs
 
@@ -376,28 +242,6 @@ def add_all_knobs(
     if "margin_slider" in node.knobs():
         existing_margin_value = node["margin_slider"].getValue()
 
-    existing_bold_value = False  # default
-    if "lga_bold_state" in node.knobs():
-        existing_bold_value = node["lga_bold_state"].getValue()
-    elif detected_bold is not None:
-        # Usar el valor detectado del callback
-        existing_bold_value = detected_bold
-    else:
-        # Si no existe el knob, detectar bold del texto original
-        original_text = node["label"].getValue()
-        existing_bold_value = "<b>" in original_text and "</b>" in original_text
-
-    existing_italic_value = False  # default
-    if "lga_italic_state" in node.knobs():
-        existing_italic_value = node["lga_italic_state"].getValue()
-    elif detected_italic is not None:
-        # Usar el valor detectado del callback
-        existing_italic_value = detected_italic
-    else:
-        # Si no existe el knob, detectar italic del texto original
-        original_text = node["label"].getValue()
-        existing_italic_value = "<i>" in original_text and "</i>" in original_text
-
     existing_margin_alignment = "left"  # default
     if "lga_margin" in node.knobs():
         existing_margin_alignment = node["lga_margin"].value()
@@ -448,10 +292,7 @@ def add_all_knobs(
             "lga_label",
             "lga_note_font_size",
             "bold_space",
-            "lga_bold_button",
-            "lga_bold_state",
-            "lga_italic_button",
-            "lga_italic_state",
+            "note_font_link",  # Cambiado de lga_bold_button y lga_bold_state
             "margin_align_label",
             "lga_margin",
             "divider_1",
@@ -510,34 +351,14 @@ def add_all_knobs(
     lga_font_size_knob = create_font_size_knob(default_size=note_font_size)
     node.addKnob(lga_font_size_knob)
 
-    # Seccion de Bold e Italic (al lado del font size - misma línea)
-    bold_knobs = create_font_bold_section(existing_bold_value, existing_italic_value)
+    # Seccion de Bold e Italic (al lado del font size - misma línea) - usando botones nativos
+    bold_knobs = create_font_bold_section()  # Ya no necesita parámetros bold/italic
     for knob in bold_knobs:
         node.addKnob(knob)
 
-    # Inicializar el estado visual del boton de bold
-    if existing_bold_value:
-        # Estado ON - boton presionado (fondo gris)
-        node["lga_bold_button"].setLabel(
-            '<span style="background-color:#505050;border:1px solid #707070;padding:2px;color:white;font-weight:bold;font-family:monospace;width:16px;height:16px;display:inline-block;text-align:center;">B</span>'
-        )
-    else:
-        # Estado OFF - boton normal
-        node["lga_bold_button"].setLabel(
-            '<span style="background-color:#303030;border:1px solid #505050;padding:2px;color:#cccccc;font-weight:bold;font-family:monospace;width:16px;height:16px;display:inline-block;text-align:center;">B</span>'
-        )
-
-    # Inicializar el estado visual del boton de italic
-    if existing_italic_value:
-        # Estado ON - boton presionado (fondo gris)
-        node["lga_italic_button"].setLabel(
-            '<span style="background-color:#505050;border:1px solid #707070;padding:2px;color:white;font-weight:bold;font-family:monospace;width:16px;height:16px;display:inline-block;text-align:center;font-style:italic;">I</span>'
-        )
-    else:
-        # Estado OFF - boton normal
-        node["lga_italic_button"].setLabel(
-            '<span style="background-color:#303030;border:1px solid #505050;padding:2px;color:#cccccc;font-weight:bold;font-family:monospace;width:16px;height:16px;display:inline-block;text-align:center;font-style:italic;">I</span>'
-        )
+    # Configurar el link del note_font después de agregarlo al nodo
+    if "note_font_link" in node.knobs():
+        node["note_font_link"].makeLink(node.name(), "note_font")
 
     # Seccion de Margin Alignment (misma línea que Bold)
     margin_align_knobs = create_margin_alignment_section(existing_margin_alignment)
@@ -569,5 +390,3 @@ def add_all_knobs(
         node.addKnob(knob)
 
     debug_print(f"[DEBUG] Finished creating all knobs in correct order")
-    debug_print(f"[DEBUG] Bold button value set to: {existing_bold_value}")
-    debug_print(f"[DEBUG] Italic button value set to: {existing_italic_value}")
