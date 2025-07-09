@@ -1,7 +1,7 @@
 """
 __________________________________________
 
-  LGA_backdrop v0.10 | Lega Pugliese
+  LGA_backdrop v0.12 | Lega Pugliese
   Backdrop personalizado con knobs modulares
 __________________________________________
 

@@ -36,10 +36,25 @@ def add_knobs_to_existing_backdrops():
     Asegura que los knobs personalizados se anadan a los BackdropNodes existentes.
     Esta funcion se llama al cargar un script.
     """
-    for node in nuke.allNodes("BackdropNode"):
-        # Asumimos que user_text ya esta guardado en el knob 'label' nativo
-        user_text = node["label"].value()
+    print(f"[DEBUG] add_knobs_to_existing_backdrops called - onScriptLoad")
+    backdrop_nodes = nuke.allNodes("BackdropNode")
+    print(f"[DEBUG] Found {len(backdrop_nodes)} BackdropNode(s)")
+
+    for node in backdrop_nodes:
+        print(f"[DEBUG] Processing node: {node.name()}")
+        # Intentar obtener el texto del knob lga_label si existe, de lo contrario, usar el knob label nativo.
+        if "lga_label" in node.knobs():
+            user_text = node["lga_label"].value()
+            print(f"[DEBUG] Using lga_label value: '{user_text}'")
+        else:
+            user_text = node["label"].value()
+            print(f"[DEBUG] Using native label value: '{user_text}'")
+
+        print(f"[DEBUG] Calling add_all_knobs for node: {node.name()}")
         LGA_BD_knobs.add_all_knobs(node, user_text)
+        print(f"[DEBUG] Finished processing node: {node.name()}")
+
+    print(f"[DEBUG] add_knobs_to_existing_backdrops completed")
 
 
 def setup_callbacks(node):
@@ -48,3 +63,8 @@ def setup_callbacks(node):
     """
     # Agregar el script de knobChanged
     node["knobChanged"].setValue(knob_changed_script())
+
+
+# Registrar el callback onScriptLoad
+# Esto asegura que los knobs lga_label mantengan su altura multilinea al cargar scripts
+nuke.addOnScriptLoad(add_knobs_to_existing_backdrops)

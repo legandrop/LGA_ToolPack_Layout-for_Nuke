@@ -21,6 +21,14 @@ def create_label_knob():
     # Renombrar para evitar conflicto con el knob 'label' nativo del BackdropNode
     label = nuke.Multiline_Eval_String_Knob("lga_label", "Label")
     label.setFlag(nuke.STARTLINE)
+    # Aplicar la bandera RESIZABLE para mantener altura multilinea
+    # Segun documentacion oficial: "Allows some knobs (notably curves and multi-line string)
+    # to expand to fill the gaps in the interface"
+    try:
+        label.setFlag(0x0008)  # RESIZABLE flag value segun documentacion NDK
+    except:
+        # Fallback si la bandera no esta disponible en esta version
+        pass
     return label
 
 
@@ -201,16 +209,84 @@ def create_zorder_section():
 
 def add_all_knobs(node, user_text="", note_font_size=42):
     """Agrega todos los knobs al nodo"""
-    # Tab principal
-    tab = nuke.Tab_Knob("backdrop")  # Cambiar de 'Settings' a 'backdrop'
-    node.addKnob(tab)
+    # Verificar si ya existen knobs personalizados
+    has_custom_knobs = "backdrop" in node.knobs()
 
-    # Label (estilo Nuke nativo) - ahora con nombre unico
+    if has_custom_knobs:
+        # Verificar si el lga_label existente ya tiene la bandera RESIZABLE
+        if "lga_label" in node.knobs():
+            lga_label_knob = node["lga_label"]
+            # Verificar si ya tiene la bandera RESIZABLE (0x0008)
+            has_resizable_flag = lga_label_knob.getFlag(0x0008)
+            print(f"[DEBUG] lga_label exists, has RESIZABLE flag: {has_resizable_flag}")
+
+            if has_resizable_flag:
+                print(
+                    f"[DEBUG] lga_label already has RESIZABLE flag, no recreation needed"
+                )
+                return  # No necesitamos recrear nada
+
+        print(
+            f"[DEBUG] Custom knobs exist, recreating knobs content (keeping existing tab)"
+        )
+        # Si ya existen knobs personalizados, eliminar solo los knobs DENTRO del tab
+        # MANTENER el tab backdrop existente
+
+        # Lista de knobs personalizados que necesitamos eliminar (SIN el tab backdrop)
+        custom_knob_names = [
+            "lga_label",
+            "lga_note_font_size",
+            "divider_1",
+            "random_color",
+            "space_color_space1",
+            "color_red",
+            "color_green",
+            "color_blue",
+            "color_yellow",
+            "space_color_newline_3",
+            "color_cyan",
+            "color_magenta",
+            "color_orange",
+            "color_purple",
+            "space_color_newline_7",
+            "divider_2",
+            "grow",
+            "shrink",
+            "fit_selected_nodes",
+            "sides",
+            "divider_3",
+            "z_order_label",
+            "zorder_back",
+            "zorder",
+            "zorder_front",
+        ]
+
+        # Eliminar todos los knobs personalizados existentes (EXCEPTO el tab)
+        for knob_name in custom_knob_names:
+            if knob_name in node.knobs():
+                try:
+                    node.removeKnob(node[knob_name])
+                    print(f"[DEBUG] Removed knob: {knob_name}")
+                except:
+                    print(f"[DEBUG] Could not remove knob: {knob_name}")
+
+        print(f"[DEBUG] Creating knobs content inside existing backdrop tab")
+    else:
+        # Crear todos los knobs desde cero - primera vez
+        print(f"[DEBUG] Creating all knobs from scratch for node: {node.name()}")
+
+        # Tab principal - solo si no existe
+        tab = nuke.Tab_Knob("backdrop")
+        node.addKnob(tab)
+
+    # Crear el contenido del tab (sea primera vez o recreando)
+    # Label (estilo Nuke nativo) - PRIMERO DE TODO
     lga_label_knob = create_label_knob()
     lga_label_knob.setValue(user_text)
     node.addKnob(lga_label_knob)
+    print(f"[DEBUG] Added lga_label knob with RESIZABLE flag")
 
-    # Font Size - ahora con nombre unico
+    # Font Size
     lga_font_size_knob = create_font_size_knob(default_size=note_font_size)
     node.addKnob(lga_font_size_knob)
 
@@ -230,10 +306,12 @@ def add_all_knobs(node, user_text="", note_font_size=42):
     for knob in resize_knobs:
         node.addKnob(knob)
 
-    # Divider 3 (saltamos la seccion de posiciones)
+    # Divider 3
     node.addKnob(create_divider("3"))
 
     # Seccion de Z-order
     zorder_knobs = create_zorder_section()
     for knob in zorder_knobs:
         node.addKnob(knob)
+
+    print(f"[DEBUG] Finished creating all knobs in correct order")

@@ -14,11 +14,12 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 - **Posicionamiento inteligente**: Se posiciona cerca del cursor del mouse
 - **Manejo de Z-order**: Gestiona correctamente las capas de los backdrops
 - **Soporte para nodos vacíos**: Crea un backdrop básico si no hay nodos seleccionados
+- **Altura multilínea persistente**: Preserva la altura del campo de texto al guardar/cargar scripts
 
 ## Funcionalidades Avanzadas
 
 ### Tab "backdrop" (no "Settings")
-- **Label**: Campo de texto estilo Nuke nativo (2 líneas) en lugar del "Text" problemático
+- **Label**: Campo de texto estilo Nuke nativo (`Multiline_Eval_String_Knob`) con altura multilínea persistente
 - **Font Size**: Campo numérico con slider (rango 10-100)
 
 ### Sección de Colores
@@ -33,6 +34,53 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 
 ### Sección de Z-Order (copiada de oz_backdrop)
 - **Z Order**: Slider con labels "Back" y "Front" (rango -5 a +5)
+
+## Sistema de Preservación de Altura Multilínea
+
+### Problema Resuelto
+Los `Multiline_Eval_String_Knob` en Nuke pierden su altura visual después de guardar y recargar scripts, mostrándose como campos de una sola línea.
+
+### Solución Implementada
+- **Bandera RESIZABLE**: Se aplica automáticamente a todos los `lga_label` knobs usando `setFlag(0x0008)`
+- **Callback onScriptLoad**: Detecta backdrops existentes al cargar scripts
+- **Recreación inteligente**: Solo recrea knobs cuando es necesario preservar funcionalidad
+- **Preservación de orden**: Mantiene `lga_label` al principio del tab "backdrop"
+
+### Archivos Clave
+- **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_knobs.py`**:
+  - `create_label_knob()`: Aplica bandera RESIZABLE al crear knobs
+  - `add_all_knobs()`: Maneja creación y recreación inteligente de knobs
+- **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_callbacks.py`**:
+  - `add_knobs_to_existing_backdrops()`: Callback registrado con `nuke.addOnScriptLoad`
+
+### Agregar Nuevos Knobs
+Para añadir nuevos knobs personalizados al tab "backdrop":
+
+1. **Crear función de knob** en `LGA_BD_knobs.py`:
+```python
+def create_nuevo_knob():
+    """Crea el nuevo knob personalizado"""
+    knob = nuke.String_Knob("nuevo_knob", "Nuevo Knob")
+    # Aplicar flags necesarios
+    return knob
+```
+
+2. **Añadir a add_all_knobs()** en `LGA_BD_knobs.py`:
+```python
+# Después de los knobs existentes y antes de los dividers/secciones
+nuevo_knob = create_nuevo_knob()
+node.addKnob(nuevo_knob)
+```
+
+3. **Actualizar lista de eliminación** en la misma función:
+```python
+custom_knob_names = [
+    "lga_label", "lga_note_font_size", "nuevo_knob",  # Añadir aquí
+    "divider_1", "random_color", ...
+]
+```
+
+**⚠️ Importante**: Solo es necesario añadir en `add_all_knobs()`. No se requieren modificaciones adicionales en callbacks.
 
 ## Cálculo de Tamaño Inteligente
 
@@ -59,7 +107,7 @@ El backdrop usa las mismas funciones de cálculo que oz_backdrop:
 - ✅ **Colores básicos**: Implementados (8 colores + random)
 - ✅ **Resize functions**: Implementadas (grow, shrink, encompass)
 - ✅ **Font size con slider**: Implementado
-- ✅ **Label estilo Nuke**: Implementado (2 líneas)
+- ✅ **Label estilo Nuke**: Implementado con altura multilínea persistente
 
 ## Uso
 
@@ -81,15 +129,16 @@ USE_LGA_BACKDROP = True  # Cambiar a False para usar oz_backdrop
 ## Archivos
 
 - `LGA_backdrop.py`: Implementación principal y ventana de diálogo
-- `LGA_knobs.py`: Manejo modular de knobs personalizados
-- `LGA_encompass.py`: Funciones de cálculo de tamaño y encompass
-- `LGA_callbacks.py`: Callbacks y manejo de eventos
+- `LGA_BD_knobs.py`: Manejo modular de knobs personalizados y sistema de altura multilínea
+- `LGA_BD_fit.py`: Funciones de cálculo de tamaño y encompass
+- `LGA_BD_callbacks.py`: Callbacks, eventos y preservación de altura multilínea
 - `README.md`: Este archivo de documentación
 
 ## Notas técnicas
 
 - **Arquitectura modular**: Cada funcionalidad en su propio archivo
 - **BackdropNode con knobs**: Tab "backdrop" con funcionalidades avanzadas
+- **Preservación automática**: Sistema inteligente de preservación de altura multilínea
 - **Cálculo inteligente**: Usa las mismas funciones que oz_backdrop para tamaño
 - **PySide2**: Para la ventana de diálogo
 - **Compatible**: Con la arquitectura de plugins de Nuke
