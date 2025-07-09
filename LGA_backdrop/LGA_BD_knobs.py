@@ -275,7 +275,7 @@ class ColorSwatchWidget(QtWidgets.QWidget):
                 ]
 
                 gradient_css = f"""
-                    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
+                    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
                         {', '.join(stop_values)});
                     border: none;
                     height: 40px;
