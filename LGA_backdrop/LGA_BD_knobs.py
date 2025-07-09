@@ -51,22 +51,13 @@ def create_font_size_knob(default_size=42):
 
 
 def create_font_bold_section(bold_value=False, italic_value=False):
-    """Crea la seccion de font bold e italic usando botones nativos de Nuke"""
+    """Crea la seccion de font bold e italic usando controles nativos de Nuke"""
     knobs = []
 
-    # Espacio antes del boton Bold
-    bold_space = nuke.Text_Knob("bold_space", "", "    ")
-
     # Link al knob note_font nativo que incluye botones Bold/Italic nativos
-    font_link = nuke.Link_Knob("note_font_link", "font")
-    # El link se configurará cuando se agregue al nodo
+    font_link = nuke.Link_Knob("note_font_link", "")  # Sin label
     font_link.clearFlag(nuke.STARTLINE)  # En la misma línea que font size
-
-    # Configurar para que aparezcan en la misma linea
-    bold_space.clearFlag(nuke.STARTLINE)
-    font_link.clearFlag(nuke.STARTLINE)
-
-    knobs.extend([bold_space, font_link])
+    knobs.append(font_link)
 
     return knobs
 
@@ -229,164 +220,130 @@ def create_zorder_section(z_value=0):
     return knobs
 
 
-def add_all_knobs(
-    node, user_text="", note_font_size=None, detected_bold=None, detected_italic=None
-):
-    """Agrega todos los knobs al nodo"""
-    # Obtener el valor actual del font size si no se proporciona
-    if note_font_size is None:
-        note_font_size = node["note_font_size"].getValue()
+def add_all_knobs(node, text_label="", existing_margin_alignment="left"):
+    """Agrega todos los knobs personalizados al BackdropNode pero solo si no existen"""
+    debug_print(f"[DEBUG] Adding knobs to node: {node.name()}")
 
-    # Obtener valores existentes para preservarlos
-    existing_margin_value = 50  # default
-    if "margin_slider" in node.knobs():
-        existing_margin_value = node["margin_slider"].getValue()
-
-    existing_margin_alignment = "left"  # default
-    if "lga_margin" in node.knobs():
-        existing_margin_alignment = node["lga_margin"].value()
-    else:
-        # Si no existe el knob, detectar alignment del texto original
-        original_text = node["label"].getValue()
-        if '<div align="center">' in original_text:
-            existing_margin_alignment = "center"
-        elif '<div align="right">' in original_text:
-            existing_margin_alignment = "right"
-        else:
-            existing_margin_alignment = "left"
-
-    existing_z_value = 0  # default
-    if "zorder" in node.knobs():
-        existing_z_value = node["zorder"].getValue()
-    else:
-        # Si no existe el knob, usar el valor del z_order nativo
-        existing_z_value = node["z_order"].getValue()
-
-    # Verificar si ya existen knobs personalizados
-    has_custom_knobs = "backdrop" in node.knobs()
-
-    if has_custom_knobs:
-        # Verificar si el lga_label existente ya tiene la bandera RESIZABLE
-        if "lga_label" in node.knobs():
-            lga_label_knob = node["lga_label"]
-            # Verificar si ya tiene la bandera RESIZABLE (0x0008)
-            has_resizable_flag = lga_label_knob.getFlag(0x0008)
-            debug_print(
-                f"[DEBUG] lga_label exists, has RESIZABLE flag: {has_resizable_flag}"
-            )
-
-            if has_resizable_flag:
-                debug_print(
-                    f"[DEBUG] lga_label already has RESIZABLE flag, no recreation needed"
-                )
-                return  # No necesitamos recrear nada
-
+    # Verificar si ya tiene el tab Backdrop y los knobs principales
+    if "backdrop" in node.knobs() and "lga_label" in node.knobs():
+        # Solo verificar si lga_label tiene la bandera RESIZABLE
+        lga_label_knob = node["lga_label"]
+        has_resizable_flag = lga_label_knob.getFlag(0x0008)
         debug_print(
-            f"[DEBUG] Custom knobs exist, recreating knobs content (keeping existing tab)"
+            f"[DEBUG] Knobs already exist, has RESIZABLE flag: {has_resizable_flag}"
         )
-        # Si ya existen knobs personalizados, eliminar solo los knobs DENTRO del tab
-        # MANTENER el tab backdrop existente
 
-        # Lista de knobs personalizados que necesitamos eliminar (SIN el tab backdrop)
-        custom_knob_names = [
-            "lga_label",
-            "lga_note_font_size",
-            "bold_space",
-            "note_font_link",  # Cambiado de lga_bold_button y lga_bold_state
-            "margin_align_label",
-            "lga_margin",
-            "divider_1",
+        if has_resizable_flag:
+            debug_print(f"[DEBUG] All knobs properly configured, skipping recreation")
+            return
+        else:
+            # Solo agregar la bandera RESIZABLE si falta
+            lga_label_knob.setFlag(0x0008)
+            debug_print(f"[DEBUG] Added RESIZABLE flag to existing lga_label")
+            return
+
+    # Crear tab backdrop solo si no existe
+    if "backdrop" not in node.knobs():
+        backdrop_tab = nuke.Tab_Knob("backdrop")
+        node.addKnob(backdrop_tab)
+        debug_print(f"[DEBUG] Created backdrop tab")
+
+    # Crear knob de label solo si no existe
+    if "lga_label" not in node.knobs():
+        lga_label_knob = nuke.Multiline_Eval_String_Knob("lga_label", "Label")
+        lga_label_knob.setValue(text_label)
+        lga_label_knob.setFlag(0x0008)  # RESIZABLE
+        node.addKnob(lga_label_knob)
+        debug_print(f"[DEBUG] Created lga_label knob with RESIZABLE flag")
+
+    # Crear font size knob solo si no existe
+    if "lga_note_font_size" not in node.knobs():
+        lga_font_size_knob = nuke.Int_Knob("lga_note_font_size", "Font Size")
+        lga_font_size_knob.setRange(10, 200)
+        lga_font_size_knob.setValue(42)
+        lga_font_size_knob.setFlag(nuke.STARTLINE)
+        node.addKnob(lga_font_size_knob)
+        debug_print(f"[DEBUG] Created font size knob")
+
+    # Crear link de font bold/italic solo si no existe
+    if "note_font_link" not in node.knobs():
+        font_link = nuke.Link_Knob("note_font_link", "")  # Sin label
+        font_link.clearFlag(nuke.STARTLINE)  # En la misma línea que font size
+        node.addKnob(font_link)
+        font_link.makeLink(node.name(), "note_font")
+        debug_print(f"[DEBUG] Created and configured note_font_link")
+
+    # Crear margin dropdown solo si no existe
+    if "lga_margin" not in node.knobs():
+        margin_dropdown = nuke.Enumeration_Knob(
+            "lga_margin", "Margin", ["left", "center", "right"]
+        )
+        margin_dropdown.setValue(existing_margin_alignment)
+        margin_dropdown.clearFlag(nuke.STARTLINE)  # En la misma línea
+        node.addKnob(margin_dropdown)
+        debug_print(f"[DEBUG] Created margin dropdown")
+
+    # Continuar con el resto de knobs usando las funciones existentes...
+    # Solo agregar si no existen
+    remaining_knobs = [
+        ("divider_1", lambda: nuke.Text_Knob("divider_1", "", "")),
+        (
             "random_color",
-            "space_color_space1",
-            "color_red",
-            "color_green",
-            "color_blue",
-            "color_yellow",
-            "space_color_newline_3",
-            "color_cyan",
-            "color_magenta",
-            "color_orange",
-            "color_purple",
-            "space_color_newline_7",
-            "divider_2",
-            "margin_label",
-            "margin_slider",
-            "autofit_label",
-            "fit_to_selected_nodes",
-            "fit_space",
-            "divider_3",
-            "z_order_label",
-            "zorder_back",
-            "zorder",
-            "zorder_front",
-            "zorder_space",
-        ]
+            lambda: nuke.PyScript_Knob(
+                "random_color",
+                "Random Color",
+                "exec(open('{}').read())".format(
+                    os.path.join(
+                        os.path.dirname(__file__), "LGA_BD_callbacks.py"
+                    ).replace("\\", "/")
+                ),
+            ),
+        ),
+    ]
 
-        # Eliminar todos los knobs personalizados existentes (EXCEPTO el tab)
-        for knob_name in custom_knob_names:
-            if knob_name in node.knobs():
-                try:
-                    node.removeKnob(node[knob_name])
-                    debug_print(f"[DEBUG] Removed knob: {knob_name}")
-                except:
-                    debug_print(f"[DEBUG] Could not remove knob: {knob_name}")
+    for knob_name, knob_creator in remaining_knobs:
+        if knob_name not in node.knobs():
+            knob = knob_creator()
+            if knob_name == "divider_1":
+                knob.setFlag(nuke.STARTLINE)
+            node.addKnob(knob)
+            debug_print(f"[DEBUG] Created {knob_name}")
 
-        debug_print(f"[DEBUG] Creating knobs content inside existing backdrop tab")
-    else:
-        # Crear todos los knobs desde cero - primera vez
-        debug_print(f"[DEBUG] Creating all knobs from scratch for node: {node.name()}")
+    # Agregar el resto de los knobs usando las funciones existentes si no existen
+    add_remaining_knobs_if_missing(node, existing_margin_alignment)
 
-        # Tab principal - solo si no existe
-        tab = nuke.Tab_Knob("backdrop")
-        node.addKnob(tab)
+    debug_print(f"[DEBUG] Finished adding all knobs")
 
-    # Crear el contenido del tab (sea primera vez o recreando)
-    # Label (estilo Nuke nativo) - PRIMERO DE TODO
-    lga_label_knob = create_label_knob()
-    lga_label_knob.setValue(user_text)
-    node.addKnob(lga_label_knob)
-    debug_print(f"[DEBUG] Added lga_label knob with RESIZABLE flag")
 
-    # Font Size
-    lga_font_size_knob = create_font_size_knob(default_size=note_font_size)
-    node.addKnob(lga_font_size_knob)
+def add_remaining_knobs_if_missing(node, existing_margin_alignment):
+    """Agrega los knobs restantes solo si no existen"""
 
-    # Seccion de Bold e Italic (al lado del font size - misma línea) - usando botones nativos
-    bold_knobs = create_font_bold_section()  # Ya no necesita parámetros bold/italic
-    for knob in bold_knobs:
-        node.addKnob(knob)
-
-    # Configurar el link del note_font después de agregarlo al nodo
-    if "note_font_link" in node.knobs():
-        node["note_font_link"].makeLink(node.name(), "note_font")
-
-    # Seccion de Margin Alignment (misma línea que Bold)
-    margin_align_knobs = create_margin_alignment_section(existing_margin_alignment)
-    for knob in margin_align_knobs:
-        node.addKnob(knob)
-
-    # Divider 1
-    node.addKnob(create_divider("1"))
-
-    # Seccion de colores
+    # Colors section
     color_knobs = create_simple_colors_section()
     for knob in color_knobs:
-        node.addKnob(knob)
+        if knob.name() not in node.knobs():
+            node.addKnob(knob)
 
     # Divider 2
-    node.addKnob(create_divider("2"))
+    if "divider_2" not in node.knobs():
+        divider2 = nuke.Text_Knob("divider_2", "", "")
+        divider2.setFlag(nuke.STARTLINE)
+        node.addKnob(divider2)
 
-    # Seccion de resize
-    resize_knobs = create_resize_section(existing_margin_value)
+    # Resize section (includes margin slider)
+    resize_knobs = create_resize_section(50)  # default margin value
     for knob in resize_knobs:
-        node.addKnob(knob)
+        if knob.name() not in node.knobs():
+            node.addKnob(knob)
 
     # Divider 3
-    node.addKnob(create_divider("3"))
+    if "divider_3" not in node.knobs():
+        divider3 = nuke.Text_Knob("divider_3", "", "")
+        divider3.setFlag(nuke.STARTLINE)
+        node.addKnob(divider3)
 
-    # Seccion de Z-order
-    zorder_knobs = create_zorder_section(existing_z_value)
+    # Z-order section
+    zorder_knobs = create_zorder_section(0)  # default z value
     for knob in zorder_knobs:
-        node.addKnob(knob)
-
-    debug_print(f"[DEBUG] Finished creating all knobs in correct order")
+        if knob.name() not in node.knobs():
+            node.addKnob(knob)
