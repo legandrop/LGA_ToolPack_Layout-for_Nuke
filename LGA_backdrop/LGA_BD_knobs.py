@@ -88,10 +88,10 @@ def create_margin_alignment_section(alignment_value="left", font_color="white"):
     # Label para Font Color
     font_color_label = nuke.Text_Knob("font_color_label", "", "    Font Color  ")
 
-    # Boton para color negro
+    # Boton para color negro (usando HTML table para forzar tamaño cuadrado)
     black_button = nuke.PyScript_Knob(
         "font_color_black",
-        "⬛",  # Cuadrado negro
+        "<span style='width:10px;height:10px;display:inline-block;text-align:center;line-height:0px;font-size:12px;'>⬛</span>",
         """
 node = nuke.thisNode()
 current_text = node['lga_label'].value()
@@ -118,8 +118,8 @@ elif alignment == "right":
 node['label'].setValue(formatted_text)
 
 # Cambiar color usando note_font_color (knob nativo)
-# Color negro en formato int: 0xFF (alpha) 00 00 00 (RGB) = 4278190080
-node['note_font_color'].setValue(4278190080)
+# Color negro en formato int: 0xFF000000 
+node['note_font_color'].setValue(0xFF000000)
 
 if 'lga_font_color' in node.knobs():
     node['lga_font_color'].setValue('black')
@@ -128,10 +128,10 @@ print('[DEBUG] Font color set to black via button using note_font_color')
     )
     black_button.setTooltip("Set font color to black")
 
-    # Boton para color blanco
+    # Boton para color blanco (usando HTML table para forzar tamaño cuadrado)
     white_button = nuke.PyScript_Knob(
         "font_color_white",
-        "⬜",  # Cuadrado blanco
+        "<span style='width:10px;height:10px;display:inline-block;text-align:center;line-height:0px;font-size:12px;'>⬜</span>",
         """
 node = nuke.thisNode()
 current_text = node['lga_label'].value()
@@ -158,8 +158,8 @@ elif alignment == "right":
 node['label'].setValue(formatted_text)
 
 # Cambiar color usando note_font_color (knob nativo)
-# Color blanco en formato int: 0xFF (alpha) FF FF FF (RGB) = 4294967295
-node['note_font_color'].setValue(4294967295)
+# Color blanco en formato int: 0xFFFFFFFF 
+node['note_font_color'].setValue(0xFFFFFFFF)
 
 if 'lga_font_color' in node.knobs():
     node['lga_font_color'].setValue('white')
@@ -167,6 +167,69 @@ print('[DEBUG] Font color set to white via button using note_font_color')
 """,
     )
     white_button.setTooltip("Set font color to white")
+
+    # Boton para color automático (usando HTML table para forzar tamaño cuadrado)
+    auto_button = nuke.PyScript_Knob(
+        "font_color_auto",
+        "<span style='width:10px;height:10px;display:inline-block;text-align:center;line-height:0px;font-size:12px;'>A</span>",
+        """
+node = nuke.thisNode()
+
+# Función para calcular contraste automático basado en el color del backdrop
+def calculate_auto_contrast():
+    backdrop_color = int(node['tile_color'].getValue())  # Convertir a int explícitamente
+    
+    # Extraer componentes RGB del color int32 del backdrop
+    # Formato: 0xRRGGBBAA (Red, Green, Blue, Alpha)
+    red = (backdrop_color >> 24) & 0xFF
+    green = (backdrop_color >> 16) & 0xFF
+    blue = (backdrop_color >> 8) & 0xFF
+    
+    # Calcular luminancia usando formula estándar
+    # Luminancia = 0.299*R + 0.587*G + 0.114*B
+    luminance = 0.299 * red + 0.587 * green + 0.114 * blue
+    
+    # Si la luminancia es alta (color claro), usar texto negro
+    # Si la luminancia es baja (color oscuro), usar texto blanco
+    if luminance > 128:  # Umbral medio
+        return 'black', 0xFF000000  # Negro
+    else:
+        return 'white', 0xFFFFFFFF  # Blanco
+
+color_name, color_value = calculate_auto_contrast()
+
+# Aplicar formato al texto (solo bold + alignment, sin color HTML)
+current_text = node['lga_label'].value()
+is_bold = False
+if 'lga_bold' in node.knobs():
+    is_bold = node['lga_bold'].value()
+
+alignment = "left"
+if 'lga_margin' in node.knobs():
+    alignment = node['lga_margin'].value()
+
+formatted_text = current_text
+if is_bold:
+    formatted_text = '<b>' + formatted_text + '</b>'
+
+if alignment == "center":
+    formatted_text = '<div align="center">' + formatted_text + '</div>'
+elif alignment == "right":
+    formatted_text = '<div align="right">' + formatted_text + '</div>'
+
+node['label'].setValue(formatted_text)
+
+# Aplicar color automático usando note_font_color
+node['note_font_color'].setValue(color_value)
+
+if 'lga_font_color' in node.knobs():
+    node['lga_font_color'].setValue(color_name)
+print(f'[DEBUG] Font color set to {color_name} automatically based on backdrop color')
+""",
+    )
+    auto_button.setTooltip(
+        "Set font color automatically based on backdrop color contrast"
+    )
 
     # Knob hidden para almacenar el color actual
     font_color_knob = nuke.String_Knob("lga_font_color", "")
@@ -179,6 +242,7 @@ print('[DEBUG] Font color set to white via button using note_font_color')
     font_color_label.clearFlag(nuke.STARTLINE)  # Al lado del dropdown
     black_button.clearFlag(nuke.STARTLINE)  # Al lado del label font color
     white_button.clearFlag(nuke.STARTLINE)  # Al lado del botón negro
+    auto_button.clearFlag(nuke.STARTLINE)  # Al lado del botón blanco
 
     knobs.extend(
         [
@@ -187,6 +251,7 @@ print('[DEBUG] Font color set to white via button using note_font_color')
             font_color_label,
             black_button,
             white_button,
+            auto_button,
             font_color_knob,
         ]
     )
@@ -368,8 +433,8 @@ def add_all_knobs(node, user_text="", note_font_size=None):
     else:
         # Si no existe el knob, detectar color del note_font_color nativo
         current_font_color = node["note_font_color"].getValue()
-        # Color negro: 4278190080, Color blanco: 4294967295
-        if current_font_color == 4278190080:
+        # Color negro: 0xFF000000, Color blanco: 0xFFFFFFFF
+        if current_font_color == 0xFF000000:
             existing_font_color = "black"
         else:
             existing_font_color = "white"
@@ -410,6 +475,7 @@ def add_all_knobs(node, user_text="", note_font_size=None):
             "font_color_label",
             "font_color_black",
             "font_color_white",
+            "font_color_auto",
             "lga_font_color",
             "divider_1",
             "random_color",

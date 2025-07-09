@@ -120,12 +120,12 @@ elif knob.name() == 'lga_font_color':
     
     # Cambiar color usando note_font_color
     if knob.value() == "black":
-        # Color negro en formato int: 0xFF (alpha) 00 00 00 (RGB) = 4278190080
-        node['note_font_color'].setValue(4278190080)
+        # Color negro en formato int: 0xFF000000 (como en oz_backdrop)
+        node['note_font_color'].setValue(0xFF000000)
         debug_print(f"[DEBUG] Font color set to black using note_font_color")
     else:  # white
-        # Color blanco en formato int: 0xFF (alpha) FF FF FF (RGB) = 4294967295
-        node['note_font_color'].setValue(4294967295)
+        # Color blanco en formato int: 0xFFFFFFFF (como en oz_backdrop)
+        node['note_font_color'].setValue(0xFFFFFFFF)
         debug_print(f"[DEBUG] Font color set to white using note_font_color")
 """
 

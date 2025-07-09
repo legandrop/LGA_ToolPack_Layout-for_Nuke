@@ -23,6 +23,7 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 - **Font Size**: Campo numérico con slider (rango 10-100)
 - **Bold**: Checkbox para aplicar/quitar estilo bold al texto del backdrop (usa tags HTML `<b></b>` internamente sin mostrarlos en el campo de entrada)
 - **Margin**: Dropdown para alineación del texto (Left/Center/Right) usando tags HTML `<div align="">` internamente
+- **Font Color**: Botones para cambiar color del texto (Negro/Blanco/Auto) usando el knob nativo `note_font_color`
 
 ### Sección de Colores
 - **Random Color**: Botón para generar color aleatorio
@@ -39,13 +40,13 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 
 ### Problemas Resueltos
 1. **Altura Multilínea**: Los `Multiline_Eval_String_Knob` en Nuke pierden su altura visual después de guardar y recargar scripts
-2. **Valores de Knobs**: Font size, margin slider, bold y alignment se resetean al valor por defecto al recargar scripts
+2. **Valores de Knobs**: Font size, margin slider, bold, alignment y font color se resetean al valor por defecto al recargar scripts
 3. **Separación de Presentación**: Los tags HTML para bold y alignment no deben aparecer en el campo de entrada del usuario
 
 ### Soluciones Implementadas
 - **Bandera RESIZABLE**: Se aplica automáticamente a todos los `lga_label` knobs usando `setFlag(0x0008)`
 - **Callback onScriptLoad**: Detecta backdrops existentes al cargar scripts y preserva valores existentes
-- **Recreación inteligente**: Solo recrea knobs cuando es necesario, preservando valores de font size, margin slider, bold y alignment
+- **Recreación inteligente**: Solo recrea knobs cuando es necesario, preservando valores de font size, margin slider, bold, alignment y font color
 - **Separación de capas**: `lga_label` contiene texto limpio, `label` nativo contiene HTML con formato
 - **Detección automática**: Al cargar scripts, detecta automáticamente si el texto tiene bold y alignment, configurando los knobs apropiados
 - **Callbacks sincronizados**: Maneja cambios aplicando formato HTML completo (bold + alignment) solo al label nativo
@@ -54,7 +55,7 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 - **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_knobs.py`**:
   - `create_label_knob()`: Aplica bandera RESIZABLE al crear knobs
   - `create_font_bold_section()`: Crea checkbox para bold con preservación de estado
-  - `create_margin_alignment_section()`: Crea dropdown para alignment con preservación de estado
+  - `create_margin_alignment_section()`: Crea dropdown para alignment y botones para font color con preservación de estado
   - `create_resize_section()`: Crea sección de margin con slider y botón auto fit
   - `add_all_knobs()`: Maneja creación y recreación inteligente preservando valores
 - **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_callbacks.py`**:
