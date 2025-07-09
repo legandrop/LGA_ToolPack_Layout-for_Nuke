@@ -169,6 +169,47 @@ def autoBackdrop():
                 if nodeIsInside(nonBackdrop, backdrop):
                     zOrder = max(zOrder, backdrop["z_order"].getValue() + 1)
 
+    # NUEVO: Evaluar si el nuevo backdrop contendra otros backdrops
+    # y en caso afirmativo, asignar un Z mas bajo que el minimo de los contenidos
+    allBackdropNodes = nuke.allNodes("BackdropNode")
+    backdrops_contained = []
+
+    # Crear los limites del nuevo backdrop temporalmente para la evaluacion
+    new_backdrop_bounds = {
+        "left": bdX,
+        "top": bdY,
+        "right": bdX + bdW,
+        "bottom": bdY + bdH,
+    }
+
+    # Verificar que backdrops estarian contenidos dentro del nuevo backdrop
+    for backdrop in allBackdropNodes:
+        backdrop_bounds = {
+            "left": backdrop.xpos(),
+            "top": backdrop.ypos(),
+            "right": backdrop.xpos() + backdrop.screenWidth(),
+            "bottom": backdrop.ypos() + backdrop.screenHeight(),
+        }
+
+        # Verificar si este backdrop esta completamente dentro del nuevo backdrop
+        if (
+            backdrop_bounds["left"] >= new_backdrop_bounds["left"]
+            and backdrop_bounds["top"] >= new_backdrop_bounds["top"]
+            and backdrop_bounds["right"] <= new_backdrop_bounds["right"]
+            and backdrop_bounds["bottom"] <= new_backdrop_bounds["bottom"]
+        ):
+            backdrops_contained.append(backdrop)
+
+    # Si hay backdrops contenidos, asignar Z mas bajo que el minimo
+    if backdrops_contained:
+        min_contained_z = min(
+            [backdrop["z_order"].getValue() for backdrop in backdrops_contained]
+        )
+        zOrder = min_contained_z - 1
+        print(
+            f"[DEBUG] Backdrop will contain {len(backdrops_contained)} backdrops. Setting Z to {zOrder} (min contained Z was {min_contained_z})"
+        )
+
     # Usar las funciones de calculo de tamaño backdrop
     note_font_size = 42  # Default font size
 

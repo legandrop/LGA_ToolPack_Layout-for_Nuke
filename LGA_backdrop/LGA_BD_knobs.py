@@ -333,7 +333,7 @@ LGA_BD_fit.fit_to_selected_nodes()
     return knobs
 
 
-def create_zorder_section():
+def create_zorder_section(z_value=0):
     """Crea la seccion de Z-order"""
     knobs = []
 
@@ -342,6 +342,7 @@ def create_zorder_section():
     zorder_back_label = nuke.Text_Knob("zorder_back", "", "Back ")
     zorder = nuke.Double_Knob("zorder", "")
     zorder.setRange(-5, +5)
+    zorder.setValue(z_value)  # Establecer el valor existente
     zorder_front_label = nuke.Text_Knob("zorder_front", "", " Front")
 
     # Espacio después del label Front
@@ -409,6 +410,13 @@ def add_all_knobs(
             existing_margin_alignment = "right"
         else:
             existing_margin_alignment = "left"
+
+    existing_z_value = 0  # default
+    if "zorder" in node.knobs():
+        existing_z_value = node["zorder"].getValue()
+    else:
+        # Si no existe el knob, usar el valor del z_order nativo
+        existing_z_value = node["z_order"].getValue()
 
     # Verificar si ya existen knobs personalizados
     has_custom_knobs = "backdrop" in node.knobs()
@@ -556,7 +564,7 @@ def add_all_knobs(
     node.addKnob(create_divider("3"))
 
     # Seccion de Z-order
-    zorder_knobs = create_zorder_section()
+    zorder_knobs = create_zorder_section(existing_z_value)
     for knob in zorder_knobs:
         node.addKnob(knob)
 
