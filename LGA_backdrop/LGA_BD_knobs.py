@@ -649,7 +649,7 @@ def create_zorder_section(z_value=0):
     zorder_front_label = nuke.Text_Knob("zorder_front", "", " Front")
 
     # Espacio después del label Front
-    zorder_space = nuke.Text_Knob("zorder_space", "", "  ")
+    zorder_space = nuke.Text_Knob("zorder_space", "", " ")
 
     # Configurar flags para que aparezcan en la misma linea
     zorder_label.clearFlag(nuke.STARTLINE)
