@@ -53,7 +53,7 @@ elif knob.name() == 'lga_label':
     if 'lga_margin' in node.knobs():
         alignment = node['lga_margin'].value()
     
-    # Aplicar formato completo
+    # Aplicar formato completo (bold + alignment, sin color HTML)
     formatted_text = text_value
     if is_bold:
         formatted_text = '<b>' + formatted_text + '</b>'
@@ -79,7 +79,7 @@ elif knob.name() == 'lga_bold':
     if 'lga_margin' in node.knobs():
         alignment = node['lga_margin'].value()
     
-    # Aplicar formato completo (bold + alignment)
+    # Aplicar formato completo (bold + alignment, sin color HTML)
     formatted_text = current_text
     if knob.value():
         formatted_text = '<b>' + formatted_text + '</b>'
@@ -102,7 +102,7 @@ elif knob.name() == 'lga_margin':
     if 'lga_bold' in node.knobs():
         is_bold = node['lga_bold'].value()
     
-    # Aplicar formato completo (bold + alignment)
+    # Aplicar formato completo (bold + alignment, sin color HTML)
     formatted_text = current_text
     if is_bold:
         formatted_text = '<b>' + formatted_text + '</b>'
@@ -114,6 +114,19 @@ elif knob.name() == 'lga_margin':
     
     debug_print(f"[DEBUG] Final formatted text: '{formatted_text}'")
     node['label'].setValue(formatted_text)
+elif knob.name() == 'lga_font_color':
+    # Aplicar color usando note_font_color (knob nativo)
+    debug_print(f"[DEBUG] lga_font_color changed to: {knob.value()}")
+    
+    # Cambiar color usando note_font_color
+    if knob.value() == "black":
+        # Color negro en formato int: 0xFF (alpha) 00 00 00 (RGB) = 4278190080
+        node['note_font_color'].setValue(4278190080)
+        debug_print(f"[DEBUG] Font color set to black using note_font_color")
+    else:  # white
+        # Color blanco en formato int: 0xFF (alpha) FF FF FF (RGB) = 4294967295
+        node['note_font_color'].setValue(4294967295)
+        debug_print(f"[DEBUG] Font color set to white using note_font_color")
 """
 
 
@@ -139,7 +152,7 @@ def add_knobs_to_existing_backdrops():
             # Obtener el valor actual del font size
         current_font_size = node["note_font_size"].getValue()
 
-        # Detectar y limpiar formato del texto (bold + alignment)
+        # Detectar y limpiar formato del texto (bold + alignment + color)
         clean_text = user_text
 
         # Detectar y remover div alignment tags
@@ -151,6 +164,8 @@ def add_knobs_to_existing_backdrops():
             "</div>"
         ):
             clean_text = clean_text[19:-6]  # Remover <div align="right"> y </div>
+
+        # Ya no necesitamos detectar font color tags HTML porque usamos note_font_color
 
         # Detectar y remover bold tags
         has_bold = clean_text.startswith("<b>") and clean_text.endswith("</b>")

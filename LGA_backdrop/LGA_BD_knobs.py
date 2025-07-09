@@ -71,8 +71,8 @@ def create_font_bold_section(bold_value=False):
     return knobs
 
 
-def create_margin_alignment_section(alignment_value="left"):
-    """Crea la seccion de margin alignment"""
+def create_margin_alignment_section(alignment_value="left", font_color="white"):
+    """Crea la seccion de margin alignment y font color"""
     knobs = []
 
     # Label para Margin
@@ -85,11 +85,111 @@ def create_margin_alignment_section(alignment_value="left"):
     margin_dropdown.setValue(alignment_value)
     margin_dropdown.setTooltip("Text alignment")
 
-    # Configurar para que margin_align_label esté en nueva línea y dropdown al lado
+    # Label para Font Color
+    font_color_label = nuke.Text_Knob("font_color_label", "", "    Font Color  ")
+
+    # Boton para color negro
+    black_button = nuke.PyScript_Knob(
+        "font_color_black",
+        "⬛",  # Cuadrado negro
+        """
+node = nuke.thisNode()
+current_text = node['lga_label'].value()
+
+# Aplicar formato completo manualmente (sin color HTML)
+is_bold = False
+if 'lga_bold' in node.knobs():
+    is_bold = node['lga_bold'].value()
+
+alignment = "left"
+if 'lga_margin' in node.knobs():
+    alignment = node['lga_margin'].value()
+
+# Aplicar formato (bold + alignment, sin color HTML)
+formatted_text = current_text
+if is_bold:
+    formatted_text = '<b>' + formatted_text + '</b>'
+
+if alignment == "center":
+    formatted_text = '<div align="center">' + formatted_text + '</div>'
+elif alignment == "right":
+    formatted_text = '<div align="right">' + formatted_text + '</div>'
+
+node['label'].setValue(formatted_text)
+
+# Cambiar color usando note_font_color (knob nativo)
+# Color negro en formato int: 0xFF (alpha) 00 00 00 (RGB) = 4278190080
+node['note_font_color'].setValue(4278190080)
+
+if 'lga_font_color' in node.knobs():
+    node['lga_font_color'].setValue('black')
+print('[DEBUG] Font color set to black via button using note_font_color')
+""",
+    )
+    black_button.setTooltip("Set font color to black")
+
+    # Boton para color blanco
+    white_button = nuke.PyScript_Knob(
+        "font_color_white",
+        "⬜",  # Cuadrado blanco
+        """
+node = nuke.thisNode()
+current_text = node['lga_label'].value()
+
+# Aplicar formato completo manualmente (sin color HTML)
+is_bold = False
+if 'lga_bold' in node.knobs():
+    is_bold = node['lga_bold'].value()
+
+alignment = "left"
+if 'lga_margin' in node.knobs():
+    alignment = node['lga_margin'].value()
+
+# Aplicar formato (bold + alignment, sin color HTML)
+formatted_text = current_text
+if is_bold:
+    formatted_text = '<b>' + formatted_text + '</b>'
+
+if alignment == "center":
+    formatted_text = '<div align="center">' + formatted_text + '</div>'
+elif alignment == "right":
+    formatted_text = '<div align="right">' + formatted_text + '</div>'
+
+node['label'].setValue(formatted_text)
+
+# Cambiar color usando note_font_color (knob nativo)
+# Color blanco en formato int: 0xFF (alpha) FF FF FF (RGB) = 4294967295
+node['note_font_color'].setValue(4294967295)
+
+if 'lga_font_color' in node.knobs():
+    node['lga_font_color'].setValue('white')
+print('[DEBUG] Font color set to white via button using note_font_color')
+""",
+    )
+    white_button.setTooltip("Set font color to white")
+
+    # Knob hidden para almacenar el color actual
+    font_color_knob = nuke.String_Knob("lga_font_color", "")
+    font_color_knob.setValue(font_color)
+    font_color_knob.setVisible(False)  # Oculto
+
+    # Configurar para que margin_align_label esté en nueva línea y el resto al lado
     margin_align_label.setFlag(nuke.STARTLINE)  # Nueva línea
     margin_dropdown.clearFlag(nuke.STARTLINE)  # Al lado del label
+    font_color_label.clearFlag(nuke.STARTLINE)  # Al lado del dropdown
+    black_button.clearFlag(nuke.STARTLINE)  # Al lado del label font color
+    white_button.clearFlag(nuke.STARTLINE)  # Al lado del botón negro
 
-    knobs.extend([margin_align_label, margin_dropdown])
+    knobs.extend(
+        [
+            margin_align_label,
+            margin_dropdown,
+            font_color_label,
+            black_button,
+            white_button,
+            font_color_knob,
+        ]
+    )
 
     return knobs
 
@@ -262,6 +362,18 @@ def add_all_knobs(node, user_text="", note_font_size=None):
         else:
             existing_margin_alignment = "left"
 
+    existing_font_color = "white"  # default
+    if "lga_font_color" in node.knobs():
+        existing_font_color = node["lga_font_color"].value()
+    else:
+        # Si no existe el knob, detectar color del note_font_color nativo
+        current_font_color = node["note_font_color"].getValue()
+        # Color negro: 4278190080, Color blanco: 4294967295
+        if current_font_color == 4278190080:
+            existing_font_color = "black"
+        else:
+            existing_font_color = "white"
+
     # Verificar si ya existen knobs personalizados
     has_custom_knobs = "backdrop" in node.knobs()
 
@@ -295,6 +407,10 @@ def add_all_knobs(node, user_text="", note_font_size=None):
             "lga_bold",
             "margin_align_label",
             "lga_margin",
+            "font_color_label",
+            "font_color_black",
+            "font_color_white",
+            "lga_font_color",
             "divider_1",
             "random_color",
             "space_color_space1",
@@ -357,7 +473,9 @@ def add_all_knobs(node, user_text="", note_font_size=None):
         node.addKnob(knob)
 
     # Seccion de Margin Alignment (nueva línea debajo)
-    margin_align_knobs = create_margin_alignment_section(existing_margin_alignment)
+    margin_align_knobs = create_margin_alignment_section(
+        existing_margin_alignment, existing_font_color
+    )
     for knob in margin_align_knobs:
         node.addKnob(knob)
 
