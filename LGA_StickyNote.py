@@ -22,7 +22,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
     def setup_ui(self):
         """Configura la interfaz de usuario"""
         self.setWindowTitle("StickyNote Editor")
-        self.setFixedSize(300, 200)
+        self.setFixedSize(300, 240)
         self.setStyleSheet("background-color: #242527; color: #FFFFFF;")
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
 
@@ -55,7 +55,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
         font_size_label.setStyleSheet("color: #AAAAAA; font-size: 11px;")
 
         self.font_size_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-        self.font_size_slider.setRange(8, 48)
+        self.font_size_slider.setRange(10, 100)
         self.font_size_slider.setValue(20)
         self.font_size_slider.setStyleSheet(
             """
@@ -84,6 +84,41 @@ class StickyNoteEditor(QtWidgets.QDialog):
         font_size_layout.addWidget(self.font_size_slider)
         font_size_layout.addWidget(self.font_size_value)
 
+        # Slider de margin
+        margin_layout = QtWidgets.QHBoxLayout()
+        margin_label = QtWidgets.QLabel("Margin:")
+        margin_label.setStyleSheet("color: #AAAAAA; font-size: 11px;")
+
+        self.margin_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.margin_slider.setRange(0, 10)
+        self.margin_slider.setValue(0)
+        self.margin_slider.setStyleSheet(
+            """
+            QSlider::groove:horizontal {
+                border: 1px solid #555555;
+                height: 8px;
+                background: #1A1A1A;
+                border-radius: 4px;
+            }
+            QSlider::handle:horizontal {
+                background: #AAAAAA;
+                border: 1px solid #555555;
+                width: 18px;
+                margin: -2px 0;
+                border-radius: 3px;
+            }
+        """
+        )
+
+        self.margin_value = QtWidgets.QLabel("0")
+        self.margin_value.setStyleSheet(
+            "color: #AAAAAA; font-size: 11px; min-width: 25px;"
+        )
+
+        margin_layout.addWidget(margin_label)
+        margin_layout.addWidget(self.margin_slider)
+        margin_layout.addWidget(self.margin_value)
+
         # Ayuda
         help_label = QtWidgets.QLabel(
             '<span style="font-size:9pt; color:#666666;">ESC para cerrar</span>'
@@ -94,6 +129,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
         main_layout.addWidget(title)
         main_layout.addWidget(self.text_edit)
         main_layout.addLayout(font_size_layout)
+        main_layout.addLayout(margin_layout)
         main_layout.addWidget(help_label)
 
         self.setLayout(main_layout)
@@ -102,6 +138,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
         """Configura las conexiones de señales"""
         self.text_edit.textChanged.connect(self.on_text_changed)
         self.font_size_slider.valueChanged.connect(self.on_font_size_changed)
+        self.margin_slider.valueChanged.connect(self.on_margin_changed)
 
     def get_or_create_sticky_note(self):
         """Obtiene el sticky note seleccionado o crea uno nuevo"""
@@ -126,10 +163,36 @@ class StickyNoteEditor(QtWidgets.QDialog):
         if not self.sticky_node:
             return
 
-        # Cargar texto
+        # Cargar texto (removiendo espacios del margin para mostrarlo limpio en el editor)
         current_text = self.sticky_node["label"].value()
+
+        # Intentar detectar el margin actual basado en los espacios al inicio y final
+        lines = current_text.split("\n")
+        margin_detected = 0
+        if lines and lines[0]:
+            # Contar espacios al inicio de la primera línea
+            left_spaces = len(lines[0]) - len(lines[0].lstrip(" "))
+            # Contar espacios al final de la primera línea
+            right_spaces = len(lines[0]) - len(lines[0].rstrip(" "))
+            # Usar el menor de los dos como margin (asumiendo que son iguales)
+            margin_detected = min(left_spaces, right_spaces)
+
+        # Remover los espacios del margin para mostrar texto limpio
+        clean_text = ""
+        for line in lines:
+            # Remover espacios del inicio y final según el margin detectado
+            if len(line) >= margin_detected * 2:
+                # Remover espacios del inicio y final
+                clean_line = line[margin_detected:] if margin_detected > 0 else line
+                if margin_detected > 0 and clean_line.endswith(" " * margin_detected):
+                    clean_line = clean_line[:-margin_detected]
+                clean_text += clean_line + "\n"
+            else:
+                clean_text += line + "\n"
+        clean_text = clean_text.rstrip("\n")  # Remover último salto de línea
+
         self.text_edit.blockSignals(True)  # Evitar callback recursivo
-        self.text_edit.setPlainText(current_text)
+        self.text_edit.setPlainText(clean_text)
         self.text_edit.blockSignals(False)
 
         # Cargar font size
@@ -139,17 +202,39 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.font_size_value.setText(str(current_font_size))
         self.font_size_slider.blockSignals(False)
 
+        # Cargar margin
+        self.margin_slider.blockSignals(True)  # Evitar callback recursivo
+        self.margin_slider.setValue(margin_detected)
+        self.margin_value.setText(str(margin_detected))
+        self.margin_slider.blockSignals(False)
+
     def on_text_changed(self):
         """Callback cuando cambia el texto"""
         if self.sticky_node:
             current_text = self.text_edit.toPlainText()
-            self.sticky_node["label"].setValue(current_text)
+            margin_spaces = " " * self.margin_slider.value()
+
+            # Agregar espacios a ambos lados de cada línea
+            lines = current_text.split("\n")
+            final_lines = []
+            for line in lines:
+                final_lines.append(margin_spaces + line + margin_spaces)
+
+            final_text = "\n".join(final_lines)
+            self.sticky_node["label"].setValue(final_text)
 
     def on_font_size_changed(self, value):
         """Callback cuando cambia el font size"""
         if self.sticky_node:
             self.sticky_node["note_font_size"].setValue(value)
             self.font_size_value.setText(str(value))
+
+    def on_margin_changed(self, value):
+        """Callback cuando cambia el margin"""
+        if self.sticky_node:
+            self.margin_value.setText(str(value))
+            # Actualizar el texto con el nuevo margin
+            self.on_text_changed()
 
     def keyPressEvent(self, event):
         """Maneja los eventos de teclado"""
