@@ -40,18 +40,31 @@ elif knob.name() == 'z_order':
 
 elif knob.name() == 'lga_label':
     # Sincronizar el label personalizado con el knob label nativo del BackdropNode
-    # Aplicar bold si el checkbox está activado
+    # Aplicar formato completo (bold + alignment)
     text_value = knob.value()
     debug_print(f"[DEBUG] lga_label changed to: '{text_value}'")
-    if 'lga_bold' in node.knobs() and node['lga_bold'].value():
-        # Si bold está activado, agregar tags al label nativo pero no al lga_label
-        bold_text = '<b>' + text_value + '</b>'
-        debug_print(f"[DEBUG] Applying bold to native label: '{bold_text}'")
-        node['label'].setValue(bold_text)
-    else:
-        # Si bold no está activado, usar texto normal
-        debug_print(f"[DEBUG] Setting normal text to native label: '{text_value}'")
-        node['label'].setValue(text_value)
+    
+    # Obtener estado actual de bold y alignment
+    is_bold = False
+    if 'lga_bold' in node.knobs():
+        is_bold = node['lga_bold'].value()
+        
+    alignment = "left"
+    if 'lga_margin' in node.knobs():
+        alignment = node['lga_margin'].value()
+    
+    # Aplicar formato completo
+    formatted_text = text_value
+    if is_bold:
+        formatted_text = '<b>' + formatted_text + '</b>'
+    
+    if alignment == "center":
+        formatted_text = '<div align="center">' + formatted_text + '</div>'
+    elif alignment == "right":
+        formatted_text = '<div align="right">' + formatted_text + '</div>'
+    
+    debug_print(f"[DEBUG] Final formatted text: '{formatted_text}'")
+    node['label'].setValue(formatted_text)
 elif knob.name() == 'lga_note_font_size':
     # Sincronizar el font size personalizado con el knob note_font_size nativo del BackdropNode
     node['note_font_size'].setValue(knob.value())
@@ -60,15 +73,47 @@ elif knob.name() == 'lga_bold':
     current_text = node['lga_label'].value()  # Obtener texto sin tags
     debug_print(f"[DEBUG] lga_bold changed to: {knob.value()}")
     debug_print(f"[DEBUG] Current lga_label text: '{current_text}'")
+    
+    # Obtener alignment actual si existe
+    alignment = "left"  # default
+    if 'lga_margin' in node.knobs():
+        alignment = node['lga_margin'].value()
+    
+    # Aplicar formato completo (bold + alignment)
+    formatted_text = current_text
     if knob.value():
-        # Aplicar bold: solo al label nativo, no al lga_label
-        bold_text = '<b>' + current_text + '</b>'
-        debug_print(f"[DEBUG] Applying bold, setting native label to: '{bold_text}'")
-        node['label'].setValue(bold_text)
-    else:
-        # Quitar bold: usar texto normal
-        debug_print(f"[DEBUG] Removing bold, setting native label to: '{current_text}'")
-        node['label'].setValue(current_text)
+        formatted_text = '<b>' + formatted_text + '</b>'
+    
+    if alignment == "center":
+        formatted_text = '<div align="center">' + formatted_text + '</div>'
+    elif alignment == "right":
+        formatted_text = '<div align="right">' + formatted_text + '</div>'
+    
+    debug_print(f"[DEBUG] Final formatted text: '{formatted_text}'")
+    node['label'].setValue(formatted_text)
+elif knob.name() == 'lga_margin':
+    # Aplicar alignment al texto del label
+    current_text = node['lga_label'].value()  # Obtener texto sin tags
+    debug_print(f"[DEBUG] lga_margin changed to: {knob.value()}")
+    debug_print(f"[DEBUG] Current lga_label text: '{current_text}'")
+    
+    # Obtener bold actual si existe
+    is_bold = False
+    if 'lga_bold' in node.knobs():
+        is_bold = node['lga_bold'].value()
+    
+    # Aplicar formato completo (bold + alignment)
+    formatted_text = current_text
+    if is_bold:
+        formatted_text = '<b>' + formatted_text + '</b>'
+    
+    if knob.value() == "center":
+        formatted_text = '<div align="center">' + formatted_text + '</div>'
+    elif knob.value() == "right":
+        formatted_text = '<div align="right">' + formatted_text + '</div>'
+    
+    debug_print(f"[DEBUG] Final formatted text: '{formatted_text}'")
+    node['label'].setValue(formatted_text)
 """
 
 
@@ -94,15 +139,26 @@ def add_knobs_to_existing_backdrops():
             # Obtener el valor actual del font size
         current_font_size = node["note_font_size"].getValue()
 
-        # Detectar si el texto tiene bold
-        has_bold = user_text.startswith("<b>") and user_text.endswith("</b>")
+        # Detectar y limpiar formato del texto (bold + alignment)
+        clean_text = user_text
+
+        # Detectar y remover div alignment tags
+        if clean_text.startswith('<div align="center">') and clean_text.endswith(
+            "</div>"
+        ):
+            clean_text = clean_text[20:-6]  # Remover <div align="center"> y </div>
+        elif clean_text.startswith('<div align="right">') and clean_text.endswith(
+            "</div>"
+        ):
+            clean_text = clean_text[19:-6]  # Remover <div align="right"> y </div>
+
+        # Detectar y remover bold tags
+        has_bold = clean_text.startswith("<b>") and clean_text.endswith("</b>")
         debug_print(f"[DEBUG] Text has bold: {has_bold}")
         if has_bold:
-            # Si tiene bold, usar el texto sin los tags para el knob lga_label
-            clean_text = user_text[3:-4]  # Remover <b> y </b>
-            debug_print(f"[DEBUG] Clean text: '{clean_text}'")
-        else:
-            clean_text = user_text
+            clean_text = clean_text[3:-4]  # Remover <b> y </b>
+
+        debug_print(f"[DEBUG] Clean text: '{clean_text}'")
 
         debug_print(f"[DEBUG] Calling add_all_knobs for node: {node.name()}")
         LGA_BD_knobs.add_all_knobs(node, clean_text, current_font_size)

@@ -71,6 +71,29 @@ def create_font_bold_section(bold_value=False):
     return knobs
 
 
+def create_margin_alignment_section(alignment_value="left"):
+    """Crea la seccion de margin alignment"""
+    knobs = []
+
+    # Label para Margin
+    margin_align_label = nuke.Text_Knob("margin_align_label", "", "    Margin ")
+
+    # Dropdown para alignment
+    margin_dropdown = nuke.Enumeration_Knob(
+        "lga_margin", "", ["left", "center", "right"]
+    )
+    margin_dropdown.setValue(alignment_value)
+    margin_dropdown.setTooltip("Text alignment")
+
+    # Configurar para que margin_align_label esté en nueva línea y dropdown al lado
+    margin_align_label.setFlag(nuke.STARTLINE)  # Nueva línea
+    margin_dropdown.clearFlag(nuke.STARTLINE)  # Al lado del label
+
+    knobs.extend([margin_align_label, margin_dropdown])
+
+    return knobs
+
+
 def create_simple_colors_section():
     """Crea una seccion simple de colores"""
     # Boton de color aleatorio
@@ -226,6 +249,19 @@ def add_all_knobs(node, user_text="", note_font_size=None):
             "<b>"
         ) and original_text.endswith("</b>")
 
+    existing_margin_alignment = "left"  # default
+    if "lga_margin" in node.knobs():
+        existing_margin_alignment = node["lga_margin"].value()
+    else:
+        # Si no existe el knob, detectar alignment del texto original
+        original_text = node["label"].getValue()
+        if '<div align="center">' in original_text:
+            existing_margin_alignment = "center"
+        elif '<div align="right">' in original_text:
+            existing_margin_alignment = "right"
+        else:
+            existing_margin_alignment = "left"
+
     # Verificar si ya existen knobs personalizados
     has_custom_knobs = "backdrop" in node.knobs()
 
@@ -257,6 +293,8 @@ def add_all_knobs(node, user_text="", note_font_size=None):
             "lga_note_font_size",
             "bold_label",
             "lga_bold",
+            "margin_align_label",
+            "lga_margin",
             "divider_1",
             "random_color",
             "space_color_space1",
@@ -313,9 +351,14 @@ def add_all_knobs(node, user_text="", note_font_size=None):
     lga_font_size_knob = create_font_size_knob(default_size=note_font_size)
     node.addKnob(lga_font_size_knob)
 
-    # Seccion de Bold
+    # Seccion de Bold (al lado del font size - misma línea)
     bold_knobs = create_font_bold_section(existing_bold_value)
     for knob in bold_knobs:
+        node.addKnob(knob)
+
+    # Seccion de Margin Alignment (nueva línea debajo)
+    margin_align_knobs = create_margin_alignment_section(existing_margin_alignment)
+    for knob in margin_align_knobs:
         node.addKnob(knob)
 
     # Divider 1

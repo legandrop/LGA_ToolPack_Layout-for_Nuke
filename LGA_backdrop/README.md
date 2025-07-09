@@ -21,7 +21,8 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 ### Tab "backdrop" (no "Settings")
 - **Label**: Campo de texto estilo Nuke nativo (`Multiline_Eval_String_Knob`) con altura multilínea persistente
 - **Font Size**: Campo numérico con slider (rango 10-100)
-- **Bold**: Checkbox para aplicar/quitar estilo bold al texto del backdrop
+- **Bold**: Checkbox para aplicar/quitar estilo bold al texto del backdrop (usa tags HTML `<b></b>` internamente sin mostrarlos en el campo de entrada)
+- **Margin**: Dropdown para alineación del texto (Left/Center/Right) usando tags HTML `<div align="">` internamente
 
 ### Sección de Colores
 - **Random Color**: Botón para generar color aleatorio
@@ -34,26 +35,31 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 ### Sección de Z-Order (copiada de oz_backdrop)
 - **Z Order**: Slider con labels "Back" y "Front" (rango -5 a +5)
 
-## Sistema de Preservación de Altura Multilínea
+## Sistema de Preservación de Estado
 
-### Problema Resuelto
-Los `Multiline_Eval_String_Knob` en Nuke pierden su altura visual después de guardar y recargar scripts, mostrándose como campos de una sola línea.
+### Problemas Resueltos
+1. **Altura Multilínea**: Los `Multiline_Eval_String_Knob` en Nuke pierden su altura visual después de guardar y recargar scripts
+2. **Valores de Knobs**: Font size, margin slider, bold y alignment se resetean al valor por defecto al recargar scripts
+3. **Separación de Presentación**: Los tags HTML para bold y alignment no deben aparecer en el campo de entrada del usuario
 
-### Solución Implementada
+### Soluciones Implementadas
 - **Bandera RESIZABLE**: Se aplica automáticamente a todos los `lga_label` knobs usando `setFlag(0x0008)`
-- **Callback onScriptLoad**: Detecta backdrops existentes al cargar scripts
-- **Recreación inteligente**: Solo recrea knobs cuando es necesario preservar funcionalidad
-- **Preservación de orden**: Mantiene `lga_label` al principio del tab "backdrop"
+- **Callback onScriptLoad**: Detecta backdrops existentes al cargar scripts y preserva valores existentes
+- **Recreación inteligente**: Solo recrea knobs cuando es necesario, preservando valores de font size, margin slider, bold y alignment
+- **Separación de capas**: `lga_label` contiene texto limpio, `label` nativo contiene HTML con formato
+- **Detección automática**: Al cargar scripts, detecta automáticamente si el texto tiene bold y alignment, configurando los knobs apropiados
+- **Callbacks sincronizados**: Maneja cambios aplicando formato HTML completo (bold + alignment) solo al label nativo
 
 ### Archivos Clave
 - **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_knobs.py`**:
   - `create_label_knob()`: Aplica bandera RESIZABLE al crear knobs
   - `create_font_bold_section()`: Crea checkbox para bold con preservación de estado
+  - `create_margin_alignment_section()`: Crea dropdown para alignment con preservación de estado
   - `create_resize_section()`: Crea sección de margin con slider y botón auto fit
   - `add_all_knobs()`: Maneja creación y recreación inteligente preservando valores
 - **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_callbacks.py`**:
   - `add_knobs_to_existing_backdrops()`: Callback registrado con `nuke.addOnScriptLoad`
-  - `knob_changed_script()`: Maneja sincronización de knobs y aplicación de bold
+  - `knob_changed_script()`: Maneja sincronización de knobs y aplicación de formato HTML (bold + alignment)
 - **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_fit.py`**:
   - `fit_to_selected_nodes()`: Redimensiona backdrop usando valor del margin slider
 
@@ -79,7 +85,7 @@ node.addKnob(nuevo_knob)
 3. **Actualizar lista de eliminación** en la misma función:
 ```python
 custom_knob_names = [
-    "lga_label", "lga_note_font_size", "bold_label", "lga_bold", "nuevo_knob",  # Añadir aquí
+    "lga_label", "lga_note_font_size", "bold_label", "lga_bold", "margin_align_label", "lga_margin", "nuevo_knob",  # Añadir aquí
     "divider_1", "random_color", ...
 ]
 ```
