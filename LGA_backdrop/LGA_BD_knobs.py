@@ -225,22 +225,9 @@ def add_all_knobs(node, text_label="", existing_margin_alignment="left"):
     debug_print(f"[DEBUG] Adding knobs to node: {node.name()}")
 
     # Verificar si ya tiene el tab Backdrop y los knobs principales
-    if "backdrop" in node.knobs() and "lga_label" in node.knobs():
-        # Solo verificar si lga_label tiene la bandera RESIZABLE
-        lga_label_knob = node["lga_label"]
-        has_resizable_flag = lga_label_knob.getFlag(0x0008)
-        debug_print(
-            f"[DEBUG] Knobs already exist, has RESIZABLE flag: {has_resizable_flag}"
-        )
-
-        if has_resizable_flag:
-            debug_print(f"[DEBUG] All knobs properly configured, skipping recreation")
-            return
-        else:
-            # Solo agregar la bandera RESIZABLE si falta
-            lga_label_knob.setFlag(0x0008)
-            debug_print(f"[DEBUG] Added RESIZABLE flag to existing lga_label")
-            return
+    if "backdrop" in node.knobs() and "label_link" in node.knobs():
+        debug_print(f"[DEBUG] Knobs already exist, skipping recreation")
+        return
 
     # Crear tab backdrop solo si no existe
     if "backdrop" not in node.knobs():
@@ -248,15 +235,18 @@ def add_all_knobs(node, text_label="", existing_margin_alignment="left"):
         node.addKnob(backdrop_tab)
         debug_print(f"[DEBUG] Created backdrop tab")
 
-    # Crear knob de label solo si no existe
-    if "lga_label" not in node.knobs():
-        lga_label_knob = nuke.Multiline_Eval_String_Knob("lga_label", "Label")
-        lga_label_knob.setValue(text_label)
-        lga_label_knob.setFlag(0x0008)  # RESIZABLE
-        node.addKnob(lga_label_knob)
-        debug_print(f"[DEBUG] Created lga_label knob with RESIZABLE flag")
+    # Crear link al label nativo solo si no existe (como en el ejemplo)
+    if "label_link" not in node.knobs():
+        label_link = nuke.Link_Knob("label_link", "Label")
+        label_link.makeLink(node.name(), "label")
+        node.addKnob(label_link)
+        debug_print(f"[DEBUG] Created label_link to native label")
 
-    # Crear font size knob solo si no existe
+        # Si tenemos texto para asignar, hacerlo al label nativo
+        if text_label:
+            node["label"].setValue(text_label)
+
+    # Crear font size knob solo si no existe (MANTENER COMO ESTABA)
     if "lga_note_font_size" not in node.knobs():
         lga_font_size_knob = nuke.Int_Knob("lga_note_font_size", "Font Size")
         lga_font_size_knob.setRange(10, 200)
@@ -265,7 +255,7 @@ def add_all_knobs(node, text_label="", existing_margin_alignment="left"):
         node.addKnob(lga_font_size_knob)
         debug_print(f"[DEBUG] Created font size knob")
 
-    # Crear link de font bold/italic solo si no existe
+    # Crear link de font bold/italic solo si no existe (SIN LABEL)
     if "note_font_link" not in node.knobs():
         font_link = nuke.Link_Knob("note_font_link", "")  # Sin label
         font_link.clearFlag(nuke.STARTLINE)  # En la misma línea que font size
@@ -273,10 +263,10 @@ def add_all_knobs(node, text_label="", existing_margin_alignment="left"):
         font_link.makeLink(node.name(), "note_font")
         debug_print(f"[DEBUG] Created and configured note_font_link")
 
-    # Crear margin dropdown solo si no existe
+    # Crear margin dropdown solo si no existe (SIN LABEL)
     if "lga_margin" not in node.knobs():
         margin_dropdown = nuke.Enumeration_Knob(
-            "lga_margin", "Margin", ["left", "center", "right"]
+            "lga_margin", "", ["left", "center", "right"]
         )
         margin_dropdown.setValue(existing_margin_alignment)
         margin_dropdown.clearFlag(nuke.STARTLINE)  # En la misma línea
@@ -347,3 +337,58 @@ def add_remaining_knobs_if_missing(node, existing_margin_alignment):
     for knob in zorder_knobs:
         if knob.name() not in node.knobs():
             node.addKnob(knob)
+
+
+def add_knobs_to_existing_backdrops():
+    """
+    Busca BackdropNodes existentes en el script actual y les agrega/actualiza knobs personalizados.
+    Se ejecuta cuando se carga un script.
+    """
+    debug_print(f"[DEBUG] add_knobs_to_existing_backdrops called - onScriptLoad")
+
+    # Buscar todos los BackdropNodes en el script actual
+    backdrop_nodes = [
+        node for node in nuke.allNodes() if node.Class() == "BackdropNode"
+    ]
+
+    if not backdrop_nodes:
+        debug_print(f"[DEBUG] Found 0 BackdropNode(s)")
+        debug_print(f"[DEBUG] add_knobs_to_existing_backdrops completed")
+        return
+
+    debug_print(f"[DEBUG] Found {len(backdrop_nodes)} BackdropNode(s)")
+
+    for node in backdrop_nodes:
+        debug_print(f"[DEBUG] Processing node: {node.name()}")
+
+        # Obtener el valor del label nativo para preservarlo
+        existing_label_value = node["label"].getValue()
+        debug_print(f"[DEBUG] Using label value: '{existing_label_value}'")
+
+        # Limpiar el texto para detectar alignment
+        clean_text = existing_label_value
+        if clean_text.startswith('<div align="center">') and clean_text.endswith(
+            "</div>"
+        ):
+            existing_margin_alignment = "center"
+            clean_text = clean_text.replace('<div align="center">', "").replace(
+                "</div>", ""
+            )
+        elif clean_text.startswith('<div align="right">') and clean_text.endswith(
+            "</div>"
+        ):
+            existing_margin_alignment = "right"
+            clean_text = clean_text.replace('<div align="right">', "").replace(
+                "</div>", ""
+            )
+        else:
+            existing_margin_alignment = "left"
+
+        debug_print(f"[DEBUG] Clean text: '{clean_text}'")
+
+        # Llamar a add_all_knobs con el texto limpio
+        add_all_knobs(node, clean_text, existing_margin_alignment)
+
+        debug_print(f"[DEBUG] Finished processing node: {node.name()}")
+
+    debug_print(f"[DEBUG] add_knobs_to_existing_backdrops completed")
