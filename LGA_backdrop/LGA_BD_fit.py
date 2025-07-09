@@ -234,23 +234,38 @@ def fit_to_selected_nodes():
     bdW += right - left
     bdH += bottom - top
 
-    zOrder = 0
-    selectedBackdropNodes = nuke.selectedNodes("BackdropNode")
+    # COMENTADO: Cálculo automático de Z-Order (causa problema de cambio no deseado)
+    # zOrder = 0
+    # selectedBackdropNodes = nuke.selectedNodes("BackdropNode")
 
-    # Si hay nodos de fondo seleccionados, colocar el nuevo inmediatamente detras del mas lejano
-    if len(selectedBackdropNodes):
-        zOrder = min([node["z_order"].getValue() for node in selectedBackdropNodes]) - 1
-    else:
-        # De lo contrario encontrar el fondo mas cercano si existe y colocar el nuevo frente a el
-        nonSelectedBackdropNodes = nuke.allNodes("BackdropNode")
-        for nonBackdrop in selNodes:
-            for backdrop in nonSelectedBackdropNodes:
-                if nodeIsInside(nonBackdrop, backdrop):
-                    zOrder = max(zOrder, backdrop["z_order"].getValue() + 1)
+    # # Si hay nodos de fondo seleccionados, colocar el nuevo inmediatamente detras del mas lejano
+    # if len(selectedBackdropNodes):
+    #     zOrder = min([node["z_order"].getValue() for node in selectedBackdropNodes]) - 1
+    # else:
+    #     # De lo contrario encontrar el fondo mas cercano si existe y colocar el nuevo frente a el
+    #     nonSelectedBackdropNodes = nuke.allNodes("BackdropNode")
+    #     for nonBackdrop in selNodes:
+    #         for backdrop in nonSelectedBackdropNodes:
+    #             if nodeIsInside(nonBackdrop, backdrop):
+    #                 zOrder = max(zOrder, backdrop["z_order"].getValue() + 1)
 
-    # Aplicar los nuevos valores al backdrop
+    # Aplicar los nuevos valores al backdrop (SIN modificar Z-order)
     this["xpos"].setValue(bdX)
     this["bdwidth"].setValue(bdW)
     this["ypos"].setValue(bdY)
     this["bdheight"].setValue(bdH)
-    this["z_order"].setValue(zOrder)
+    # COMENTADO: No modificar Z-order al hacer autofit manual
+    # this["z_order"].setValue(zOrder)
+
+    # COMENTADO: No sincronizar slider zorder (causa cambio no deseado del valor)
+    # # IMPORTANTE: Sincronizar el slider zorder con el valor del z_order nativo
+    # if "zorder" in this.knobs():
+    #     this["zorder"].setValue(zOrder)
+    #     debug_print(
+    #         f"[DEBUG] Sincronizado slider zorder con z_order en autofit: {zOrder}"
+    #     )
+
+    debug_print(
+        f"[DEBUG] Autofit aplicado SIN modificar Z-order: X={bdX}, Y={bdY}, W={bdW}, H={bdH}"
+    )
+    debug_print(f"[DEBUG] Z-order preservado (no modificado por autofit)")

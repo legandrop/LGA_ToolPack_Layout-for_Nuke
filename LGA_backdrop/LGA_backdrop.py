@@ -255,8 +255,16 @@ def autoBackdrop():
         label=user_text,
     )
 
-    # Agregar todos los knobs personalizados
+    # Agregar todos los knobs personalizados (pasar el valor del z_order actual)
     LGA_BD_knobs.add_all_knobs(n, user_text, "left")
+
+    # IMPORTANTE: Sincronizar el slider zorder con el valor del z_order nativo después de crear los knobs
+    if "zorder" in n.knobs():
+        current_z_order = n["z_order"].getValue()
+        n["zorder"].setValue(current_z_order)
+        print(
+            f"[DEBUG] Sincronizado slider zorder con z_order nativo: {current_z_order}"
+        )
 
     # Configurar callbacks
     LGA_BD_callbacks.setup_callbacks(n)

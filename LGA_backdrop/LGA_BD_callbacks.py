@@ -56,10 +56,10 @@ elif knob.name() == 'lga_note_font_size':
 elif knob.name() == 'margin_slider':
     # NUEVA FUNCIONALIDAD: Auto fit automático cuando cambia el margin slider
     debug_print(f"[DEBUG] margin_slider changed to: {knob.value()}")
-    debug_print(f"[DEBUG] Ejecutando autofit automático...")
+    debug_print(f"[DEBUG] Ejecutando autofit automático completo...")
     
     try:
-        # Copiar la función directamente aquí para evitar problemas de import
+        # Usar la misma lógica que la función fit_to_selected_nodes pero SIN cambiar Z-order
         this = node
         padding = this["margin_slider"].getValue()
 
@@ -73,7 +73,7 @@ elif knob.name() == 'margin_slider':
         if not selNodes:
             debug_print(f"[DEBUG] No hay nodos seleccionados, buscando nodos dentro del backdrop")
             
-            # Buscar nodos dentro del backdrop (función inline)
+            # Buscar nodos dentro del backdrop (función inline copiada de fit_to_selected_nodes)
             backdrop_left = this.xpos()
             backdrop_top = this.ypos()
             backdrop_right = backdrop_left + this.screenWidth()
@@ -102,33 +102,105 @@ elif knob.name() == 'margin_slider':
             
             if not selNodes:
                 debug_print(f"[DEBUG] No hay nodos dentro del backdrop para hacer autofit")
-                # No usar return aquí, simplemente no hacer nada
+                # No hacer nada si no hay nodos
                 pass
             else:
                 debug_print(f"[DEBUG] Encontrados {len(selNodes)} nodos dentro del backdrop para autofit")
 
-        # Continuar con el cálculo de autofit solo si hay nodos
+        # Continuar con el cálculo de autofit completo solo si hay nodos
         if selNodes:
+            # Obtener el texto y tamaño de fuente del backdrop actual (IGUAL QUE LA FUNCIÓN PRO)
+            user_text = this["label"].getValue()
+            note_font_size = this["note_font_size"].getValue()
+            
+            # Calcular los límites básicos para el nodo de fondo
             bdX = min([node_calc.xpos() for node_calc in selNodes])
             bdY = min([node_calc.ypos() for node_calc in selNodes])
             bdW = max([node_calc.xpos() + node_calc.screenWidth() for node_calc in selNodes]) - bdX
             bdH = max([node_calc.ypos() + node_calc.screenHeight() for node_calc in selNodes]) - bdY
 
-            debug_print(f"[DEBUG] Límites calculados: X={bdX}, Y={bdY}, W={bdW}, H={bdH}")
+            debug_print(f"[DEBUG] Límites calculados básicos: X={bdX}, Y={bdY}, W={bdW}, H={bdH}")
             
-            # Aplicar padding y calcular nuevas dimensiones
-            bdX_new = bdX - padding
-            bdY_new = bdY - padding  
-            bdW_new = bdW + (2 * padding)
-            bdH_new = bdH + (2 * padding)
+            # ===== AQUÍ VIENE LA LÓGICA COMPLETA DE TEXTO (copiada de fit_to_selected_nodes) =====
             
-            # Aplicar los nuevos valores al backdrop
-            this["xpos"].setValue(bdX_new)
-            this["ypos"].setValue(bdY_new)
-            this["bdwidth"].setValue(bdW_new)
-            this["bdheight"].setValue(bdH_new)
+            # Función para eliminar tags HTML
+            import re
+            def strip_html_tags_inline(text):
+                clean_text = re.sub(r"<.*?>", "", text)
+                return clean_text
             
-            debug_print(f"[DEBUG] Autofit aplicado: X={bdX_new}, Y={bdY_new}, W={bdW_new}, H={bdH_new}")
+            # Función para calcular extra top
+            def calculate_extra_top_inline(text, font_size):
+                line_count = text.count("\\n") + 2
+                text_height = font_size * line_count
+                return text_height
+            
+            # Función para calcular mínimo horizontal
+            def calculate_min_horizontal_inline(text, font_size):
+                text = strip_html_tags_inline(text)
+                debug_print(f"[DEBUG INLINE] Texto utilizado para el cálculo: {text}")
+                
+                # Calcular el ajuste del tamaño de la fuente
+                adjustment = 0.2 * font_size - 1.5
+                adjusted_font_size = font_size - adjustment
+                
+                # Crear una fuente con la familia Verdana y el tamaño ajustado
+                from PySide2.QtGui import QFontMetrics, QFont
+                font = QFont("Verdana")
+                font.setPointSize(adjusted_font_size)
+                metrics = QFontMetrics(font)
+                
+                lines = text.split("\\n")
+                max_width = max(metrics.horizontalAdvance(line) for line in lines)
+                min_horizontal = max_width
+                
+                debug_print(f"[DEBUG INLINE] Línea más larga tiene {max_width} píxeles de ancho.")
+                debug_print(f"[DEBUG INLINE] Ancho mínimo calculado: {min_horizontal}")
+                return min_horizontal
+            
+            # Calcular el tamaño adicional necesario para el texto
+            extra_top = calculate_extra_top_inline(user_text, note_font_size)
+            debug_print(f"[DEBUG] extra_top fit: {extra_top}")
+            
+            # Calcular el ancho mínimo necesario para el texto
+            min_horizontal = calculate_min_horizontal_inline(user_text, note_font_size)
+            debug_print(f"[DEBUG] min_horizontal nuevo: {min_horizontal}")
+            
+            # Expandir los límites para dejar un pequeño borde (IGUAL QUE LA FUNCIÓN PRO)
+            if padding < extra_top:
+                top = -extra_top
+            else:
+                top = -padding
+            
+            debug_print(f"[DEBUG] top nuevo fit: {top}")
+            bottom = padding
+            debug_print(f"[DEBUG] bottom nuevo fit: {bottom}")
+            
+            # Ajustar los valores de left y right para asegurar el mínimo horizontal
+            left = -1 * padding
+            debug_print(f"[DEBUG] left nuevo: {left}")
+            additional_width = max(0, min_horizontal - bdW)
+            left_adjustment = additional_width / 2
+            right_adjustment = additional_width / 2
+            
+            right = padding + right_adjustment
+            debug_print(f"[DEBUG] right nuevo: {right}")
+            left -= left_adjustment
+            debug_print(f"[DEBUG] left ajustado: {left}")
+            
+            bdX += left
+            bdY += top
+            bdW += right - left
+            bdH += bottom - top
+            
+            # ===== APLICAR LOS NUEVOS VALORES (SIN TOCAR Z-ORDER) =====
+            this["xpos"].setValue(bdX)
+            this["bdwidth"].setValue(bdW)
+            this["ypos"].setValue(bdY)
+            this["bdheight"].setValue(bdH)
+            
+            debug_print(f"[DEBUG] Autofit COMPLETO aplicado: X={bdX}, Y={bdY}, W={bdW}, H={bdH}")
+            debug_print(f"[DEBUG] Z-order NO modificado (preservado)")
         else:
             debug_print(f"[DEBUG] No se encontraron nodos para autofit")
         

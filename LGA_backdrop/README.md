@@ -29,11 +29,11 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 - **8 Colores básicos**: Red, Green, Blue, Yellow, Cyan, Magenta, Orange, Purple
 
 ### Sección de Resize
-- **Margin**: Slider automático para configurar el margen del auto fit (rango 10-200) - ejecuta autofit al cambiar
-- **Auto Fit**: Botón para redimensionar manualmente abarcando nodos seleccionados o nodos dentro del backdrop
+- **Margin**: Slider automático para configurar el margen del auto fit (rango 10-200) - ejecuta autofit completo al cambiar (preserva Z-order)
+- **Auto Fit**: Botón para redimensionar manualmente abarcando nodos seleccionados o nodos dentro del backdrop (preserva Z-order)
 
 ### Sección de Z-Order (copiada de oz_backdrop)
-- **Z Order**: Slider con labels "Back" y "Front" (rango -5 a +5)
+- **Z Order**: Slider con labels "Back" y "Front" (rango -10 a +10)
 
 ## Sistema de Preservación de Estado
 
@@ -88,8 +88,9 @@ if "nuevo_knob" not in node.knobs():
 ### Autofit Automático con Margin Slider
 - **Autofit en tiempo real**: El slider de margin ejecuta autofit automáticamente al cambiar su valor
 - **Sin necesidad de botón**: No es necesario hacer clic en el botón Auto Fit, el cambio es inmediato
-- **Callback inteligente**: Usa `knob_changed_script()` para detectar cambios en `margin_slider` y ejecutar la función inline
-- **Función inline**: La lógica de autofit se ejecuta directamente en el callback para evitar problemas de importación
+- **Función completa**: Usa la misma lógica que el botón autofit, respetando texto multilínea, font size y cálculos precisos
+- **Preservación de Z-order**: El autofit automático NO modifica el Z-order del backdrop (a diferencia del botón)
+- **Callback inteligente**: Usa `knob_changed_script()` con función inline completa que incluye cálculo de texto
 - **Debug extensivo**: Sistema completo de debug prints para monitorear el funcionamiento del autofit automático
 
 ### Métodos de Optimización
