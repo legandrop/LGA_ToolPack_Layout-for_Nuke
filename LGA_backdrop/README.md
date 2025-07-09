@@ -18,12 +18,11 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 
 ## Funcionalidades Avanzadas
 
-### Tab "backdrop" (no "Settings")
-- **Label**: Campo de texto estilo Nuke nativo (`Multiline_Eval_String_Knob`) con altura multilínea persistente
-- **Font Size**: Campo numérico con slider (rango 10-100)
-- **Bold**: Botón toggle para aplicar/quitar estilo bold al texto del backdrop (usa tags HTML `<b></b>` internamente sin mostrarlos en el campo de entrada)
-- **Italic**: Botón toggle para aplicar/quitar estilo italic al texto del backdrop (usa tags HTML `<i></i>` internamente sin mostrarlos en el campo de entrada)
-- **Margin**: Dropdown para alineación del texto (Left/Center/Right) usando tags HTML `<div align="">` internamente
+### Tab "backdrop" 
+- **Label**: Link directo al `label` nativo del BackdropNode usando `Link_Knob`
+- **Font Size**: Slider numérico (`lga_note_font_size`) sincronizado con `note_font_size` nativo
+- **Font**: Link directo al `note_font` nativo del BackdropNode con dropdown de fuentes y controles Bold/Italic integrados
+- **Margin**: Dropdown (`lga_margin`) para alineación del texto (Left/Center/Right) con aplicación automática de tags HTML
 
 ### Sección de Colores
 - **Random Color**: Botón para generar color aleatorio
@@ -39,59 +38,41 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 ## Sistema de Preservación de Estado
 
 ### Problemas Resueltos
-1. **Altura Multilínea**: Los `Multiline_Eval_String_Knob` en Nuke pierden su altura visual después de guardar y recargar scripts
-2. **Valores de Knobs**: Font size, margin slider, bold, italic, Z-order y alignment se resetean al valor por defecto al recargar scripts
-3. **Separación de Presentación**: Los tags HTML para bold, italic y alignment no deben aparecer en el campo de entrada del usuario
+1. **Duplicación de Link_Knobs**: Los Link_Knobs se duplicaban al guardar y recargar scripts debido a recreación innecesaria
+2. **Preservación de Valores**: Font size, margin alignment y Z-order se resetean al recargar scripts
+3. **Sincronización**: Los knobs personalizados no se sincronizaban correctamente con los knobs nativos del BackdropNode
 
 ### Soluciones Implementadas
-- **Bandera RESIZABLE**: Se aplica automáticamente a todos los `lga_label` knobs usando `setFlag(0x0008)`
-- **Callback onScriptLoad**: Detecta backdrops existentes al cargar scripts y preserva valores existentes
-- **Recreación inteligente**: Solo recrea knobs cuando es necesario, preservando valores de font size, margin slider, bold, italic, Z-order y alignment
-- **Separación de capas**: `lga_label` contiene texto limpio, `label` nativo contiene HTML con formato
-- **Detección automática**: Al cargar scripts, detecta automáticamente si el texto tiene bold, italic y alignment, configurando los knobs apropiados
-- **Callbacks sincronizados**: Maneja cambios aplicando formato HTML completo (bold + italic + alignment) solo al label nativo
+- **Link_Knobs Directos**: Uso de `Link_Knob` para vincular directamente a `label` y `note_font` nativos, eliminando duplicación
+- **Callback onScriptLoad**: `add_knobs_to_existing_backdrops()` detecta backdrops existentes y solo agrega knobs faltantes
+- **Recreación Condicional**: `add_all_knobs()` verifica si los knobs existen antes de crearlos, evitando duplicación
+- **Sincronización Bidireccional**: `knob_changed_script()` sincroniza cambios entre knobs personalizados y nativos
+- **Preservación de Valores**: Los valores de `lga_note_font_size`, `lga_margin` y `zorder` se preservan al recargar scripts
+- **Detección de Alignment**: Detecta automáticamente alignment existente en el `label` y configura el dropdown apropiadamente
 
 ### Archivos Clave
 - **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_knobs.py`**:
-  - `create_label_knob()`: Aplica bandera RESIZABLE al crear knobs
-  - `create_font_bold_section()`: Crea botones toggle para bold e italic con preservación de estado
-  - `create_margin_alignment_section()`: Crea dropdown para alignment con preservación de estado
-  - `create_resize_section()`: Crea sección de margin con slider y botón auto fit
-  - `add_all_knobs()`: Maneja creación y recreación inteligente preservando valores
+  - `create_font_size_knob()`: Crea slider para font size sincronizado con knob nativo
+  - `add_all_knobs()`: Maneja creación condicional de knobs, evitando duplicación y preservando valores
+  - `add_knobs_to_existing_backdrops()`: Callback onScriptLoad que agrega knobs faltantes a backdrops existentes
 - **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_callbacks.py`**:
-  - `add_knobs_to_existing_backdrops()`: Callback registrado con `nuke.addOnScriptLoad`
-  - `knob_changed_script()`: Maneja sincronización de knobs y aplicación de formato HTML (bold + italic + alignment)
+  - `knob_changed_script()`: Sincroniza cambios entre `lga_note_font_size` ↔ `note_font_size` y maneja alignment HTML
 - **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_fit.py`**:
   - `fit_to_selected_nodes()`: Redimensiona backdrop usando valor del margin slider
 
 ### Agregar Nuevos Knobs
 Para añadir nuevos knobs personalizados al tab "backdrop":
 
-1. **Crear función de knob** en `LGA_BD_knobs.py`:
+1. **Agregar verificación condicional** en `add_all_knobs()` dentro de `LGA_BD_knobs.py`:
 ```python
-def create_nuevo_knob():
-    """Crea el nuevo knob personalizado"""
-    knob = nuke.String_Knob("nuevo_knob", "Nuevo Knob")
-    # Aplicar flags necesarios
-    return knob
+# Ejemplo: crear nuevo knob solo si no existe
+if "nuevo_knob" not in node.knobs():
+    nuevo_knob = nuke.String_Knob("nuevo_knob", "Nuevo Knob")
+    node.addKnob(nuevo_knob)
+    debug_print(f"[DEBUG] Created nuevo_knob")
 ```
 
-2. **Añadir a add_all_knobs()** en `LGA_BD_knobs.py`:
-```python
-# Después de los knobs existentes y antes de los dividers/secciones
-nuevo_knob = create_nuevo_knob()
-node.addKnob(nuevo_knob)
-```
-
-3. **Actualizar lista de eliminación** en la misma función:
-```python
-custom_knob_names = [
-    "lga_label", "lga_note_font_size", "bold_space", "lga_bold_button", "lga_bold_state", "lga_italic_button", "lga_italic_state", "margin_align_label", "lga_margin", "nuevo_knob",  # Añadir aquí
-    "divider_1", "random_color", ...
-]
-```
-
-**⚠️ Importante**: Solo es necesario añadir en `add_all_knobs()`. No se requieren modificaciones adicionales en callbacks.
+**⚠️ Importante**: Siempre usar verificación `if "knob_name" not in node.knobs():` para evitar duplicación al recargar scripts.
 
 ## Cálculo de Tamaño Inteligente
 
