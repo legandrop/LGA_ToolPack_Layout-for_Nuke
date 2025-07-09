@@ -85,12 +85,12 @@ def nodeIsInside(node, backdropNode):
     return topLeft and bottomRight
 
 
-def fit_selected_nodes():
+def fit_to_selected_nodes():
     """
     Redimensiona el backdrop para abarcar todos los nodos seleccionados
     """
     this = nuke.thisNode()
-    padding = this["sides"].getValue()
+    padding = this["margin_slider"].getValue()
 
     if this.isSelected:
         this.setSelected(False)

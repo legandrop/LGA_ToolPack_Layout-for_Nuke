@@ -27,8 +27,6 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 - **8 Colores básicos**: Red, Green, Blue, Yellow, Cyan, Magenta, Orange, Purple
 
 ### Sección de Resize (copiada de oz_backdrop)
-- **Grow**: Botón para agrandar el backdrop 50pt en todas las direcciones
-- **Shrink**: Botón para encoger el backdrop 50pt en todas las direcciones  
 - **Encompass**: Botón para redimensionar automáticamente abarcando nodos seleccionados
 - **Padding**: Campo numérico para el margen del encompass
 

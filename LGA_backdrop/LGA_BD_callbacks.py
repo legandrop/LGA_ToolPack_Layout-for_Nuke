@@ -22,6 +22,7 @@ elif knob.name() == 'z_order':
     # Sincronizar z_order con el slider zorder
     if 'zorder' in node.knobs():
         node['zorder'].setValue(knob.value())
+
 elif knob.name() == 'lga_label':
     # Sincronizar el label personalizado con el knob label nativo del BackdropNode
     node['label'].setValue(knob.value())
@@ -50,8 +51,11 @@ def add_knobs_to_existing_backdrops():
             user_text = node["label"].value()
             print(f"[DEBUG] Using native label value: '{user_text}'")
 
+        # Obtener el valor actual del font size
+        current_font_size = node["note_font_size"].getValue()
+
         print(f"[DEBUG] Calling add_all_knobs for node: {node.name()}")
-        LGA_BD_knobs.add_all_knobs(node, user_text)
+        LGA_BD_knobs.add_all_knobs(node, user_text, current_font_size)
         print(f"[DEBUG] Finished processing node: {node.name()}")
 
     print(f"[DEBUG] add_knobs_to_existing_backdrops completed")

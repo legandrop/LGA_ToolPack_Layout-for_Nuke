@@ -91,93 +91,56 @@ node['tile_color'].setValue({color_value})
     return color_knobs
 
 
-def create_resize_section():
+def create_resize_section(margin_value=50):
     """Crea la seccion de resize"""
     knobs = []
 
-    # Botones grow y shrink
-    grow = nuke.PyScript_Knob(
-        "grow",
-        ' <img src="MergeMin.png" width="20" height="20">',
-        """
-n = nuke.thisNode()
-
-def grow(node=None, step=50):
-    try:
-        if not node:
-            n = nuke.selectedNode()
-        else:
-            n = node
-            n['xpos'].setValue(n['xpos'].getValue() - step)
-            n['ypos'].setValue(n['ypos'].getValue() - step)
-            n['bdwidth'].setValue(n['bdwidth'].getValue() + step * 2)
-            n['bdheight'].setValue(n['bdheight'].getValue() + step * 2)
-    except Exception as e:
-        print('Error:: %s' % e)
-
-grow(n, 50)
-""",
-    )
-    grow.setTooltip("Grows the size of the Backdrop by 50pt in every direction")
-
-    shrink = nuke.PyScript_Knob(
-        "shrink",
-        ' <img src="MergeMax.png" width="20" height="20">',
-        """
-n = nuke.thisNode()
-
-def shrink(node=None, step=50):
-    try:
-        if not node:
-            n = nuke.selectedNode()
-        else:
-            n = node
-            n['xpos'].setValue(n['xpos'].getValue() + step)
-            n['ypos'].setValue(n['ypos'].getValue() + step)
-            n['bdwidth'].setValue(n['bdwidth'].getValue() - step * 2)
-            n['bdheight'].setValue(n['bdheight'].getValue() - step * 2)
-    except Exception as e:
-        print('Error:: %s' % e)
-
-shrink(n, 50)
-""",
-    )
-    shrink.setTooltip("Shrinks the size of the Backdrop by 50pt in every direction")
-
-    # Boton fit
     # Construir la ruta absoluta al icono
     icon_path = os.path.join(os.path.dirname(__file__), "icons", "lga_bd_fit.png")
+
+    # Label para Margin
+    margin_label = nuke.Text_Knob("margin_label", "", "Margin      ")
+
+    # Slider para margin
+    margin_slider = nuke.Double_Knob("margin_slider", "")
+    margin_slider.setRange(10, 200)
+    margin_slider.setValue(margin_value)  # usar el valor pasado como parámetro
+    margin_slider.setFlag(nuke.NO_ANIMATION)
+    margin_slider.setTooltip("Margin slider for auto fit")
+
+    # Label para Auto Fit
+    autofit_label = nuke.Text_Knob("autofit_label", "", "          Auto Fit  ")
+
+    # Boton Auto Fit
     fit_button = nuke.PyScript_Knob(
-        "fit_selected_nodes",
+        "fit_to_selected_nodes",
         f' <img src="{icon_path}" width="20" height="20">',
         """
 import LGA_BD_fit
-LGA_BD_fit.fit_selected_nodes()
+LGA_BD_fit.fit_to_selected_nodes()
 """,
     )
     fit_button.setTooltip(
         "Will resize the backdrop to fit every selected nodes plus a padding number"
     )
 
-    # Padding para fit
-    fit_padding = nuke.Int_Knob("sides", "")
-    fit_padding.setValue(50)  # default value
-    fit_padding.clearFlag(nuke.STARTLINE)
-    fit_padding.setTooltip(
-        "When fitting nodes this number of pt will be added to the Backdrop size in every direction"
-    )
+    # Espacio después del botón de fit
+    fit_space = nuke.Text_Knob("fit_space", "", "   ")
 
     # Configurar para que todos los elementos estén en una sola línea
-    shrink.clearFlag(nuke.STARTLINE)
+    margin_label.clearFlag(nuke.STARTLINE)
+    margin_slider.clearFlag(nuke.STARTLINE)
+    autofit_label.clearFlag(nuke.STARTLINE)
     fit_button.clearFlag(nuke.STARTLINE)
-    fit_padding.clearFlag(nuke.STARTLINE)
+    fit_space.clearFlag(nuke.STARTLINE)
 
     knobs.extend(
         [
-            grow,
-            shrink,
+            margin_label,
+            margin_slider,
+            autofit_label,
             fit_button,
-            fit_padding,
+            fit_space,
         ]
     )
 
@@ -195,20 +158,35 @@ def create_zorder_section():
     zorder.setRange(-5, +5)
     zorder_front_label = nuke.Text_Knob("zorder_front", "", " Front")
 
+    # Espacio después del label Front
+    zorder_space = nuke.Text_Knob("zorder_space", "", "   ")
+
     # Configurar flags para que aparezcan en la misma linea
     zorder_label.clearFlag(nuke.STARTLINE)
     zorder_back_label.clearFlag(nuke.STARTLINE)
     zorder.clearFlag(nuke.STARTLINE)
     zorder_front_label.clearFlag(nuke.STARTLINE)
+    zorder_space.clearFlag(nuke.STARTLINE)
     zorder.setFlag(nuke.NO_ANIMATION)
 
-    knobs.extend([zorder_label, zorder_back_label, zorder, zorder_front_label])
+    knobs.extend(
+        [zorder_label, zorder_back_label, zorder, zorder_front_label, zorder_space]
+    )
 
     return knobs
 
 
-def add_all_knobs(node, user_text="", note_font_size=42):
+def add_all_knobs(node, user_text="", note_font_size=None):
     """Agrega todos los knobs al nodo"""
+    # Obtener el valor actual del font size si no se proporciona
+    if note_font_size is None:
+        note_font_size = node["note_font_size"].getValue()
+
+    # Obtener valores existentes para preservarlos
+    existing_margin_value = 50  # default
+    if "margin_slider" in node.knobs():
+        existing_margin_value = node["margin_slider"].getValue()
+
     # Verificar si ya existen knobs personalizados
     has_custom_knobs = "backdrop" in node.knobs()
 
@@ -250,15 +228,17 @@ def add_all_knobs(node, user_text="", note_font_size=42):
             "color_purple",
             "space_color_newline_7",
             "divider_2",
-            "grow",
-            "shrink",
-            "fit_selected_nodes",
-            "sides",
+            "margin_label",
+            "margin_slider",
+            "autofit_label",
+            "fit_to_selected_nodes",
+            "fit_space",
             "divider_3",
             "z_order_label",
             "zorder_back",
             "zorder",
             "zorder_front",
+            "zorder_space",
         ]
 
         # Eliminar todos los knobs personalizados existentes (EXCEPTO el tab)
@@ -302,7 +282,7 @@ def add_all_knobs(node, user_text="", note_font_size=42):
     node.addKnob(create_divider("2"))
 
     # Seccion de resize
-    resize_knobs = create_resize_section()
+    resize_knobs = create_resize_section(existing_margin_value)
     for knob in resize_knobs:
         node.addKnob(knob)
 
