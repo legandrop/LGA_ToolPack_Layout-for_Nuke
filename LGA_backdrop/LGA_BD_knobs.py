@@ -34,6 +34,9 @@ class ColorSwatchWidget(QtWidgets.QWidget):
     SWATCH_CSS = "background-color: rgb(%03d,%03d,%03d); border: none; height: 40px;"
     SWATCH_COLOR = (58, 58, 58)
 
+    # Variable para controlar la saturacion del gradiente en el boton random (0.0 a 1.0)
+    RANDOM_GRADIENT_SATURATION = 0.7
+
     def __init__(self, node=None):
         super(ColorSwatchWidget, self).__init__()
         self.node = node
@@ -113,6 +116,12 @@ class ColorSwatchWidget(QtWidgets.QWidget):
             b = hue_to_rgb(p, q, h - 1 / 3)
 
         return int(r * 255), int(g * 255), int(b * 255)
+
+    def _saturate_rgb(self, r, g, b, saturation_factor):
+        """Ajusta la saturacion de un color RGB (0-255) por un factor (0.0 a 1.0)"""
+        h, l, s = self._rgb_to_hls(r, g, b)
+        new_s = s * saturation_factor
+        return self._hls_to_rgb(h, l, new_s)
 
     def _generate_color_variations(self):
         """Genera 5 variaciones para cada color base"""
@@ -235,15 +244,39 @@ class ColorSwatchWidget(QtWidgets.QWidget):
             if color_name == "random" and rgb_values == "gradient":
                 # Botón especial con gradiente multicolor
                 color_knob.setToolTip("Click to Apply Random Color!")
-                gradient_css = """
+
+                # Generar colores para el gradiente con saturacion controlada
+                gradient_colors_rgb = [
+                    (255, 0, 0),
+                    (255, 127, 0),
+                    (255, 255, 0),
+                    (0, 255, 0),
+                    (0, 0, 255),
+                    (139, 0, 255),
+                    (255, 0, 255),
+                ]
+
+                # Aplicar el factor de saturacion a cada color
+                saturated_colors = []
+                for r, g, b in gradient_colors_rgb:
+                    saturated_colors.append(
+                        self._saturate_rgb(r, g, b, self.RANDOM_GRADIENT_SATURATION)
+                    )
+
+                # Construir el string CSS para el gradiente
+                stop_values = [
+                    "stop: 0 rgb(%d, %d, %d)" % saturated_colors[0],
+                    "stop: 0.16 rgb(%d, %d, %d)" % saturated_colors[1],
+                    "stop: 0.33 rgb(%d, %d, %d)" % saturated_colors[2],
+                    "stop: 0.5 rgb(%d, %d, %d)" % saturated_colors[3],
+                    "stop: 0.66 rgb(%d, %d, %d)" % saturated_colors[4],
+                    "stop: 0.83 rgb(%d, %d, %d)" % saturated_colors[5],
+                    "stop: 1 rgb(%d, %d, %d)" % saturated_colors[6],
+                ]
+
+                gradient_css = f"""
                     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
-                        stop: 0 rgb(255, 0, 0),
-                        stop: 0.16 rgb(255, 127, 0),
-                        stop: 0.33 rgb(255, 255, 0),
-                        stop: 0.5 rgb(0, 255, 0),
-                        stop: 0.66 rgb(0, 0, 255),
-                        stop: 0.83 rgb(139, 0, 255),
-                        stop: 1 rgb(255, 0, 255));
+                        {', '.join(stop_values)});
                     border: none;
                     height: 40px;
                 """
@@ -344,13 +377,22 @@ class ColorSwatchWidget(QtWidgets.QWidget):
 
         # Convertir a formato hex para Nuke
         hex_color = (r << 24) | (g << 16) | (b << 8) | 255
-        self.node["tile_color"].setValue(hex_color)
+        if (
+            self.node
+            and hasattr(self.node, "__getitem__")
+            and "tile_color" in self.node.knobs()
+        ):
+            self.node["tile_color"].setValue(hex_color)
 
-        # Reset tracking para colores random
-        self._last_applied_color = None
-        self._last_applied_index = -1
+            # Reset tracking para colores random
+            self._last_applied_color = None
+            self._last_applied_index = -1
 
-        debug_print(f"[DEBUG] Applied random color: RGB({r}, {g}, {b}) = {hex_color}")
+            debug_print(
+                f"[DEBUG] Applied random color: RGB({r}, {g}, {b}) = {hex_color}"
+            )
+        else:
+            debug_print(f"[DEBUG] Error: Invalid node or missing tile_color knob")
 
     def makeUI(self):
         return self
