@@ -6,7 +6,7 @@ import nuke
 import LGA_BD_knobs
 
 # Variable global para activar o desactivar los prints
-DEBUG = True
+DEBUG = False
 
 
 def debug_print(*message):
@@ -21,7 +21,7 @@ def knob_changed_script():
     return """
 # Callback para knobChanged del LGA_backdrop
 # Variable global para activar o desactivar los prints
-DEBUG = True
+DEBUG = False
 
 def debug_print(*message):
     if DEBUG:
@@ -55,16 +55,6 @@ elif knob.name() == 'margin_slider':
     debug_print(f"[DEBUG] Ejecutando autofit automático...")
     
     try:
-        # Intentar varias formas de importar el módulo
-        import sys
-        import os
-        
-        # Agregar la ruta del directorio actual al path
-        current_dir = os.path.dirname(node.name())  # Esto no funciona, pero intentamos
-        
-        # Método más directo: ejecutar el código directamente
-        debug_print(f"[DEBUG] Intentando ejecutar fit_to_selected_nodes directamente...")
-        
         # Copiar la función directamente aquí para evitar problemas de import
         this = node
         padding = this["margin_slider"].getValue()
@@ -108,11 +98,12 @@ elif knob.name() == 'margin_slider':
             
             if not selNodes:
                 debug_print(f"[DEBUG] No hay nodos dentro del backdrop para hacer autofit")
-                return
-            
-            debug_print(f"[DEBUG] Encontrados {len(selNodes)} nodos dentro del backdrop para autofit")
+                # No usar return aquí, simplemente no hacer nada
+                pass
+            else:
+                debug_print(f"[DEBUG] Encontrados {len(selNodes)} nodos dentro del backdrop para autofit")
 
-        # Continuar con el cálculo de autofit
+        # Continuar con el cálculo de autofit solo si hay nodos
         if selNodes:
             bdX = min([node_calc.xpos() for node_calc in selNodes])
             bdY = min([node_calc.ypos() for node_calc in selNodes])
@@ -213,7 +204,31 @@ def add_knobs_to_existing_backdrops():
         LGA_BD_knobs.add_all_knobs(node, clean_text, existing_margin_alignment)
         debug_print(f"[DEBUG] Finished processing node: {node.name()}")
 
+        # NUEVA FUNCIONALIDAD: Asegurar que los sliders no tengan animación
+        debug_print(
+            f"[DEBUG] Aplicando NO_ANIMATION a sliders para node: {node.name()}"
+        )
+        fix_animation_flags(node)
+
     debug_print(f"[DEBUG] add_knobs_to_existing_backdrops completed")
+
+
+def fix_animation_flags(node):
+    """
+    Aplica el flag NO_ANIMATION a todos los sliders que no deben tener animación
+    """
+    slider_knobs = ["margin_slider", "zorder", "lga_note_font_size"]
+
+    for knob_name in slider_knobs:
+        if knob_name in node.knobs():
+            knob = node[knob_name]
+            if hasattr(knob, "setFlag"):
+                knob.setFlag(nuke.NO_ANIMATION)
+                debug_print(f"[DEBUG] Applied NO_ANIMATION to {knob_name}")
+            else:
+                debug_print(
+                    f"[DEBUG] Could not apply NO_ANIMATION to {knob_name} - no setFlag method"
+                )
 
 
 def setup_callbacks(node):

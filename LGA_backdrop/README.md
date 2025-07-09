@@ -56,7 +56,8 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
   - `add_all_knobs()`: Maneja creación condicional de knobs, evitando duplicación y preservando valores
   - `add_knobs_to_existing_backdrops()`: Callback onScriptLoad que agrega knobs faltantes a backdrops existentes
 - **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_callbacks.py`**:
-  - `knob_changed_script()`: Sincroniza cambios entre knobs y ejecuta autofit automático en cambios de `margin_slider`
+  - `knob_changed_script()`: Sincroniza cambios entre knobs y ejecuta autofit automático inline en cambios de `margin_slider`
+  - `fix_animation_flags()`: Aplica el flag NO_ANIMATION a sliders para evitar iconos de animación no deseados
 - **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_fit.py`**:
   - `fit_to_selected_nodes()`: Redimensiona backdrop usando valor del margin slider o nodos internos
   - `find_nodes_inside_backdrop()`: Encuentra eficientemente nodos dentro del backdrop actual
@@ -87,7 +88,9 @@ if "nuevo_knob" not in node.knobs():
 ### Autofit Automático con Margin Slider
 - **Autofit en tiempo real**: El slider de margin ejecuta autofit automáticamente al cambiar su valor
 - **Sin necesidad de botón**: No es necesario hacer clic en el botón Auto Fit, el cambio es inmediato
-- **Callback inteligente**: Usa `knob_changed_script()` para detectar cambios en `margin_slider` y ejecutar la función automáticamente
+- **Callback inteligente**: Usa `knob_changed_script()` para detectar cambios en `margin_slider` y ejecutar la función inline
+- **Función inline**: La lógica de autofit se ejecuta directamente en el callback para evitar problemas de importación
+- **Debug extensivo**: Sistema completo de debug prints para monitorear el funcionamiento del autofit automático
 
 ### Métodos de Optimización
 - **`nuke.allNodes()`**: Función nativa optimizada que es la forma más eficiente de obtener nodos en Nuke
