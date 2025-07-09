@@ -169,7 +169,7 @@ def autoBackdrop():
                 if nodeIsInside(nonBackdrop, backdrop):
                     zOrder = max(zOrder, backdrop["z_order"].getValue() + 1)
 
-    # Usar las funciones de calculo de tamaño como en oz_backdrop
+    # Usar las funciones de calculo de tamaño backdrop
     note_font_size = 42  # Default font size
 
     # Calcular el tamaño adicional necesario para el texto
@@ -215,7 +215,7 @@ def autoBackdrop():
     )
 
     # Agregar todos los knobs personalizados
-    LGA_BD_knobs.add_all_knobs(n, user_text)
+    LGA_BD_knobs.add_all_knobs(n, user_text, note_font_size)
 
     # Configurar callbacks
     LGA_BD_callbacks.setup_callbacks(n)

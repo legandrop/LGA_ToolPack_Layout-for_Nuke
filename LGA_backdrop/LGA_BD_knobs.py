@@ -3,6 +3,7 @@ LGA_BD_knobs.py - Manejo modular de knobs para LGA_backdrop
 """
 
 import nuke
+import os
 
 
 def create_divider(name=""):
@@ -17,14 +18,16 @@ def create_space(name="", text=" "):
 
 def create_label_knob():
     """Crea el knob de label estilo Nuke nativo (multilinea)"""
-    label = nuke.Multiline_Eval_String_Knob("label", "label")
+    # Renombrar para evitar conflicto con el knob 'label' nativo del BackdropNode
+    label = nuke.Multiline_Eval_String_Knob("lga_label", "Label")
     label.setFlag(nuke.STARTLINE)
     return label
 
 
 def create_font_size_knob(default_size=42):
     """Crea el knob de font size con slider"""
-    size = nuke.Double_Knob("note_font_size", "Font Size")
+    # Renombrar para evitar conflicto con el knob 'note_font_size' nativo del BackdropNode
+    size = nuke.Double_Knob("lga_note_font_size", "Font Size")
     size.setRange(10, 100)
     size.setValue(default_size)
     size.setFlag(nuke.NO_ANIMATION)
@@ -87,7 +90,7 @@ def create_resize_section():
     # Botones grow y shrink
     grow = nuke.PyScript_Knob(
         "grow",
-        ' <img src="MergeMin.png">',
+        ' <img src="MergeMin.png" width="20" height="20">',
         """
 n = nuke.thisNode()
 
@@ -111,7 +114,7 @@ grow(n, 50)
 
     shrink = nuke.PyScript_Knob(
         "shrink",
-        ' <img src="MergeMax.png">',
+        ' <img src="MergeMax.png" width="20" height="20">',
         """
 n = nuke.thisNode()
 
@@ -134,9 +137,11 @@ shrink(n, 50)
     shrink.setTooltip("Shrinks the size of the Backdrop by 50pt in every direction")
 
     # Boton fit
+    # Construir la ruta absoluta al icono
+    icon_path = os.path.join(os.path.dirname(__file__), "icons", "lga_bd_fit.png")
     fit_button = nuke.PyScript_Knob(
         "fit_selected_nodes",
-        ' <img src="ContactSheet.png">',
+        f' <img src="{icon_path}" width="20" height="20">',
         """
 import LGA_BD_fit
 LGA_BD_fit.fit_selected_nodes()
@@ -194,20 +199,20 @@ def create_zorder_section():
     return knobs
 
 
-def add_all_knobs(node, user_text=""):
+def add_all_knobs(node, user_text="", note_font_size=42):
     """Agrega todos los knobs al nodo"""
     # Tab principal
     tab = nuke.Tab_Knob("backdrop")  # Cambiar de 'Settings' a 'backdrop'
     node.addKnob(tab)
 
-    # Label (estilo Nuke nativo)
-    label = create_label_knob()
-    label.setValue(user_text)
-    node.addKnob(label)
+    # Label (estilo Nuke nativo) - ahora con nombre unico
+    lga_label_knob = create_label_knob()
+    lga_label_knob.setValue(user_text)
+    node.addKnob(lga_label_knob)
 
-    # Font Size
-    font_size = create_font_size_knob()
-    node.addKnob(font_size)
+    # Font Size - ahora con nombre unico
+    lga_font_size_knob = create_font_size_knob(default_size=note_font_size)
+    node.addKnob(lga_font_size_knob)
 
     # Divider 1
     node.addKnob(create_divider("1"))
