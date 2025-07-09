@@ -125,8 +125,11 @@ def create_resize_section(margin_value=50):
     # Construir la ruta absoluta al icono
     icon_path = os.path.join(os.path.dirname(__file__), "icons", "lga_bd_fit.png")
 
+    # Label principal para Resize (siguiendo el patrón de Z Order)
+    resize_label = nuke.Text_Knob("resize_label", "", "    Resize  ")
+
     # Label para Margin
-    margin_label = nuke.Text_Knob("margin_label", "", "Margin      ")
+    margin_label = nuke.Text_Knob("margin_label", "", "Margin ")
 
     # Slider para margin
     margin_slider = nuke.Double_Knob("margin_slider", "")
@@ -136,7 +139,7 @@ def create_resize_section(margin_value=50):
     margin_slider.setTooltip("Margin slider for auto fit")
 
     # Label para Auto Fit
-    autofit_label = nuke.Text_Knob("autofit_label", "", "          Auto Fit  ")
+    autofit_label = nuke.Text_Knob("autofit_label", "", "     Auto Fit  ")
 
     # Boton Auto Fit
     fit_button = nuke.PyScript_Knob(
@@ -148,13 +151,14 @@ LGA_BD_fit.fit_to_selected_nodes()
 """,
     )
     fit_button.setTooltip(
-        "Will resize the backdrop to fit every selected nodes plus a padding number"
+        "Resize the backdrop to fit every included nodes using a margin number"
     )
 
     # Espacio después del botón de fit
-    fit_space = nuke.Text_Knob("fit_space", "", "   ")
+    fit_space = nuke.Text_Knob("fit_space", "", " ")
 
     # Configurar para que todos los elementos estén en una sola línea
+    resize_label.clearFlag(nuke.STARTLINE)
     margin_label.clearFlag(nuke.STARTLINE)
     margin_slider.clearFlag(nuke.STARTLINE)
     autofit_label.clearFlag(nuke.STARTLINE)
@@ -163,6 +167,7 @@ LGA_BD_fit.fit_to_selected_nodes()
 
     knobs.extend(
         [
+            resize_label,
             margin_label,
             margin_slider,
             autofit_label,
@@ -179,7 +184,7 @@ def create_zorder_section(z_value=0):
     knobs = []
 
     # Labels y slider de Z-order
-    zorder_label = nuke.Text_Knob("z_order_label", "", "Z Order     ")
+    zorder_label = nuke.Text_Knob("z_order_label", "", "   Z Order  ")
     zorder_back_label = nuke.Text_Knob("zorder_back", "", "Back ")
     zorder = nuke.Double_Knob("zorder", "")
     zorder.setRange(-10.0, +10.0)
@@ -187,7 +192,7 @@ def create_zorder_section(z_value=0):
     zorder_front_label = nuke.Text_Knob("zorder_front", "", " Front")
 
     # Espacio después del label Front
-    zorder_space = nuke.Text_Knob("zorder_space", "", "   ")
+    zorder_space = nuke.Text_Knob("zorder_space", "", "  ")
 
     # Configurar flags para que aparezcan en la misma linea
     zorder_label.clearFlag(nuke.STARTLINE)
