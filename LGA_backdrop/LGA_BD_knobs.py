@@ -5,6 +5,14 @@ LGA_BD_knobs.py - Manejo modular de knobs para LGA_backdrop
 import nuke
 import os
 
+# Variable global para activar o desactivar los prints
+DEBUG = True
+
+
+def debug_print(*message):
+    if DEBUG:
+        print(*message)
+
 
 def create_divider(name=""):
     """Crea un divider (separador visual)"""
@@ -40,6 +48,27 @@ def create_font_size_knob(default_size=42):
     size.setValue(default_size)
     size.setFlag(nuke.NO_ANIMATION)
     return size
+
+
+def create_font_bold_section(bold_value=False):
+    """Crea la seccion de font bold"""
+    knobs = []
+
+    # Label para Bold
+    bold_label = nuke.Text_Knob("bold_label", "", "      Bold  ")
+
+    # Checkbox para bold
+    bold_checkbox = nuke.Boolean_Knob("lga_bold", "")
+    bold_checkbox.setValue(bold_value)
+    bold_checkbox.setTooltip("Make text bold")
+
+    # Configurar para que aparezcan en la misma línea
+    bold_label.clearFlag(nuke.STARTLINE)
+    bold_checkbox.clearFlag(nuke.STARTLINE)
+
+    knobs.extend([bold_label, bold_checkbox])
+
+    return knobs
 
 
 def create_simple_colors_section():
@@ -187,6 +216,16 @@ def add_all_knobs(node, user_text="", note_font_size=None):
     if "margin_slider" in node.knobs():
         existing_margin_value = node["margin_slider"].getValue()
 
+    existing_bold_value = False  # default
+    if "lga_bold" in node.knobs():
+        existing_bold_value = node["lga_bold"].getValue()
+    else:
+        # Si no existe el knob, detectar bold del texto original
+        original_text = node["label"].getValue()
+        existing_bold_value = original_text.startswith(
+            "<b>"
+        ) and original_text.endswith("</b>")
+
     # Verificar si ya existen knobs personalizados
     has_custom_knobs = "backdrop" in node.knobs()
 
@@ -196,15 +235,17 @@ def add_all_knobs(node, user_text="", note_font_size=None):
             lga_label_knob = node["lga_label"]
             # Verificar si ya tiene la bandera RESIZABLE (0x0008)
             has_resizable_flag = lga_label_knob.getFlag(0x0008)
-            print(f"[DEBUG] lga_label exists, has RESIZABLE flag: {has_resizable_flag}")
+            debug_print(
+                f"[DEBUG] lga_label exists, has RESIZABLE flag: {has_resizable_flag}"
+            )
 
             if has_resizable_flag:
-                print(
+                debug_print(
                     f"[DEBUG] lga_label already has RESIZABLE flag, no recreation needed"
                 )
                 return  # No necesitamos recrear nada
 
-        print(
+        debug_print(
             f"[DEBUG] Custom knobs exist, recreating knobs content (keeping existing tab)"
         )
         # Si ya existen knobs personalizados, eliminar solo los knobs DENTRO del tab
@@ -214,6 +255,8 @@ def add_all_knobs(node, user_text="", note_font_size=None):
         custom_knob_names = [
             "lga_label",
             "lga_note_font_size",
+            "bold_label",
+            "lga_bold",
             "divider_1",
             "random_color",
             "space_color_space1",
@@ -246,14 +289,14 @@ def add_all_knobs(node, user_text="", note_font_size=None):
             if knob_name in node.knobs():
                 try:
                     node.removeKnob(node[knob_name])
-                    print(f"[DEBUG] Removed knob: {knob_name}")
+                    debug_print(f"[DEBUG] Removed knob: {knob_name}")
                 except:
-                    print(f"[DEBUG] Could not remove knob: {knob_name}")
+                    debug_print(f"[DEBUG] Could not remove knob: {knob_name}")
 
-        print(f"[DEBUG] Creating knobs content inside existing backdrop tab")
+        debug_print(f"[DEBUG] Creating knobs content inside existing backdrop tab")
     else:
         # Crear todos los knobs desde cero - primera vez
-        print(f"[DEBUG] Creating all knobs from scratch for node: {node.name()}")
+        debug_print(f"[DEBUG] Creating all knobs from scratch for node: {node.name()}")
 
         # Tab principal - solo si no existe
         tab = nuke.Tab_Knob("backdrop")
@@ -264,11 +307,16 @@ def add_all_knobs(node, user_text="", note_font_size=None):
     lga_label_knob = create_label_knob()
     lga_label_knob.setValue(user_text)
     node.addKnob(lga_label_knob)
-    print(f"[DEBUG] Added lga_label knob with RESIZABLE flag")
+    debug_print(f"[DEBUG] Added lga_label knob with RESIZABLE flag")
 
     # Font Size
     lga_font_size_knob = create_font_size_knob(default_size=note_font_size)
     node.addKnob(lga_font_size_knob)
+
+    # Seccion de Bold
+    bold_knobs = create_font_bold_section(existing_bold_value)
+    for knob in bold_knobs:
+        node.addKnob(knob)
 
     # Divider 1
     node.addKnob(create_divider("1"))
@@ -294,4 +342,5 @@ def add_all_knobs(node, user_text="", note_font_size=None):
     for knob in zorder_knobs:
         node.addKnob(knob)
 
-    print(f"[DEBUG] Finished creating all knobs in correct order")
+    debug_print(f"[DEBUG] Finished creating all knobs in correct order")
+    debug_print(f"[DEBUG] Bold checkbox value set to: {existing_bold_value}")

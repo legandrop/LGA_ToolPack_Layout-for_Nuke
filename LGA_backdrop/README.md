@@ -21,14 +21,15 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 ### Tab "backdrop" (no "Settings")
 - **Label**: Campo de texto estilo Nuke nativo (`Multiline_Eval_String_Knob`) con altura multilínea persistente
 - **Font Size**: Campo numérico con slider (rango 10-100)
+- **Bold**: Checkbox para aplicar/quitar estilo bold al texto del backdrop
 
 ### Sección de Colores
 - **Random Color**: Botón para generar color aleatorio
 - **8 Colores básicos**: Red, Green, Blue, Yellow, Cyan, Magenta, Orange, Purple
 
-### Sección de Resize (copiada de oz_backdrop)
-- **Encompass**: Botón para redimensionar automáticamente abarcando nodos seleccionados
-- **Padding**: Campo numérico para el margen del encompass
+### Sección de Resize
+- **Margin**: Slider para configurar el margen del auto fit (rango 10-200)
+- **Auto Fit**: Botón para redimensionar automáticamente abarcando nodos seleccionados
 
 ### Sección de Z-Order (copiada de oz_backdrop)
 - **Z Order**: Slider con labels "Back" y "Front" (rango -5 a +5)
@@ -47,9 +48,14 @@ Los `Multiline_Eval_String_Knob` en Nuke pierden su altura visual después de gu
 ### Archivos Clave
 - **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_knobs.py`**:
   - `create_label_knob()`: Aplica bandera RESIZABLE al crear knobs
-  - `add_all_knobs()`: Maneja creación y recreación inteligente de knobs
+  - `create_font_bold_section()`: Crea checkbox para bold con preservación de estado
+  - `create_resize_section()`: Crea sección de margin con slider y botón auto fit
+  - `add_all_knobs()`: Maneja creación y recreación inteligente preservando valores
 - **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_callbacks.py`**:
   - `add_knobs_to_existing_backdrops()`: Callback registrado con `nuke.addOnScriptLoad`
+  - `knob_changed_script()`: Maneja sincronización de knobs y aplicación de bold
+- **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_fit.py`**:
+  - `fit_to_selected_nodes()`: Redimensiona backdrop usando valor del margin slider
 
 ### Agregar Nuevos Knobs
 Para añadir nuevos knobs personalizados al tab "backdrop":
@@ -73,7 +79,7 @@ node.addKnob(nuevo_knob)
 3. **Actualizar lista de eliminación** en la misma función:
 ```python
 custom_knob_names = [
-    "lga_label", "lga_note_font_size", "nuevo_knob",  # Añadir aquí
+    "lga_label", "lga_note_font_size", "bold_label", "lga_bold", "nuevo_knob",  # Añadir aquí
     "divider_1", "random_color", ...
 ]
 ```
