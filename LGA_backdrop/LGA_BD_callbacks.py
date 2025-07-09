@@ -91,19 +91,7 @@ elif knob.name() == 'lga_margin':
     
     debug_print(f"[DEBUG] Final formatted text: '{formatted_text}'")
     node['label'].setValue(formatted_text)
-elif knob.name() == 'lga_font_color':
-    # Aplicar color usando note_font_color (knob nativo)
-    debug_print(f"[DEBUG] lga_font_color changed to: {knob.value()}")
-    
-    # Cambiar color usando note_font_color
-    if knob.value() == "black":
-        # Color negro en formato int: 0xFF000000 (como en oz_backdrop)
-        node['note_font_color'].setValue(0xFF000000)
-        debug_print(f"[DEBUG] Font color set to black using note_font_color")
-    else:  # white
-        # Color blanco en formato int: 0xFFFFFFFF (como en oz_backdrop)
-        node['note_font_color'].setValue(0xFFFFFFFF)
-        debug_print(f"[DEBUG] Font color set to white using note_font_color")
+
 """
 
 
