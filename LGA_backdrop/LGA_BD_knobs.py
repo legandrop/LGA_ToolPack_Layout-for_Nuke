@@ -523,6 +523,147 @@ class LGA_AutoFitControlWidget(QtWidgets.QWidget):
 nuke.LGA_AutoFitControlWidget = LGA_AutoFitControlWidget
 
 
+class LGA_SaveDefaultsWidget(QtWidgets.QWidget):
+    """Widget personalizado para el botón Save que guarda configuraciones por defecto."""
+
+    def __init__(self, node=None):
+        super(LGA_SaveDefaultsWidget, self).__init__()
+        self.node = node
+        self._create_ui()
+
+    def _create_ui(self):
+        self.setSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )  # Asegurar que el widget no se estire
+        main_layout = QtWidgets.QHBoxLayout(self)
+        main_layout.setContentsMargins(
+            0, 0, 0, 0
+        )  # Eliminar márgenes internos del layout
+        main_layout.setSpacing(10)  # Eliminar espacio entre los widgets del layout
+        main_layout.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+        )  # Alinear contenido a la DERECHA y verticalmente centrado
+
+        # Añadir un spacer expansivo para consumir el espacio restante a la IZQUIERDA
+        main_layout.addSpacerItem(
+            QtWidgets.QSpacerItem(
+                0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+            )
+        )
+
+        # Botón para el icono
+        save_button = QtWidgets.QPushButton()
+        save_button.setToolTip("Save current properties as default for new backdrops")
+        save_button.clicked.connect(self._on_save_button_clicked)
+
+        # Construir la ruta absoluta al icono
+        icon_path = os.path.join(os.path.dirname(__file__), "icons", "lga_bd_save.png")
+
+        # Cargar el icono y ajustar su tamaño
+        icon = QtGui.QIcon(icon_path)
+        save_button.setIcon(icon)
+        save_button.setIconSize(
+            QtCore.QSize(24, 24)
+        )  # Reducir el tamaño del icono en 10px
+        save_button.setFixedSize(
+            QtCore.QSize(32, 32)
+        )  # Mantener el tamaño del botón igual
+        save_button.setSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )  # Asegurar tamaño fijo del botón
+
+        # Aplicar el estilo CSS al botón
+        save_button.setStyleSheet(
+            """
+            QPushButton {
+                background-color: rgb(58, 58, 58); /* Color de fondo similar a los otros botones */
+                border: none;
+                padding: 0px; /* Añadir padding por defecto del botón */
+            }
+            QPushButton:hover {
+                background-color: rgb(80, 80, 80); /* Color al pasar el ratón */
+            }
+            QPushButton:pressed {
+                background-color: rgb(30, 30, 30); /* Color al presionar */
+            }
+        """
+        )
+
+        main_layout.addWidget(save_button)
+
+        # Establecer tamaño para el widget completo (expandible horizontalmente)
+        self.setFixedHeight(32)  # Altura fija
+        self.setSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed
+        )  # Expandible horizontalmente, altura fija
+
+    def _on_save_button_clicked(self):
+        """Maneja el click del botón y guarda las configuraciones actuales como defaults."""
+        try:
+            import LGA_BD_config
+
+            if not self.node:
+                debug_print("[DEBUG] No node available for saving defaults")
+                return
+
+            # Extraer configuraciones actuales del backdrop
+            current_settings = LGA_BD_config.extract_current_backdrop_settings(
+                self.node
+            )
+
+            # Guardar como defaults
+            success = LGA_BD_config.save_backdrop_defaults(
+                current_settings["font_size"],
+                current_settings["font_name"],
+                current_settings["bold"],
+                current_settings["italic"],
+                current_settings["align"],
+                current_settings["margin"],
+            )
+
+            if success:
+                debug_print("[DEBUG] Backdrop defaults saved successfully")
+                # Mostrar mensaje de confirmación usando nuke.message
+                try:
+                    import nuke
+
+                    nuke.message("Backdrop defaults saved successfully!")
+                except:
+                    debug_print("[DEBUG] Could not show nuke.message")
+            else:
+                debug_print("[DEBUG] Failed to save backdrop defaults")
+                try:
+                    import nuke
+
+                    nuke.message(
+                        "Failed to save backdrop defaults. Check console for details."
+                    )
+                except:
+                    debug_print("[DEBUG] Could not show nuke.message")
+
+        except Exception as e:
+            debug_print(f"[DEBUG] Error saving backdrop defaults: {e}")
+            try:
+                import nuke
+
+                nuke.message(f"Error saving backdrop defaults: {e}")
+            except:
+                debug_print("[DEBUG] Could not show nuke.message")
+
+    def makeUI(self):
+        return self
+
+    def updateValue(self):
+        pass
+
+    def sizeHint(self):
+        """Define el tamaño preferido del widget para el sistema de layout."""
+        return QtCore.QSize(200, 32)  # Devolver el tamaño preferido expandible
+
+
+nuke.LGA_SaveDefaultsWidget = LGA_SaveDefaultsWidget
+
+
 def create_divider(name=""):
     """Crea un divider (separador visual)"""
     return nuke.Text_Knob(f"divider_{name}", "")
@@ -666,6 +807,20 @@ def create_zorder_section(z_value=0):
     return knobs
 
 
+def create_save_defaults_section():
+    """Crea la sección del botón Save Defaults"""
+    knobs = []
+
+    # Widget de save defaults usando clase registrada globalmente
+    save_defaults_widget = nuke.PyCustom_Knob(
+        "lga_save_defaults", "", "nuke.LGA_SaveDefaultsWidget(nuke.thisNode())"
+    )
+
+    knobs.append(save_defaults_widget)
+
+    return knobs
+
+
 def add_all_knobs(node, text_label="", existing_margin_alignment="left"):
     """Agrega todos los knobs personalizados al BackdropNode pero solo si no existen"""
     debug_print(f"[DEBUG] Adding knobs to node: {node.name()}")
@@ -765,6 +920,18 @@ def add_remaining_knobs_if_missing(node, existing_margin_alignment):
     # Colors section (movida al final)
     color_knobs = create_lga_color_swatch_buttons()
     for knob in color_knobs:
+        if knob.name() not in node.knobs():
+            node.addKnob(knob)
+
+    # Divider 5 (antes de la sección de save defaults)
+    if "divider_5" not in node.knobs():
+        divider5 = nuke.Text_Knob("divider_5", "", "")
+        divider5.setFlag(nuke.STARTLINE)
+        node.addKnob(divider5)
+
+    # Save Defaults section (al final)
+    save_defaults_knobs = create_save_defaults_section()
+    for knob in save_defaults_knobs:
         if knob.name() not in node.knobs():
             node.addKnob(knob)
 

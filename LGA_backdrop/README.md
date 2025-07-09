@@ -42,6 +42,47 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 ### Sección de Z-Order (copiada de oz_backdrop)
 - **Z Order**: Slider con labels "Back" y "Front" (rango -10 a +10)
 
+### Sección de Save Defaults
+- **Save as Default**: Botón con icono `lga_bd_save.png` que guarda las configuraciones actuales como valores por defecto
+- **Posicionamiento**: Ubicado al final del backdrop, alineado completamente a la derecha
+- **Tooltip**: "Save current properties as default for new backdrops"
+- **Funcionalidad**: Guarda font size, font name, bold, italic, align y margin en archivo de configuración
+- **Sincronización**: Extrae valores actuales del backdrop incluyendo font size slider y alignment dropdown
+
+## Sistema de Configuración de Defaults
+
+### Arquitectura del Sistema
+El sistema de configuración sigue el mismo patrón que `LGA_ToolPack_settings.py` para garantizar consistencia:
+
+### Ubicación de Archivos
+- **Windows**: `%APPDATA%\LGA\ToolPack_Layout\backdrop_defaults.ini`
+- **macOS**: `~/Library/Application Support/LGA/ToolPack_Layout/backdrop_defaults.ini`
+- **Linux**: `~/.config/LGA/ToolPack_Layout/backdrop_defaults.ini`
+
+### Configuraciones Guardadas
+- **Font Size**: Tamaño de fuente (por defecto: 50)
+- **Font Name**: Nombre de la fuente (por defecto: "Verdana")
+- **Bold**: Estado del bold (por defecto: False)
+- **Italic**: Estado del italic (por defecto: False)
+- **Align**: Alineación del texto (por defecto: "left")
+- **Margin**: Valor del margin slider (por defecto: 50)
+
+### Comportamiento
+- **Al crear backdrop nuevo**: Se cargan automáticamente los valores guardados como defaults
+- **Al cargar proyecto existente**: NO se aplican los defaults, se preservan los valores del proyecto
+- **Al hacer Save as Default**: Se guardan las configuraciones actuales para futuros backdrops
+- **Fallback robusto**: Si no existe configuración, se usan valores hardcoded
+- **Sincronización automática**: Font size slider y margin slider se sincronizan con valores por defecto al crear backdrop
+- **Detección inteligente**: Convierte índices de dropdown a strings y maneja diferentes tipos de datos
+
+### Módulo LGA_BD_config.py
+- **get_backdrop_defaults()**: Carga configuraciones desde archivo INI con fallback robusto
+- **save_backdrop_defaults()**: Guarda configuraciones actuales con validación de tipos
+- **extract_current_backdrop_settings()**: Extrae configuraciones de un backdrop existente con debug extensivo
+- **ensure_config_exists()**: Crea archivo de configuración si no existe
+- **Detección de Font**: Maneja correctamente Font_Knob y parsea valores "Arial Bold Italic"
+- **Conversión de Alignment**: Convierte índices de dropdown (0, 1, 2) a strings ("left", "center", "right")
+
 ## Sistema de Preservación de Estado
 
 ### Problemas Resueltos
@@ -59,11 +100,23 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 - **Persistencia de Widgets**: PyCustom_Knob usa clase registrada globalmente para preservar widgets de colores al guardar/cargar scripts
 
 ### Archivos Clave
+- **`LGA_ToolPack-Layout/LGA_backdrop/LGA_backdrop.py`**:
+  - `autoBackdrop()`: Función principal que ahora carga valores por defecto desde configuración al crear nuevos backdrops
+  - Sincronización automática de font size slider y margin slider con valores por defecto
+  - Construcción correcta de font value con bold/italic y aplicación de alignment HTML
+- **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_config.py`**:
+  - `get_backdrop_defaults()`: Carga configuraciones desde archivo INI con fallback robusto
+  - `save_backdrop_defaults()`: Guarda configuraciones actuales en archivo INI
+  - `extract_current_backdrop_settings()`: Extrae configuraciones actuales de un backdrop node
+  - `get_config_directory()`: Maneja rutas multiplataforma siguiendo patrón de LGA_ToolPack_settings
 - **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_knobs.py`**:
   - `create_font_size_knob()`: Crea slider para font size sincronizado con knob nativo
   - `add_all_knobs()`: Maneja creación condicional de knobs, evitando duplicación y preservando valores
   - `add_knobs_to_existing_backdrops()`: Callback onScriptLoad que agrega knobs faltantes a backdrops existentes
   - `ColorSwatchWidget()`: Clase avanzada con sistema de variaciones, tracking interno y algoritmos de conversión HLS
+  - `LGA_SaveDefaultsWidget()`: Widget personalizado para botón Save que integra funcionalidad de guardado
+  - `create_save_defaults_section()`: Crea sección del botón Save Defaults al final del backdrop
+  - Widget expandible horizontalmente con botón alineado completamente a la derecha
   - `_generate_color_variations()`: Genera 5 variaciones por color usando interpolación de luminancia y saturación
   - `_cycle_color_variation()`: Maneja el ciclo inteligente entre variaciones con tracking interno
   - `_apply_random_color()`: Aplica colores RGB completamente aleatorios con reset de tracking
@@ -205,8 +258,9 @@ USE_LGA_BACKDROP = True  # Cambiar a False para usar oz_backdrop
 
 ## Archivos
 
-- `LGA_backdrop.py`: Implementación principal, ventana de diálogo y cálculo automático de Z-order
-- `LGA_BD_knobs.py`: Manejo modular de knobs personalizados, sistema de altura multilínea y preservación de valores
+- `LGA_backdrop.py`: Implementación principal, ventana de diálogo, cálculo automático de Z-order y carga de defaults
+- `LGA_BD_config.py`: Sistema de configuración para guardar y cargar valores por defecto del backdrop
+- `LGA_BD_knobs.py`: Manejo modular de knobs personalizados, sistema de altura multilínea, preservación de valores y widget Save
 - `LGA_BD_fit.py`: Funciones de cálculo de tamaño y encompass
 - `LGA_BD_callbacks.py`: Callbacks, eventos, preservación de altura multilínea y detección de formato HTML
 - `README.md`: Este archivo de documentación

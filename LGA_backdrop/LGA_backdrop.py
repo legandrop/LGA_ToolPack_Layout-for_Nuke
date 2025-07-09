@@ -1,7 +1,7 @@
 """
 __________________________________________
 
-  LGA_backdrop v0.12 | Lega Pugliese
+  LGA_backdrop v0.80 | Lega Pugliese
   Backdrop personalizado con knobs modulares
 __________________________________________
 
@@ -19,6 +19,7 @@ from PySide2.QtGui import QFontMetrics, QFont
 import LGA_BD_knobs
 import LGA_BD_callbacks
 import LGA_BD_fit
+import LGA_BD_config
 
 
 def create_text_dialog():
@@ -210,17 +211,31 @@ def autoBackdrop():
             f"[DEBUG] Backdrop will contain {len(backdrops_contained)} backdrops. Setting Z to {zOrder} (min contained Z was {min_contained_z})"
         )
 
-    # Usar las funciones de calculo de tamaño backdrop
-    note_font_size = 42  # Default font size
+    # Cargar valores por defecto desde configuración
+    try:
+        backdrop_defaults = LGA_BD_config.get_backdrop_defaults()
+        note_font_size = backdrop_defaults["font_size"]
+        default_font_name = backdrop_defaults["font_name"]
+        default_bold = backdrop_defaults["bold"]
+        default_italic = backdrop_defaults["italic"]
+        default_align = backdrop_defaults["align"]
+        margin_value = backdrop_defaults["margin"]
+        print(f"[DEBUG] Loaded backdrop defaults: {backdrop_defaults}")
+    except Exception as e:
+        print(f"[DEBUG] Error loading backdrop defaults, using hardcoded values: {e}")
+        # Usar valores hardcoded como fallback
+        note_font_size = 42
+        default_font_name = "Verdana"
+        default_bold = False
+        default_italic = False
+        default_align = "left"
+        margin_value = 50
 
     # Calcular el tamaño adicional necesario para el texto
     extra_top = LGA_BD_fit.calculate_extra_top(user_text, note_font_size)
 
     # Calcular el ancho minimo necesario para el texto
     min_horizontal = LGA_BD_fit.calculate_min_horizontal(user_text, note_font_size)
-
-    # Expandir los limites para dejar un poco de borde
-    margin_value = 50  # Default margin
 
     if margin_value < extra_top:
         top = -extra_top
@@ -243,6 +258,20 @@ def autoBackdrop():
     bdW += right - left
     bdH += bottom - top
 
+    # Construir el valor de font con bold/italic
+    font_value = default_font_name
+    if default_bold:
+        font_value += " Bold"
+    if default_italic:
+        font_value += " Italic"
+
+    # Aplicar alignment al texto del label
+    formatted_user_text = user_text
+    if default_align == "center":
+        formatted_user_text = '<div align="center">' + user_text + "</div>"
+    elif default_align == "right":
+        formatted_user_text = '<div align="right">' + user_text + "</div>"
+
     # Crear el backdrop
     n = nuke.nodes.BackdropNode(
         xpos=bdX,
@@ -251,12 +280,13 @@ def autoBackdrop():
         bdheight=bdH,
         tile_color=int((random.random() * (16 - 10))) + 10,
         note_font_size=note_font_size,
+        note_font=font_value,
         z_order=zOrder,
-        label=user_text,
+        label=formatted_user_text,
     )
 
-    # Agregar todos los knobs personalizados (pasar el valor del z_order actual)
-    LGA_BD_knobs.add_all_knobs(n, user_text, "left")
+    # Agregar todos los knobs personalizados (pasar el alignment por defecto)
+    LGA_BD_knobs.add_all_knobs(n, formatted_user_text, default_align)
 
     # IMPORTANTE: Sincronizar el slider zorder con el valor del z_order nativo después de crear los knobs
     if "zorder" in n.knobs():
@@ -264,6 +294,20 @@ def autoBackdrop():
         n["zorder"].setValue(current_z_order)
         print(
             f"[DEBUG] Sincronizado slider zorder con z_order nativo: {current_z_order}"
+        )
+
+    # IMPORTANTE: Sincronizar el margin slider con el valor por defecto cargado
+    if "margin_slider" in n.knobs():
+        n["margin_slider"].setValue(margin_value)
+        print(
+            f"[DEBUG] Sincronizado margin slider con valor por defecto: {margin_value}"
+        )
+
+    # IMPORTANTE: Sincronizar el font size slider con el valor por defecto cargado
+    if "lga_note_font_size" in n.knobs():
+        n["lga_note_font_size"].setValue(note_font_size)
+        print(
+            f"[DEBUG] Sincronizado font size slider con valor por defecto: {note_font_size}"
         )
 
     # Configurar callbacks
