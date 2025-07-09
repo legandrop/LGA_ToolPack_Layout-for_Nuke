@@ -95,7 +95,7 @@ import LGA_StickyNote
 n.addCommand(
     "  Create StickyNote",
     "LGA_StickyNote.run_sticky_note()",
-    "Ctrl+Shift+n",
+    "Shift+n",
     shortcutContext=2,
     icon=icon_LTPB,
 )
@@ -150,7 +150,7 @@ from ku_labeler import Core_SetLabel
 
 LABELPOPUP = Core_SetLabel()
 n.addCommand(
-    "  Label Nodes", LABELPOPUP.run, "shift+n", shortcutContext=2, icon=icon_LTPB
+    "  Label Nodes", LABELPOPUP.run, "shift+l", shortcutContext=2, icon=icon_LTPB
 )
 
 
