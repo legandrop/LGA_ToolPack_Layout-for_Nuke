@@ -34,6 +34,7 @@ class ColorSwatchWidget(QtWidgets.QWidget):
         self._swatch_widgets = []
 
         self.color_swatches = [
+            ("random", "gradient"),  # Botón especial con gradiente multicolor
             ("red", (204, 85, 85)),
             ("green", (85, 204, 85)),
             ("blue", (85, 85, 204)),
@@ -54,10 +55,31 @@ class ColorSwatchWidget(QtWidgets.QWidget):
         for i, (color_name, rgb_values) in enumerate(self.color_swatches):
             color_knob = QtWidgets.QPushButton()
             color_knob.clicked.connect(self.color_knob_click)
-            color_knob.setToolTip("Click to Select This Color!")
-            color_knob.setStyleSheet(
-                self.SWATCH_CSS % (rgb_values[0], rgb_values[1], rgb_values[2])
-            )
+
+            if color_name == "random" and rgb_values == "gradient":
+                # Botón especial con gradiente multicolor
+                color_knob.setToolTip("Click to Apply Random Color!")
+                gradient_css = """
+                    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
+                        stop: 0 rgb(255, 0, 0),
+                        stop: 0.16 rgb(255, 127, 0),
+                        stop: 0.33 rgb(255, 255, 0),
+                        stop: 0.5 rgb(0, 255, 0),
+                        stop: 0.66 rgb(0, 0, 255),
+                        stop: 0.83 rgb(139, 0, 255),
+                        stop: 1 rgb(255, 0, 255));
+                    border: none;
+                    height: 40px;
+                """
+                color_knob.setStyleSheet(gradient_css)
+                color_knob.setProperty("is_random", True)
+            else:
+                # Botón de color sólido normal
+                color_knob.setToolTip("Click to Select This Color!")
+                color_knob.setStyleSheet(
+                    self.SWATCH_CSS % (rgb_values[0], rgb_values[1], rgb_values[2])
+                )
+                color_knob.setProperty("is_random", False)
 
             color_chooser_layout.addWidget(color_knob)
             self._swatch_widgets.append(color_knob)
@@ -67,6 +89,15 @@ class ColorSwatchWidget(QtWidgets.QWidget):
         if not widget or not self.node:
             return
 
+        # Verificar si es el botón de random
+        if widget.property("is_random"):
+            import random
+
+            random_color = int((random.random() * (16 - 10))) + 10
+            self.node["tile_color"].setValue(random_color)
+            return
+
+        # Botón de color normal
         color_stylesheet = widget.styleSheet()
 
         import re
@@ -146,20 +177,6 @@ def create_margin_alignment_section(alignment_value="left"):
 def create_lga_color_swatch_buttons():
     """Crea seccion de colores"""
     color_knobs = []
-
-    # Boton de color aleatorio
-    random_color = nuke.PyScript_Knob(
-        "lga_random_color",
-        "Random Color",
-        """
-import random
-node = nuke.thisNode()
-random_color = int((random.random() * (16 - 10))) + 10
-node['tile_color'].setValue(random_color)
-""",
-    )
-    color_knobs.append(random_color)
-    color_knobs.append(create_space("lga_color_space1"))
 
     # Widget de colores personalizados - asegurar que la clase esté en el namespace global
     import LGA_BD_knobs
