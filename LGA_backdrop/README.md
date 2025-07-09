@@ -25,8 +25,11 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 - **Margin**: Dropdown (`lga_margin`) para alineación del texto (Left/Center/Right) con aplicación automática de tags HTML
 
 ### Sección de Colores
-- **Random Color**: Botón para generar color aleatorio
-- **8 Colores básicos**: Red, Green, Blue, Yellow, Cyan, Magenta, Orange, Purple
+- **Widget de Colores Personalizados**: Implementación de botones cuadrados estilo swatch usando PyCustom_Knob
+- **Botón Random con Gradiente**: Primer botón con gradiente multicolor arcoíris para aplicar colores aleatorios
+- **8 Colores Sólidos**: Botones cuadrados con colores sólidos (Red, Green, Blue, Yellow, Cyan, Magenta, Orange, Purple)
+- **Estilo Visual**: Botones de 40px de altura, sin bordes, con colores RGB sólidos o gradiente
+- **Persistencia**: Clase registrada globalmente (`nuke.LGA_ColorSwatchWidget`) para preservar funcionalidad al guardar/cargar scripts
 
 ### Sección de Resize
 - **Margin**: Slider automático para configurar el margen del auto fit (rango 10-200) - ejecuta autofit completo al cambiar (preserva Z-order)
@@ -49,12 +52,15 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 - **Sincronización Bidireccional**: `knob_changed_script()` sincroniza cambios entre knobs personalizados y nativos
 - **Preservación de Valores**: Los valores de `lga_note_font_size`, `lga_margin` y `zorder` se preservan al recargar scripts
 - **Detección de Alignment**: Detecta automáticamente alignment existente en el `label` y configura el dropdown apropiadamente
+- **Persistencia de Widgets**: PyCustom_Knob usa clase registrada globalmente para preservar widgets de colores al guardar/cargar scripts
 
 ### Archivos Clave
 - **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_knobs.py`**:
   - `create_font_size_knob()`: Crea slider para font size sincronizado con knob nativo
   - `add_all_knobs()`: Maneja creación condicional de knobs, evitando duplicación y preservando valores
   - `add_knobs_to_existing_backdrops()`: Callback onScriptLoad que agrega knobs faltantes a backdrops existentes
+  - `ColorSwatchWidget()`: Clase que implementa botones de colores estilo swatch con gradiente random y colores sólidos
+  - `create_lga_color_swatch_buttons()`: Crea PyCustom_Knob con clase registrada globalmente para persistencia
 - **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_callbacks.py`**:
   - `knob_changed_script()`: Sincroniza cambios entre knobs y ejecuta autofit automático inline en cambios de `margin_slider`
   - `fix_animation_flags()`: Aplica el flag NO_ANIMATION a sliders para evitar iconos de animación no deseados

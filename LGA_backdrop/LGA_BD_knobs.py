@@ -119,6 +119,10 @@ class ColorSwatchWidget(QtWidgets.QWidget):
         pass
 
 
+# Registrar la clase globalmente para PyCustom_Knob al importar el módulo
+nuke.LGA_ColorSwatchWidget = ColorSwatchWidget
+
+
 def create_divider(name=""):
     """Crea un divider (separador visual)"""
     return nuke.Text_Knob(f"divider_{name}", "")
@@ -178,13 +182,9 @@ def create_lga_color_swatch_buttons():
     """Crea seccion de colores"""
     color_knobs = []
 
-    # Widget de colores personalizados - asegurar que la clase esté en el namespace global
-    import LGA_BD_knobs
-
-    nuke.ColorSwatchWidget = LGA_BD_knobs.ColorSwatchWidget
-
+    # Widget de colores personalizados usando clase registrada globalmente
     lga_color_palette_widget = nuke.PyCustom_Knob(
-        "lga_color_palette", "", "nuke.ColorSwatchWidget(nuke.thisNode())"
+        "lga_color_palette", "", "nuke.LGA_ColorSwatchWidget(nuke.thisNode())"
     )
 
     color_knobs.append(lga_color_palette_widget)
