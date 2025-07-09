@@ -256,7 +256,7 @@ def autoBackdrop():
     )
 
     # Agregar todos los knobs personalizados
-    LGA_BD_knobs.add_all_knobs(n, user_text, note_font_size)
+    LGA_BD_knobs.add_all_knobs(n, user_text, "left")
 
     # Configurar callbacks
     LGA_BD_callbacks.setup_callbacks(n)

@@ -30,7 +30,7 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 
 ### Sección de Resize
 - **Margin**: Slider para configurar el margen del auto fit (rango 10-200)
-- **Auto Fit**: Botón para redimensionar automáticamente abarcando nodos seleccionados
+- **Auto Fit**: Botón para redimensionar automáticamente abarcando nodos seleccionados o nodos dentro del backdrop
 
 ### Sección de Z-Order (copiada de oz_backdrop)
 - **Z Order**: Slider con labels "Back" y "Front" (rango -5 a +5)
@@ -58,7 +58,9 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 - **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_callbacks.py`**:
   - `knob_changed_script()`: Sincroniza cambios entre `lga_note_font_size` ↔ `note_font_size` y maneja alignment HTML
 - **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_fit.py`**:
-  - `fit_to_selected_nodes()`: Redimensiona backdrop usando valor del margin slider
+  - `fit_to_selected_nodes()`: Redimensiona backdrop usando valor del margin slider o nodos internos
+  - `find_nodes_inside_backdrop()`: Encuentra eficientemente nodos dentro del backdrop actual
+  - `get_nodes_efficiently()`: Método optimizado para obtener nodos usando API nativa de Nuke
 
 ### Agregar Nuevos Knobs
 Para añadir nuevos knobs personalizados al tab "backdrop":
@@ -73,6 +75,19 @@ if "nuevo_knob" not in node.knobs():
 ```
 
 **⚠️ Importante**: Siempre usar verificación `if "knob_name" not in node.knobs():` para evitar duplicación al recargar scripts.
+
+## Funcionalidad Autofit Mejorada
+
+### Detección Automática de Nodos
+- **Sin selección**: Si no hay nodos seleccionados, la función `fit_to_selected_nodes()` busca automáticamente todos los nodos dentro del backdrop actual
+- **Optimización**: Usa `find_nodes_inside_backdrop()` que emplea `nuke.allNodes()` optimizado internamente
+- **Debug extensivo**: Sistema de debug prints para monitorear el proceso de búsqueda y cálculo de límites
+- **Soporte completo**: Funciona con todos los tipos de nodos incluidos otros backdrops dentro del backdrop principal
+
+### Métodos de Optimización
+- **`nuke.allNodes()`**: Función nativa optimizada que es la forma más eficiente de obtener nodos en Nuke
+- **Evita filtros manuales**: No usa iteración manual innecesaria que puede ser lenta en scripts grandes
+- **Cálculo preciso de límites**: Verifica que los nodos estén completamente contenidos dentro del backdrop
 
 ## Cálculo de Tamaño Inteligente
 

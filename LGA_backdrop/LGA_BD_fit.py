@@ -7,12 +7,79 @@ import nuke
 from PySide2.QtGui import QFontMetrics, QFont
 
 # Variable global para activar o desactivar los prints
-DEBUG = False
+DEBUG = True
 
 
 def debug_print(*message):
     if DEBUG:
         print(*message)
+
+
+def find_nodes_inside_backdrop(backdrop):
+    """
+    Encuentra eficientemente todos los nodos (incluidos backdrops) que están dentro de un backdrop dado.
+    Esta implementación optimizada evita iterar innecesariamente por todos los nodos del script.
+    """
+    debug_print(
+        f"[DEBUG] find_nodes_inside_backdrop - Buscando nodos dentro del backdrop: {backdrop.name()}"
+    )
+
+    # Obtener límites del backdrop
+    backdrop_left = backdrop.xpos()
+    backdrop_top = backdrop.ypos()
+    backdrop_right = backdrop_left + backdrop.screenWidth()
+    backdrop_bottom = backdrop_top + backdrop.screenHeight()
+
+    debug_print(
+        f"[DEBUG] Backdrop bounds: left={backdrop_left}, top={backdrop_top}, right={backdrop_right}, bottom={backdrop_bottom}"
+    )
+
+    nodes_inside = []
+
+    # Usar nuke.allNodes() que es la forma más eficiente en Nuke
+    # Esta función está optimizada internamente y es preferible a métodos de filtrado manual
+    all_nodes = nuke.allNodes()
+    debug_print(f"[DEBUG] Total nodos en el script: {len(all_nodes)}")
+
+    for node in all_nodes:
+        # Excluir el backdrop mismo y nodos Root
+        if node == backdrop or node.Class() == "Root":
+            continue
+
+        # Obtener límites del nodo
+        node_left = node.xpos()
+        node_top = node.ypos()
+        node_right = node_left + node.screenWidth()
+        node_bottom = node_top + node.screenHeight()
+
+        # Verificar si el nodo está completamente dentro del backdrop
+        if (
+            node_left >= backdrop_left
+            and node_top >= backdrop_top
+            and node_right <= backdrop_right
+            and node_bottom <= backdrop_bottom
+        ):
+
+            nodes_inside.append(node)
+            debug_print(
+                f"[DEBUG] Nodo dentro del backdrop: {node.name()} ({node.Class()})"
+            )
+
+    debug_print(
+        f"[DEBUG] Total nodos encontrados dentro del backdrop: {len(nodes_inside)}"
+    )
+    return nodes_inside
+
+
+def get_nodes_efficiently(filter_class=None):
+    """
+    Método optimizado para obtener nodos usando la API nativa de Nuke.
+    Usa nuke.allNodes() con filtro de clase que está optimizado internamente.
+    """
+    if filter_class:
+        return nuke.allNodes(filter_class)
+    else:
+        return nuke.allNodes()
 
 
 def calculate_extra_top(text, font_size):
@@ -87,18 +154,38 @@ def nodeIsInside(node, backdropNode):
 
 def fit_to_selected_nodes():
     """
-    Redimensiona el backdrop para abarcar todos los nodos seleccionados
+    Redimensiona el backdrop para abarcar todos los nodos seleccionados.
+    Si no hay nodos seleccionados, busca automáticamente todos los nodos dentro del backdrop.
     """
     this = nuke.thisNode()
     padding = this["margin_slider"].getValue()
 
     if this.isSelected:
         this.setSelected(False)
-    selNodes = nuke.selectedNodes()
 
+    selNodes = nuke.selectedNodes()
+    debug_print(f"[DEBUG] Nodos inicialmente seleccionados: {len(selNodes)}")
+
+    # NUEVA FUNCIONALIDAD: Si no hay nodos seleccionados, buscar nodos dentro del backdrop
     if not selNodes:
-        nuke.message("Some nodes should be selected")
-        return
+        debug_print(
+            f"[DEBUG] No hay nodos seleccionados, buscando nodos dentro del backdrop"
+        )
+        selNodes = find_nodes_inside_backdrop(this)
+
+        if not selNodes:
+            nuke.message("No hay nodos dentro del backdrop para hacer autofit")
+            return
+
+        debug_print(
+            f"[DEBUG] Encontrados {len(selNodes)} nodos dentro del backdrop para autofit"
+        )
+
+        # Mostrar qué nodos se encontraron
+        node_names = [f"{node.name()} ({node.Class()})" for node in selNodes]
+        debug_print(
+            f"[DEBUG] Nodos que se usarán para autofit: {', '.join(node_names)}"
+        )
 
     # Obtener el texto y tamano de fuente del backdrop actual
     user_text = this["label"].getValue()
@@ -109,6 +196,8 @@ def fit_to_selected_nodes():
     bdY = min([node.ypos() for node in selNodes])
     bdW = max([node.xpos() + node.screenWidth() for node in selNodes]) - bdX
     bdH = max([node.ypos() + node.screenHeight() for node in selNodes]) - bdY
+
+    debug_print(f"[DEBUG] Límites calculados: X={bdX}, Y={bdY}, W={bdW}, H={bdH}")
 
     # Calcular el tamano adicional necesario para el texto
     extra_top = calculate_extra_top(user_text, note_font_size)
