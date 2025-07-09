@@ -44,19 +44,25 @@ elif knob.name() == 'lga_label':
     text_value = knob.value()
     debug_print(f"[DEBUG] lga_label changed to: '{text_value}'")
     
-    # Obtener estado actual de bold y alignment
+    # Obtener estado actual de bold, italic y alignment
     is_bold = False
     if 'lga_bold_state' in node.knobs(): # Cambiado a lga_bold_state
         is_bold = node['lga_bold_state'].value()
+    
+    is_italic = False
+    if 'lga_italic_state' in node.knobs():
+        is_italic = node['lga_italic_state'].value()
         
     alignment = "left"
     if 'lga_margin' in node.knobs():
         alignment = node['lga_margin'].value()
     
-    # Aplicar formato completo (bold + alignment, sin color HTML)
+    # Aplicar formato completo (bold + italic + alignment, sin color HTML)
     formatted_text = text_value
     if is_bold:
         formatted_text = '<b>' + formatted_text + '</b>'
+    if is_italic:
+        formatted_text = '<i>' + formatted_text + '</i>'
     
     if alignment == "center":
         formatted_text = '<div align="center">' + formatted_text + '</div>'
@@ -74,15 +80,21 @@ elif knob.name() == 'lga_margin':
     debug_print(f"[DEBUG] lga_margin changed to: {knob.value()}")
     debug_print(f"[DEBUG] Current lga_label text: '{current_text}'")
     
-    # Obtener bold actual si existe
+    # Obtener bold e italic actual si existen
     is_bold = False
-    if 'lga_bold' in node.knobs():
-        is_bold = node['lga_bold'].value()
+    if 'lga_bold_state' in node.knobs():
+        is_bold = node['lga_bold_state'].value()
     
-    # Aplicar formato completo (bold + alignment, sin color HTML)
+    is_italic = False
+    if 'lga_italic_state' in node.knobs():
+        is_italic = node['lga_italic_state'].value()
+    
+    # Aplicar formato completo (bold + italic + alignment, sin color HTML)
     formatted_text = current_text
     if is_bold:
         formatted_text = '<b>' + formatted_text + '</b>'
+    if is_italic:
+        formatted_text = '<i>' + formatted_text + '</i>'
     
     if knob.value() == "center":
         formatted_text = '<div align="center">' + formatted_text + '</div>'
@@ -132,16 +144,23 @@ def add_knobs_to_existing_backdrops():
 
         # Ya no necesitamos detectar font color tags HTML porque usamos note_font_color
 
-        # Detectar y remover bold tags
-        has_bold = clean_text.startswith("<b>") and clean_text.endswith("</b>")
+        # Detectar bold y italic tags de forma más robusta
+        has_bold = "<b>" in clean_text and "</b>" in clean_text
+        has_italic = "<i>" in clean_text and "</i>" in clean_text
         debug_print(f"[DEBUG] Text has bold: {has_bold}")
-        if has_bold:
-            clean_text = clean_text[3:-4]  # Remover <b> y </b>
+        debug_print(f"[DEBUG] Text has italic: {has_italic}")
+
+        # Remover tags HTML de forma robusta
+        import re
+
+        clean_text = re.sub(r"</?[bi]>", "", clean_text)
 
         debug_print(f"[DEBUG] Clean text: '{clean_text}'")
 
         debug_print(f"[DEBUG] Calling add_all_knobs for node: {node.name()}")
-        LGA_BD_knobs.add_all_knobs(node, clean_text, current_font_size)
+        LGA_BD_knobs.add_all_knobs(
+            node, clean_text, current_font_size, has_bold, has_italic
+        )
         debug_print(f"[DEBUG] Finished processing node: {node.name()}")
 
     debug_print(f"[DEBUG] add_knobs_to_existing_backdrops completed")
