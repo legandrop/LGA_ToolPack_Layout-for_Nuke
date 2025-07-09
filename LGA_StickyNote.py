@@ -22,7 +22,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
     def setup_ui(self):
         """Configura la interfaz de usuario"""
         self.setWindowTitle("StickyNote Editor")
-        self.setFixedSize(300, 240)
+        self.setFixedSize(300, 280)
         self.setStyleSheet("background-color: #242527; color: #FFFFFF;")
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
 
@@ -84,10 +84,10 @@ class StickyNoteEditor(QtWidgets.QDialog):
         font_size_layout.addWidget(self.font_size_slider)
         font_size_layout.addWidget(self.font_size_value)
 
-        # Slider de margin
-        margin_layout = QtWidgets.QHBoxLayout()
-        margin_label = QtWidgets.QLabel("Margin:")
-        margin_label.setStyleSheet("color: #AAAAAA; font-size: 11px;")
+        # Slider de margin X
+        margin_x_layout = QtWidgets.QHBoxLayout()
+        margin_x_label = QtWidgets.QLabel("Margin X:")
+        margin_x_label.setStyleSheet("color: #AAAAAA; font-size: 11px;")
 
         self.margin_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.margin_slider.setRange(0, 10)
@@ -115,9 +115,44 @@ class StickyNoteEditor(QtWidgets.QDialog):
             "color: #AAAAAA; font-size: 11px; min-width: 25px;"
         )
 
-        margin_layout.addWidget(margin_label)
-        margin_layout.addWidget(self.margin_slider)
-        margin_layout.addWidget(self.margin_value)
+        margin_x_layout.addWidget(margin_x_label)
+        margin_x_layout.addWidget(self.margin_slider)
+        margin_x_layout.addWidget(self.margin_value)
+
+        # Slider de margin Y
+        margin_y_layout = QtWidgets.QHBoxLayout()
+        margin_y_label = QtWidgets.QLabel("Margin Y:")
+        margin_y_label.setStyleSheet("color: #AAAAAA; font-size: 11px;")
+
+        self.margin_y_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.margin_y_slider.setRange(0, 4)
+        self.margin_y_slider.setValue(0)
+        self.margin_y_slider.setStyleSheet(
+            """
+            QSlider::groove:horizontal {
+                border: 1px solid #555555;
+                height: 8px;
+                background: #1A1A1A;
+                border-radius: 4px;
+            }
+            QSlider::handle:horizontal {
+                background: #AAAAAA;
+                border: 1px solid #555555;
+                width: 18px;
+                margin: -2px 0;
+                border-radius: 3px;
+            }
+        """
+        )
+
+        self.margin_y_value = QtWidgets.QLabel("0")
+        self.margin_y_value.setStyleSheet(
+            "color: #AAAAAA; font-size: 11px; min-width: 25px;"
+        )
+
+        margin_y_layout.addWidget(margin_y_label)
+        margin_y_layout.addWidget(self.margin_y_slider)
+        margin_y_layout.addWidget(self.margin_y_value)
 
         # Ayuda
         help_label = QtWidgets.QLabel(
@@ -129,7 +164,8 @@ class StickyNoteEditor(QtWidgets.QDialog):
         main_layout.addWidget(title)
         main_layout.addWidget(self.text_edit)
         main_layout.addLayout(font_size_layout)
-        main_layout.addLayout(margin_layout)
+        main_layout.addLayout(margin_x_layout)
+        main_layout.addLayout(margin_y_layout)
         main_layout.addWidget(help_label)
 
         self.setLayout(main_layout)
@@ -139,6 +175,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.text_edit.textChanged.connect(self.on_text_changed)
         self.font_size_slider.valueChanged.connect(self.on_font_size_changed)
         self.margin_slider.valueChanged.connect(self.on_margin_changed)
+        self.margin_y_slider.valueChanged.connect(self.on_margin_y_changed)
 
     def get_or_create_sticky_note(self):
         """Obtiene el sticky note seleccionado o crea uno nuevo"""
@@ -202,23 +239,88 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.font_size_value.setText(str(current_font_size))
         self.font_size_slider.blockSignals(False)
 
-        # Cargar margin
+        # Detectar margin Y (líneas vacías al inicio y final)
+        margin_y_detected = 0
+        if lines:
+            # Contar líneas vacías al inicio
+            start_empty = 0
+            for line in lines:
+                if line.strip() == "":
+                    start_empty += 1
+                else:
+                    break
+
+            # Contar líneas vacías al final
+            end_empty = 0
+            for line in reversed(lines):
+                if line.strip() == "":
+                    end_empty += 1
+                else:
+                    break
+
+            # Usar el menor como margin Y
+            margin_y_detected = min(start_empty, end_empty)
+
+            # Remover las líneas vacías del margin Y para el texto limpio
+            if margin_y_detected > 0:
+                lines = (
+                    lines[margin_y_detected:-margin_y_detected]
+                    if margin_y_detected < len(lines) // 2
+                    else lines
+                )
+                # Recalcular clean_text sin las líneas del margin Y
+                clean_text = ""
+                for line in lines:
+                    # Remover espacios del inicio y final según el margin detectado
+                    if len(line) >= margin_detected * 2:
+                        # Remover espacios del inicio y final
+                        clean_line = (
+                            line[margin_detected:] if margin_detected > 0 else line
+                        )
+                        if margin_detected > 0 and clean_line.endswith(
+                            " " * margin_detected
+                        ):
+                            clean_line = clean_line[:-margin_detected]
+                        clean_text += clean_line + "\n"
+                    else:
+                        clean_text += line + "\n"
+                clean_text = clean_text.rstrip("\n")  # Remover último salto de línea
+
+                # Actualizar el texto en el editor
+                self.text_edit.blockSignals(True)
+                self.text_edit.setPlainText(clean_text)
+                self.text_edit.blockSignals(False)
+
+        # Cargar margin X
         self.margin_slider.blockSignals(True)  # Evitar callback recursivo
         self.margin_slider.setValue(margin_detected)
         self.margin_value.setText(str(margin_detected))
         self.margin_slider.blockSignals(False)
 
+        # Cargar margin Y
+        self.margin_y_slider.blockSignals(True)  # Evitar callback recursivo
+        self.margin_y_slider.setValue(margin_y_detected)
+        self.margin_y_value.setText(str(margin_y_detected))
+        self.margin_y_slider.blockSignals(False)
+
     def on_text_changed(self):
         """Callback cuando cambia el texto"""
         if self.sticky_node:
             current_text = self.text_edit.toPlainText()
-            margin_spaces = " " * self.margin_slider.value()
+            margin_x_spaces = " " * self.margin_slider.value()
+            margin_y_lines = self.margin_y_slider.value()
 
-            # Agregar espacios a ambos lados de cada línea
+            # Agregar espacios a ambos lados de cada línea (Margin X)
             lines = current_text.split("\n")
             final_lines = []
             for line in lines:
-                final_lines.append(margin_spaces + line + margin_spaces)
+                final_lines.append(margin_x_spaces + line + margin_x_spaces)
+
+            # Agregar líneas vacías arriba y abajo (Margin Y)
+            empty_line = margin_x_spaces + margin_x_spaces  # Línea vacía con margin X
+            for _ in range(margin_y_lines):
+                final_lines.insert(0, empty_line)  # Agregar arriba
+                final_lines.append(empty_line)  # Agregar abajo
 
             final_text = "\n".join(final_lines)
             self.sticky_node["label"].setValue(final_text)
@@ -230,9 +332,16 @@ class StickyNoteEditor(QtWidgets.QDialog):
             self.font_size_value.setText(str(value))
 
     def on_margin_changed(self, value):
-        """Callback cuando cambia el margin"""
+        """Callback cuando cambia el margin X"""
         if self.sticky_node:
             self.margin_value.setText(str(value))
+            # Actualizar el texto con el nuevo margin
+            self.on_text_changed()
+
+    def on_margin_y_changed(self, value):
+        """Callback cuando cambia el margin Y"""
+        if self.sticky_node:
+            self.margin_y_value.setText(str(value))
             # Actualizar el texto con el nuevo margin
             self.on_text_changed()
 
