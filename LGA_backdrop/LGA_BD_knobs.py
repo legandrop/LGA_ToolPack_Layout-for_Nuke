@@ -405,6 +405,124 @@ class ColorSwatchWidget(QtWidgets.QWidget):
 nuke.LGA_ColorSwatchWidget = ColorSwatchWidget
 
 
+class LGA_AutoFitControlWidget(QtWidgets.QWidget):
+    """Widget personalizado que combina el label 'Auto Fit' y el botón de ajuste."""
+
+    def __init__(self, node=None):
+        super(LGA_AutoFitControlWidget, self).__init__()
+        self.node = node
+        self._create_ui()
+
+    def _create_ui(self):
+        self.setSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )  # Asegurar que el widget no se estire
+        main_layout = QtWidgets.QHBoxLayout(self)
+        main_layout.setContentsMargins(
+            0, 0, 0, 0
+        )  # Eliminar márgenes internos del layout
+        main_layout.setSpacing(10)  # Eliminar espacio entre los widgets del layout
+        main_layout.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+        )  # Alinear contenido a la DERECHA y verticalmente centrado
+
+        # Añadir un spacer expansivo para consumir el espacio restante a la IZQUIERDA
+        main_layout.addSpacerItem(
+            QtWidgets.QSpacerItem(
+                0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+            )
+        )
+
+        # Label para el texto "Auto Fit"
+        autofit_label = QtWidgets.QLabel("   Auto Fit  ")
+        autofit_label.setFixedWidth(60)  # Ancho fijo para el label
+        autofit_label.setMinimumWidth(60)
+        autofit_label.setMaximumWidth(60)
+        autofit_label.setSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )  # Asegurar tamaño fijo
+        autofit_label.setStyleSheet(
+            "QLabel { padding: 0px; margin: 0px; }"
+        )  # Eliminar padding y margen del label
+
+        # Botón para el icono
+        fit_button = QtWidgets.QPushButton()
+        fit_button.setToolTip(
+            "Resize the backdrop to fit every included nodes using a margin number"
+        )
+        fit_button.clicked.connect(self._on_fit_button_clicked)
+
+        # Construir la ruta absoluta al icono
+        icon_path = os.path.join(os.path.dirname(__file__), "icons", "lga_bd_fit.png")
+
+        # Cargar el icono y ajustar su tamaño
+        icon = QtGui.QIcon(icon_path)
+        fit_button.setIcon(icon)
+        fit_button.setIconSize(
+            QtCore.QSize(24, 24)
+        )  # Reducir el tamaño del icono en 10px
+        fit_button.setFixedSize(
+            QtCore.QSize(32, 32)
+        )  # Mantener el tamaño del botón igual
+        fit_button.setSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )  # Asegurar tamaño fijo del botón
+
+        # Aplicar el estilo CSS al botón
+        fit_button.setStyleSheet(
+            """
+            QPushButton {
+                background-color: rgb(58, 58, 58); /* Color de fondo similar a los otros botones */
+                border: none;
+                padding: 0px; /* Añadir padding por defecto del botón */
+            }
+            QPushButton:hover {
+                background-color: rgb(80, 80, 80); /* Color al pasar el ratón */
+            }
+            QPushButton:pressed {
+                background-color: rgb(30, 30, 30); /* Color al presionar */
+            }
+        """
+        )
+
+        main_layout.addWidget(autofit_label)
+        main_layout.addWidget(fit_button)
+        # Añadir un spacer expansivo para consumir el espacio restante a la derecha
+        main_layout.addSpacerItem(
+            QtWidgets.QSpacerItem(
+                0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+            )
+        )
+
+        # Establecer tamaño fijo para el widget completo (label + espacio + botón)
+        self.setFixedSize(
+            QtCore.QSize(98, 32)
+        )  # Ancho fijo para el widget que contiene el label y el botón
+
+    def _on_fit_button_clicked(self):
+        """Maneja el click del botón y llama a la función de ajuste."""
+        try:
+            import LGA_BD_fit
+
+            LGA_BD_fit.fit_to_selected_nodes()
+            debug_print("[DEBUG] LGA_BD_fit.fit_to_selected_nodes() called")
+        except Exception as e:
+            debug_print(f"[DEBUG] Error calling fit_to_selected_nodes: {e}")
+
+    def makeUI(self):
+        return self
+
+    def updateValue(self):
+        pass
+
+    def sizeHint(self):
+        """Define el tamaño preferido del widget para el sistema de layout."""
+        return QtCore.QSize(84, 24)  # Devolver el tamaño fijo deseado
+
+
+nuke.LGA_AutoFitControlWidget = LGA_AutoFitControlWidget
+
+
 def create_divider(name=""):
     """Crea un divider (separador visual)"""
     return nuke.Text_Knob(f"divider_{name}", "")
@@ -494,41 +612,24 @@ def create_resize_section(margin_value=50):
     margin_slider.setFlag(nuke.NO_ANIMATION)
     margin_slider.setTooltip("Margin slider for auto fit")
 
-    # Label para Auto Fit
-    autofit_label = nuke.Text_Knob("autofit_label", "", "     Auto Fit  ")
-
-    # Boton Auto Fit
-    fit_button = nuke.PyScript_Knob(
-        "fit_to_selected_nodes",
-        f' <img src="{icon_path}" width="20" height="20">',
-        """
-import LGA_BD_fit
-LGA_BD_fit.fit_to_selected_nodes()
-""",
+    # Nuevo widget de PySide2 que contiene tanto el label como el botón de Auto Fit
+    autofit_control_widget = nuke.PyCustom_Knob(
+        "lga_autofit_control", "", "nuke.LGA_AutoFitControlWidget(nuke.thisNode())"
     )
-    fit_button.setTooltip(
-        "Resize the backdrop to fit every included nodes using a margin number"
-    )
-
-    # Espacio después del botón de fit
-    fit_space = nuke.Text_Knob("fit_space", "", " ")
+    autofit_control_widget.clearFlag(nuke.STARTLINE)  # Al lado del slider
 
     # Configurar para que todos los elementos estén en una sola línea
     resize_label.clearFlag(nuke.STARTLINE)
     margin_label.clearFlag(nuke.STARTLINE)
     margin_slider.clearFlag(nuke.STARTLINE)
-    autofit_label.clearFlag(nuke.STARTLINE)
-    fit_button.clearFlag(nuke.STARTLINE)
-    fit_space.clearFlag(nuke.STARTLINE)
+    autofit_control_widget.clearFlag(nuke.STARTLINE)
 
     knobs.extend(
         [
             resize_label,
             margin_label,
             margin_slider,
-            autofit_label,
-            fit_button,
-            fit_space,
+            autofit_control_widget,
         ]
     )
 
