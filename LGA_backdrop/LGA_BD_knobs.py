@@ -233,7 +233,7 @@ def add_all_knobs(node, text_label="", existing_margin_alignment="left"):
     # Crear font size slider solo si no existe (USAR LA FUNCIÓN ORIGINAL)
     if "lga_note_font_size" not in node.knobs():
         lga_font_size_knob = create_font_size_knob(42)  # usar la función original
-        lga_font_size_knob.setFlag(nuke.STARTLINE)
+        lga_font_size_knob.setFlag(nuke.STARTLINE | nuke.NO_ANIMATION)
         node.addKnob(lga_font_size_knob)
         debug_print(f"[DEBUG] Created font size slider")
 
