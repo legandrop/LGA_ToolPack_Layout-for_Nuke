@@ -33,12 +33,16 @@ knob = nuke.thisKnob()
 debug_print(f"[CALLBACK DEBUG] Knob changed: {knob.name()} = {knob.value()}")
 
 if knob.name() == 'zorder':
-    # Sincronizar el slider zorder con z_order
-    node['z_order'].setValue(knob.value())
+    # Sincronizar el slider zorder con z_order (asegurar que sea entero)
+    value = int(round(knob.value()))
+    node['z_order'].setValue(value)
+    # Asegurar que el slider también muestre el valor entero
+    knob.setValue(value)
 elif knob.name() == 'z_order':
-    # Sincronizar z_order con el slider zorder
+    # Sincronizar z_order con el slider zorder (asegurar que sea entero)
     if 'zorder' in node.knobs():
-        node['zorder'].setValue(knob.value())
+        value = int(round(knob.value()))
+        node['zorder'].setValue(value)
 
 elif knob.name() == 'label_link':
     # Manejar cambios en el label

@@ -182,8 +182,8 @@ def create_zorder_section(z_value=0):
     zorder_label = nuke.Text_Knob("z_order_label", "", "Z Order     ")
     zorder_back_label = nuke.Text_Knob("zorder_back", "", "Back ")
     zorder = nuke.Double_Knob("zorder", "")
-    zorder.setRange(-5, +5)
-    zorder.setValue(z_value)  # Establecer el valor existente
+    zorder.setRange(-5.0, +5.0)
+    zorder.setValue(int(z_value))  # Establecer el valor existente como entero
     zorder_front_label = nuke.Text_Knob("zorder_front", "", " Front")
 
     # Espacio después del label Front
