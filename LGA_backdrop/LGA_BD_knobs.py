@@ -24,22 +24,6 @@ def create_space(name="", text=" "):
     return nuke.Text_Knob(f"space_{name}", " ", text)
 
 
-def create_label_knob():
-    """Crea el knob de label estilo Nuke nativo (multilinea)"""
-    # Renombrar para evitar conflicto con el knob 'label' nativo del BackdropNode
-    label = nuke.Multiline_Eval_String_Knob("lga_label", "Label")
-    label.setFlag(nuke.STARTLINE)
-    # Aplicar la bandera RESIZABLE para mantener altura multilinea
-    # Segun documentacion oficial: "Allows some knobs (notably curves and multi-line string)
-    # to expand to fill the gaps in the interface"
-    try:
-        label.setFlag(0x0008)  # RESIZABLE flag value segun documentacion NDK
-    except:
-        # Fallback si la bandera no esta disponible en esta version
-        pass
-    return label
-
-
 def create_font_size_knob(default_size=42):
     """Crea el knob de font size con slider"""
     # Renombrar para evitar conflicto con el knob 'note_font_size' nativo del BackdropNode
@@ -246,14 +230,12 @@ def add_all_knobs(node, text_label="", existing_margin_alignment="left"):
         if text_label:
             node["label"].setValue(text_label)
 
-    # Crear font size knob solo si no existe (MANTENER COMO ESTABA)
+    # Crear font size slider solo si no existe (USAR LA FUNCIÓN ORIGINAL)
     if "lga_note_font_size" not in node.knobs():
-        lga_font_size_knob = nuke.Int_Knob("lga_note_font_size", "Font Size")
-        lga_font_size_knob.setRange(10, 200)
-        lga_font_size_knob.setValue(42)
+        lga_font_size_knob = create_font_size_knob(42)  # usar la función original
         lga_font_size_knob.setFlag(nuke.STARTLINE)
         node.addKnob(lga_font_size_knob)
-        debug_print(f"[DEBUG] Created font size knob")
+        debug_print(f"[DEBUG] Created font size slider")
 
     # Crear link de font bold/italic solo si no existe (SIN LABEL)
     if "note_font_link" not in node.knobs():

@@ -38,38 +38,31 @@ elif knob.name() == 'z_order':
     if 'zorder' in node.knobs():
         node['zorder'].setValue(knob.value())
 
-elif knob.name() == 'lga_label':
-    # Sincronizar el label personalizado con el knob label nativo del BackdropNode
-    # Aplicar solo formato de alignment ya que bold/italic ahora se manejan nativamente
+elif knob.name() == 'label_link':
+    # Manejar cambios en el label
     text_value = knob.value()
-    debug_print(f"[DEBUG] lga_label changed to: '{text_value}'")
-    
-    alignment = "left"
-    if 'lga_margin' in node.knobs():
-        alignment = node['lga_margin'].value()
-    
-    # Aplicar solo alignment (sin bold/italic ya que se manejan nativamente)
-    formatted_text = text_value
-    
-    if alignment == "center":
-        formatted_text = '<div align="center">' + formatted_text + '</div>'
-    elif alignment == "right":
-        formatted_text = '<div align="right">' + formatted_text + '</div>'
-    
-    debug_print(f"[DEBUG] Final formatted text: '{formatted_text}'")
-    node['label'].setValue(formatted_text)
+    debug_print(f"[DEBUG] label_link changed to: '{text_value}'")
+
 elif knob.name() == 'lga_note_font_size':
     # Sincronizar el font size personalizado con el knob note_font_size nativo del BackdropNode
     node['note_font_size'].setValue(knob.value())
 elif knob.name() == 'lga_margin':
-    # Aplicar alignment al texto del label
-    current_text = node['lga_label'].value()  # Obtener texto sin tags
-    debug_print(f"[DEBUG] lga_margin changed to: {knob.value()}")
-    debug_print(f"[DEBUG] Current lga_label text: '{current_text}'")
+    # Sincronizar alignment
+    debug_print(f"[DEBUG] lga_margin changed to: '{knob.value()}'")
     
-    # Aplicar solo alignment (sin bold/italic ya que se manejan nativamente)
-    formatted_text = current_text
+    # Obtener el texto actual del label nativo (limpiar tags previos)
+    current_text = node['label'].value()
+    debug_print(f"[DEBUG] Current label text: '{current_text}'")
     
+    # Limpiar tags de alignment previos
+    clean_text = current_text
+    if clean_text.startswith('<div align="center">') and clean_text.endswith('</div>'):
+        clean_text = clean_text[20:-6]
+    elif clean_text.startswith('<div align="right">') and clean_text.endswith('</div>'):
+        clean_text = clean_text[19:-6]
+    
+    # Aplicar nuevo alignment
+    formatted_text = clean_text
     if knob.value() == "center":
         formatted_text = '<div align="center">' + formatted_text + '</div>'
     elif knob.value() == "right":
@@ -92,29 +85,26 @@ def add_knobs_to_existing_backdrops():
 
     for node in backdrop_nodes:
         debug_print(f"[DEBUG] Processing node: {node.name()}")
-        # Intentar obtener el texto del knob lga_label si existe, de lo contrario, usar el knob label nativo.
-        if "lga_label" in node.knobs():
-            user_text = node["lga_label"].value()
-            debug_print(f"[DEBUG] Using lga_label value: '{user_text}'")
-        else:
-            user_text = node["label"].value()
-            debug_print(f"[DEBUG] Using native label value: '{user_text}'")
 
-        # Obtener el valor actual del font size
-        current_font_size = node["note_font_size"].getValue()
+        # Usar el label nativo
+        user_text = node["label"].value()
+        debug_print(f"[DEBUG] Using native label value: '{user_text}'")
 
         # Detectar y limpiar formato del texto (solo alignment, no bold/italic)
         clean_text = user_text
+        existing_margin_alignment = "left"
 
         # Detectar y remover div alignment tags
         if clean_text.startswith('<div align="center">') and clean_text.endswith(
             "</div>"
         ):
             clean_text = clean_text[20:-6]  # Remover <div align="center"> y </div>
+            existing_margin_alignment = "center"
         elif clean_text.startswith('<div align="right">') and clean_text.endswith(
             "</div>"
         ):
             clean_text = clean_text[19:-6]  # Remover <div align="right"> y </div>
+            existing_margin_alignment = "right"
 
         # Remover tags HTML residuales si existen (de implementaciones anteriores)
         import re
@@ -124,9 +114,7 @@ def add_knobs_to_existing_backdrops():
         debug_print(f"[DEBUG] Clean text: '{clean_text}'")
 
         debug_print(f"[DEBUG] Calling add_all_knobs for node: {node.name()}")
-        LGA_BD_knobs.add_all_knobs(
-            node, clean_text, current_font_size
-        )  # Ya no pasamos parámetros bold/italic
+        LGA_BD_knobs.add_all_knobs(node, clean_text, existing_margin_alignment)
         debug_print(f"[DEBUG] Finished processing node: {node.name()}")
 
     debug_print(f"[DEBUG] add_knobs_to_existing_backdrops completed")
