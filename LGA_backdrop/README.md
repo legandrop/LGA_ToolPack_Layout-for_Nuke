@@ -25,10 +25,14 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 - **Margin**: Dropdown (`lga_margin`) para alineación del texto (Left/Center/Right) con aplicación automática de tags HTML
 
 ### Sección de Colores
-- **Widget de Colores Personalizados**: Implementación de botones cuadrados estilo swatch usando PyCustom_Knob
-- **Botón Random con Gradiente**: Primer botón con gradiente multicolor arcoíris para aplicar colores aleatorios
-- **8 Colores Sólidos**: Botones cuadrados con colores sólidos (Red, Green, Blue, Yellow, Cyan, Magenta, Orange, Purple)
-- **Estilo Visual**: Botones de 40px de altura, sin bordes, con colores RGB sólidos o gradiente
+- **Widget de Colores Avanzado**: Implementación de botones estilo swatch con sistema de variaciones usando PyCustom_Knob
+- **Botón Random con Gradiente**: Primer botón con gradiente multicolor arcoíris que aplica colores RGB completamente aleatorios
+- **9 Familias de Colores**: Botones con variaciones cíclicas (Red, Green, Blue, Yellow, Cyan, Magenta, Orange, Purple, Gray)
+- **Sistema de Variaciones**: Cada color tiene 5 variaciones que ciclan automáticamente al hacer clic repetido
+- **Variables Controlables**: `MIN_LIGHTNESS`, `MAX_LIGHTNESS`, `MIN_SATURATION`, `MAX_SATURATION` para controlar rangos de variación
+- **Tracking Inteligente**: Sistema interno que recuerda la última variación aplicada para ciclo correcto
+- **Conversión HLS**: Algoritmos internos de conversión RGB↔HLS para generar variaciones precisas de luminancia y saturación
+- **Comportamiento Especial Gray**: El gris solo varía en luminancia (de oscuro a claro) manteniendo saturación en 0
 - **Persistencia**: Clase registrada globalmente (`nuke.LGA_ColorSwatchWidget`) para preservar funcionalidad al guardar/cargar scripts
 
 ### Sección de Resize
@@ -59,7 +63,11 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
   - `create_font_size_knob()`: Crea slider para font size sincronizado con knob nativo
   - `add_all_knobs()`: Maneja creación condicional de knobs, evitando duplicación y preservando valores
   - `add_knobs_to_existing_backdrops()`: Callback onScriptLoad que agrega knobs faltantes a backdrops existentes
-  - `ColorSwatchWidget()`: Clase que implementa botones de colores estilo swatch con gradiente random y colores sólidos
+  - `ColorSwatchWidget()`: Clase avanzada con sistema de variaciones, tracking interno y algoritmos de conversión HLS
+  - `_generate_color_variations()`: Genera 5 variaciones por color usando interpolación de luminancia y saturación
+  - `_cycle_color_variation()`: Maneja el ciclo inteligente entre variaciones con tracking interno
+  - `_apply_random_color()`: Aplica colores RGB completamente aleatorios con reset de tracking
+  - `_rgb_to_hls()` y `_hls_to_rgb()`: Funciones de conversión de espacios de color para variaciones precisas
   - `create_lga_color_swatch_buttons()`: Crea PyCustom_Knob con clase registrada globalmente para persistencia
 - **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_callbacks.py`**:
   - `knob_changed_script()`: Sincroniza cambios entre knobs y ejecuta autofit automático inline en cambios de `margin_slider`
@@ -82,6 +90,29 @@ if "nuevo_knob" not in node.knobs():
 ```
 
 **⚠️ Importante**: Siempre usar verificación `if "knob_name" not in node.knobs():` para evitar duplicación al recargar scripts.
+
+## Sistema de Variaciones de Colores
+
+### Variables Controlables
+El sistema permite ajustar los rangos de variación editando las constantes de clase en `ColorSwatchWidget`:
+```python
+MIN_LIGHTNESS = 0.3    # Luminancia mínima (0.0 = negro, 1.0 = blanco)
+MAX_LIGHTNESS = 0.8    # Luminancia máxima 
+MIN_SATURATION = 0.4   # Saturación mínima (0.0 = gris, 1.0 = color puro)
+MAX_SATURATION = 1.0   # Saturación máxima
+```
+
+### Comportamiento del Sistema
+- **Primera vez**: Al hacer clic en un color, se aplica la variación 0 (más oscura/menos saturada)
+- **Clicks repetidos**: Cicla automáticamente entre las 5 variaciones (0→1→2→3→4→0...)
+- **Cambio de familia**: Al cambiar a otro color, reinicia desde variación 0
+- **Random**: El botón random resetea el tracking y genera RGB completamente aleatorio
+- **Gray especial**: Solo varía luminancia manteniendo saturación en 0 para efectos monocromáticos
+
+### Tracking Interno
+El sistema usa variables internas para mantener estado:
+- `_last_applied_color`: Nombre de la última familia de color aplicada
+- `_last_applied_index`: Índice de la última variación aplicada (0-4)
 
 ## Funcionalidad Autofit Mejorada
 
@@ -145,7 +176,7 @@ El sistema incluye lógica inteligente para determinar el Z-order al crear nuevo
 - ✅ **Cálculo de límites**: Implementada (con funciones de oz_backdrop)
 - ✅ **Z-order management**: Implementada con cálculo automático y preservación de valores
 - ✅ **Knobs personalizados**: Implementados (modulares)
-- ✅ **Colores básicos**: Implementados (8 colores + random)
+- ✅ **Sistema de colores avanzado**: Implementado (9 familias de colores con 5 variaciones cada una + random RGB)
 - ✅ **Resize functions**: Implementadas (grow, shrink, encompass)
 - ✅ **Font size con slider**: Implementado
 - ✅ **Bold toggle button**: Implementado con preservación de estado
