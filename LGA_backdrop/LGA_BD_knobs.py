@@ -5,6 +5,15 @@ LGA_BD_knobs.py - Manejo modular de knobs para LGA_backdrop
 import nuke
 import os
 
+try:
+    import PySide.QtCore as QtCore
+    import PySide.QtGui as QtGui
+    import PySide.QtGui as QtWidgets
+except:
+    import PySide2.QtCore as QtCore
+    import PySide2.QtGui as QtGui
+    import PySide2.QtWidgets as QtWidgets
+
 # Variable global para activar o desactivar los prints
 DEBUG = True
 
@@ -12,6 +21,71 @@ DEBUG = True
 def debug_print(*message):
     if DEBUG:
         print(*message)
+
+
+class ColorSwatchWidget(QtWidgets.QWidget):
+    SWATCH_TOTAL = 8
+    SWATCH_CSS = "background-color: rgb(%03d,%03d,%03d); border: none; height: 40px;"
+    SWATCH_COLOR = (58, 58, 58)
+
+    def __init__(self, node=None):
+        super(ColorSwatchWidget, self).__init__()
+        self.node = node
+        self._swatch_widgets = []
+
+        self.color_swatches = [
+            ("red", (204, 85, 85)),
+            ("green", (85, 204, 85)),
+            ("blue", (85, 85, 204)),
+            ("yellow", (204, 204, 85)),
+            ("cyan", (85, 204, 204)),
+            ("magenta", (204, 85, 204)),
+            ("orange", (204, 136, 85)),
+            ("purple", (136, 85, 204)),
+        ]
+
+        self._create_layout()
+
+    def _create_layout(self):
+        color_chooser_layout = QtWidgets.QHBoxLayout()
+        color_chooser_layout.setAlignment(QtCore.Qt.AlignTop)
+        self.setLayout(color_chooser_layout)
+
+        for i, (color_name, rgb_values) in enumerate(self.color_swatches):
+            color_knob = QtWidgets.QPushButton()
+            color_knob.clicked.connect(self.color_knob_click)
+            color_knob.setToolTip("Click to Select This Color!")
+            color_knob.setStyleSheet(
+                self.SWATCH_CSS % (rgb_values[0], rgb_values[1], rgb_values[2])
+            )
+
+            color_chooser_layout.addWidget(color_knob)
+            self._swatch_widgets.append(color_knob)
+
+    def color_knob_click(self):
+        widget = self.sender()
+        if not widget or not self.node:
+            return
+
+        color_stylesheet = widget.styleSheet()
+
+        import re
+
+        matches = re.findall("[(](?:\d{1,3}[,\)]){3}", color_stylesheet)
+        if matches:
+            color_value = matches[0][1:-1].split(",")
+            color_value.append("255")
+
+            rgb_color = tuple(map(int, color_value))
+            hex_color = int("%02x%02x%02x%02x" % rgb_color, 16)
+
+            self.node["tile_color"].setValue(hex_color)
+
+    def makeUI(self):
+        return self
+
+    def updateValue(self):
+        pass
 
 
 def create_divider(name=""):
@@ -69,51 +143,34 @@ def create_margin_alignment_section(alignment_value="left"):
     return knobs
 
 
-def create_simple_colors_section():
-    """Crea una seccion simple de colores"""
+def create_lga_color_swatch_buttons():
+    """Crea seccion de colores"""
+    color_knobs = []
+
     # Boton de color aleatorio
     random_color = nuke.PyScript_Knob(
-        "random_color",
+        "lga_random_color",
         "Random Color",
         """
 import random
 node = nuke.thisNode()
-# Generar color aleatorio en el rango que usa Nuke
 random_color = int((random.random() * (16 - 10))) + 10
 node['tile_color'].setValue(random_color)
 """,
     )
-
-    # Colores basicos predefinidos
-    colors = [
-        ("Red", 0xFF0000FF),
-        ("Green", 0x00FF00FF),
-        ("Blue", 0x0000FFFF),
-        ("Yellow", 0xFFFF00FF),
-        ("Cyan", 0x00FFFFFF),
-        ("Magenta", 0xFF00FFFF),
-        ("Orange", 0xFF8000FF),
-        ("Purple", 0x8000FFFF),
-    ]
-
-    color_knobs = []
     color_knobs.append(random_color)
-    color_knobs.append(create_space("color_space1"))
+    color_knobs.append(create_space("lga_color_space1"))
 
-    for i, (name, color_value) in enumerate(colors):
-        color_knob = nuke.PyScript_Knob(
-            f"color_{name.lower()}",
-            name,
-            f"""
-node = nuke.thisNode()
-node['tile_color'].setValue({color_value})
-""",
-        )
-        color_knobs.append(color_knob)
+    # Widget de colores personalizados - asegurar que la clase esté en el namespace global
+    import LGA_BD_knobs
 
-        # Agregar salto de linea cada 4 colores
-        if (i + 1) % 4 == 0:
-            color_knobs.append(create_space(f"color_newline_{i}"))
+    nuke.ColorSwatchWidget = LGA_BD_knobs.ColorSwatchWidget
+
+    lga_color_palette_widget = nuke.PyCustom_Knob(
+        "lga_color_palette", "", "nuke.ColorSwatchWidget(nuke.thisNode())"
+    )
+
+    color_knobs.append(lga_color_palette_widget)
 
     return color_knobs
 
@@ -306,7 +363,7 @@ def add_remaining_knobs_if_missing(node, existing_margin_alignment):
         node.addKnob(divider4)
 
     # Colors section (movida al final)
-    color_knobs = create_simple_colors_section()
+    color_knobs = create_lga_color_swatch_buttons()
     for knob in color_knobs:
         if knob.name() not in node.knobs():
             node.addKnob(knob)
