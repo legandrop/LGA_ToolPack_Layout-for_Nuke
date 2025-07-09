@@ -255,32 +255,6 @@ def add_all_knobs(node, text_label="", existing_margin_alignment="left"):
         node.addKnob(margin_dropdown)
         debug_print(f"[DEBUG] Created margin dropdown")
 
-    # Continuar con el resto de knobs usando las funciones existentes...
-    # Solo agregar si no existen
-    remaining_knobs = [
-        ("divider_1", lambda: nuke.Text_Knob("divider_1", "", "")),
-        (
-            "random_color",
-            lambda: nuke.PyScript_Knob(
-                "random_color",
-                "Random Color",
-                "exec(open('{}').read())".format(
-                    os.path.join(
-                        os.path.dirname(__file__), "LGA_BD_callbacks.py"
-                    ).replace("\\", "/")
-                ),
-            ),
-        ),
-    ]
-
-    for knob_name, knob_creator in remaining_knobs:
-        if knob_name not in node.knobs():
-            knob = knob_creator()
-            if knob_name == "divider_1":
-                knob.setFlag(nuke.STARTLINE)
-            node.addKnob(knob)
-            debug_print(f"[DEBUG] Created {knob_name}")
-
     # Agregar el resto de los knobs usando las funciones existentes si no existen
     add_remaining_knobs_if_missing(node, existing_margin_alignment)
 
@@ -290,13 +264,7 @@ def add_all_knobs(node, text_label="", existing_margin_alignment="left"):
 def add_remaining_knobs_if_missing(node, existing_margin_alignment):
     """Agrega los knobs restantes solo si no existen"""
 
-    # Colors section
-    color_knobs = create_simple_colors_section()
-    for knob in color_knobs:
-        if knob.name() not in node.knobs():
-            node.addKnob(knob)
-
-    # Divider 2
+    # Divider 2 (antes de la sección de resize)
     if "divider_2" not in node.knobs():
         divider2 = nuke.Text_Knob("divider_2", "", "")
         divider2.setFlag(nuke.STARTLINE)
@@ -311,7 +279,7 @@ def add_remaining_knobs_if_missing(node, existing_margin_alignment):
                 knob.setFlag(nuke.NO_ANIMATION)
             node.addKnob(knob)
 
-    # Divider 3
+    # Divider 3 (antes de la sección de z-order)
     if "divider_3" not in node.knobs():
         divider3 = nuke.Text_Knob("divider_3", "", "")
         divider3.setFlag(nuke.STARTLINE)
@@ -324,6 +292,18 @@ def add_remaining_knobs_if_missing(node, existing_margin_alignment):
             # Asegurar que el slider zorder tenga NO_ANIMATION
             if hasattr(knob, "setFlag") and knob.name() == "zorder":
                 knob.setFlag(nuke.NO_ANIMATION)
+            node.addKnob(knob)
+
+    # Divider 4 (antes de la sección de colores)
+    if "divider_4" not in node.knobs():
+        divider4 = nuke.Text_Knob("divider_4", "", "")
+        divider4.setFlag(nuke.STARTLINE)
+        node.addKnob(divider4)
+
+    # Colors section (movida al final)
+    color_knobs = create_simple_colors_section()
+    for knob in color_knobs:
+        if knob.name() not in node.knobs():
             node.addKnob(knob)
 
 
