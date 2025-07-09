@@ -51,22 +51,74 @@ def create_font_size_knob(default_size=42):
 
 
 def create_font_bold_section(bold_value=False):
-    """Crea la seccion de font bold"""
+    """Crea la seccion de font bold (toggle button con estilo)"""
     knobs = []
 
-    # Label para Bold
-    bold_label = nuke.Text_Knob("bold_label", "", "      Bold  ")
+    # Boton toggle para bold con estilo de icono cuadrado
+    # Estado inicial determinado por bold_value
+    if bold_value:
+        initial_label = '<span style="background-color:#505050;border:1px solid #707070;padding:2px;color:white;font-weight:bold;font-family:monospace;width:16px;height:16px;display:inline-block;text-align:center;">B</span>'
+    else:
+        initial_label = '<span style="background-color:#303030;border:1px solid #505050;padding:2px;color:#cccccc;font-weight:bold;font-family:monospace;width:16px;height:16px;display:inline-block;text-align:center;">B</span>'
 
-    # Checkbox para bold
-    bold_checkbox = nuke.Boolean_Knob("lga_bold", "")
-    bold_checkbox.setValue(bold_value)
-    bold_checkbox.setTooltip("Make text bold")
+    bold_button = nuke.PyScript_Knob(
+        "lga_bold_button",
+        initial_label,
+        """
+node = nuke.thisNode()
+current_text = node['lga_label'].value()
 
-    # Configurar para que aparezcan en la misma línea
-    bold_label.clearFlag(nuke.STARTLINE)
-    bold_checkbox.clearFlag(nuke.STARTLINE)
+alignment = "left"
+if 'lga_margin' in node.knobs():
+    alignment = node['lga_margin'].value()
 
-    knobs.extend([bold_label, bold_checkbox])
+# Obtener el estado actual del knob hidden
+current_bold_state = False
+if 'lga_bold_state' in node.knobs():
+    current_bold_state = node['lga_bold_state'].value()
+
+# Alternar el estado
+new_bold_state = not current_bold_state
+
+# Actualizar el texto aplicando o quitando bold
+formatted_text = current_text
+if new_bold_state:
+    formatted_text = '<b>' + formatted_text + '</b>'
+
+# Aplicar alignment
+if alignment == "center":
+    formatted_text = '<div align="center">' + formatted_text + '</div>'
+elif alignment == "right":
+    formatted_text = '<div align="right">' + formatted_text + '</div>'
+
+# Actualizar el label nativo
+node['label'].setValue(formatted_text)
+
+# Actualizar el estado hidden
+node['lga_bold_state'].setValue(new_bold_state)
+
+# Actualizar la apariencia del boton para reflejar el estado toggle
+if new_bold_state:
+    # Estado ON - boton presionado (más claro)
+    node['lga_bold_button'].setLabel('<span style="background-color:#505050;border:1px solid #707070;padding:2px;color:white;font-weight:bold;font-family:monospace;width:16px;height:16px;display:inline-block;text-align:center;">B</span>')
+else:
+    # Estado OFF - boton normal (más oscuro)
+    node['lga_bold_button'].setLabel('<span style="background-color:#303030;border:1px solid #505050;padding:2px;color:#cccccc;font-weight:bold;font-family:monospace;width:16px;height:16px;display:inline-block;text-align:center;">B</span>')
+
+print(f"[DEBUG] Bold toggle. New bold state: {new_bold_state}")
+""",
+    )
+    bold_button.setTooltip("Toggle bold text")
+
+    # Knob hidden para almacenar el estado de bold
+    bold_state_knob = nuke.Boolean_Knob("lga_bold_state", "")
+    bold_state_knob.setValue(bold_value)
+    bold_state_knob.setVisible(False)  # Oculto
+
+    # Configurar para que aparezcan en la misma linea
+    bold_button.clearFlag(nuke.STARTLINE)
+
+    knobs.extend([bold_button, bold_state_knob])
 
     return knobs
 
@@ -405,8 +457,8 @@ def add_all_knobs(node, user_text="", note_font_size=None):
         existing_margin_value = node["margin_slider"].getValue()
 
     existing_bold_value = False  # default
-    if "lga_bold" in node.knobs():
-        existing_bold_value = node["lga_bold"].getValue()
+    if "lga_bold_state" in node.knobs():
+        existing_bold_value = node["lga_bold_state"].getValue()
     else:
         # Si no existe el knob, detectar bold del texto original
         original_text = node["label"].getValue()
@@ -468,8 +520,8 @@ def add_all_knobs(node, user_text="", note_font_size=None):
         custom_knob_names = [
             "lga_label",
             "lga_note_font_size",
-            "bold_label",
-            "lga_bold",
+            "lga_bold_button",
+            "lga_bold_state",
             "margin_align_label",
             "lga_margin",
             "font_color_label",
@@ -537,6 +589,18 @@ def add_all_knobs(node, user_text="", note_font_size=None):
     bold_knobs = create_font_bold_section(existing_bold_value)
     for knob in bold_knobs:
         node.addKnob(knob)
+
+    # Inicializar el estado visual del boton de bold
+    if existing_bold_value:
+        # Estado ON - boton presionado (fondo gris)
+        node["lga_bold_button"].setLabel(
+            '<span style="background-color:#505050;border:1px solid #707070;padding:2px;color:white;font-weight:bold;font-family:monospace;width:16px;height:16px;display:inline-block;text-align:center;">B</span>'
+        )
+    else:
+        # Estado OFF - boton normal
+        node["lga_bold_button"].setLabel(
+            '<span style="background-color:#303030;border:1px solid #505050;padding:2px;color:#cccccc;font-weight:bold;font-family:monospace;width:16px;height:16px;display:inline-block;text-align:center;">B</span>'
+        )
 
     # Seccion de Margin Alignment (nueva línea debajo)
     margin_align_knobs = create_margin_alignment_section(
