@@ -529,6 +529,12 @@ class LGA_SaveDefaultsWidget(QtWidgets.QWidget):
     def __init__(self, node=None):
         super(LGA_SaveDefaultsWidget, self).__init__()
         self.node = node
+        self._icon_path = os.path.join(
+            os.path.dirname(__file__), "icons", "lga_bd_save.png"
+        )
+        self._hover_icon_path = os.path.join(
+            os.path.dirname(__file__), "icons", "lga_bd_save_hover.png"
+        )
         self._create_ui()
 
     def _create_ui(self):
@@ -552,50 +558,61 @@ class LGA_SaveDefaultsWidget(QtWidgets.QWidget):
         )
 
         # Botón para el icono
-        save_button = QtWidgets.QPushButton()
-        save_button.setToolTip("Save current properties as default for new backdrops")
-        save_button.clicked.connect(self._on_save_button_clicked)
+        self.save_button = QtWidgets.QPushButton()  # Cambiado a self.save_button
+        self.save_button.setToolTip(
+            "Save current properties as default for new backdrops"
+        )
+        self.save_button.clicked.connect(self._on_save_button_clicked)
 
-        # Construir la ruta absoluta al icono
-        icon_path = os.path.join(os.path.dirname(__file__), "icons", "lga_bd_save.png")
-
-        # Cargar el icono y ajustar su tamaño
-        icon = QtGui.QIcon(icon_path)
-        save_button.setIcon(icon)
-        save_button.setIconSize(
-            QtCore.QSize(24, 24)
+        # Cargar el icono normal
+        icon = QtGui.QIcon(self._icon_path)
+        self.save_button.setIcon(icon)
+        self.save_button.setIconSize(
+            QtCore.QSize(20, 20)
         )  # Reducir el tamaño del icono en 10px
-        save_button.setFixedSize(
-            QtCore.QSize(32, 32)
+        self.save_button.setFixedSize(
+            QtCore.QSize(28, 28)
         )  # Mantener el tamaño del botón igual
-        save_button.setSizePolicy(
+        self.save_button.setSizePolicy(
             QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
         )  # Asegurar tamaño fijo del botón
 
         # Aplicar el estilo CSS al botón
-        save_button.setStyleSheet(
+        self.save_button.setStyleSheet(
             """
             QPushButton {
-                background-color: rgb(58, 58, 58); /* Color de fondo similar a los otros botones */
+                background-color: rgb(50, 50, 50); /* Color de fondo similar a los otros botones */
                 border: none;
                 padding: 0px; /* Añadir padding por defecto del botón */
             }
             QPushButton:hover {
-                background-color: rgb(80, 80, 80); /* Color al pasar el ratón */
+                background-color: rgb(50, 50, 50); /* Color al pasar el ratón, el cambio de icono se maneja en enterEvent/leaveEvent */
             }
             QPushButton:pressed {
-                background-color: rgb(30, 30, 30); /* Color al presionar */
+                background-color: rgb(70, 70, 70); /* Color al presionar */
             }
         """
         )
 
-        main_layout.addWidget(save_button)
+        main_layout.addWidget(self.save_button)  # Añadir self.save_button al layout
 
         # Establecer tamaño para el widget completo (expandible horizontalmente)
         self.setFixedHeight(32)  # Altura fija
         self.setSizePolicy(
             QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed
         )  # Expandible horizontalmente, altura fija
+
+    def enterEvent(self, event):
+        """Cambia el icono a la version hover cuando el raton entra."""
+        if self.save_button:
+            self.save_button.setIcon(QtGui.QIcon(self._hover_icon_path))
+        super(LGA_SaveDefaultsWidget, self).enterEvent(event)
+
+    def leaveEvent(self, event):
+        """Cambia el icono a la version normal cuando el raton sale."""
+        if self.save_button:
+            self.save_button.setIcon(QtGui.QIcon(self._icon_path))
+        super(LGA_SaveDefaultsWidget, self).leaveEvent(event)
 
     def _on_save_button_clicked(self):
         """Maneja el click del botón y guarda las configuraciones actuales como defaults."""
@@ -658,7 +675,7 @@ class LGA_SaveDefaultsWidget(QtWidgets.QWidget):
 
     def sizeHint(self):
         """Define el tamaño preferido del widget para el sistema de layout."""
-        return QtCore.QSize(200, 32)  # Devolver el tamaño preferido expandible
+        return QtCore.QSize(28, 28)  # Devolver el tamaño preferido expandible
 
 
 nuke.LGA_SaveDefaultsWidget = LGA_SaveDefaultsWidget
