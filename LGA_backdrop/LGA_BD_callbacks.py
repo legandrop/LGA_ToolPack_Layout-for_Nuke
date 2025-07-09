@@ -30,6 +30,8 @@ def debug_print(*message):
 node = nuke.thisNode()
 knob = nuke.thisKnob()
 
+debug_print(f"[CALLBACK DEBUG] Knob changed: {knob.name()} = {knob.value()}")
+
 if knob.name() == 'zorder':
     # Sincronizar el slider zorder con z_order
     node['z_order'].setValue(knob.value())
@@ -46,6 +48,100 @@ elif knob.name() == 'label_link':
 elif knob.name() == 'lga_note_font_size':
     # Sincronizar el font size personalizado con el knob note_font_size nativo del BackdropNode
     node['note_font_size'].setValue(knob.value())
+
+elif knob.name() == 'margin_slider':
+    # NUEVA FUNCIONALIDAD: Auto fit automático cuando cambia el margin slider
+    debug_print(f"[DEBUG] margin_slider changed to: {knob.value()}")
+    debug_print(f"[DEBUG] Ejecutando autofit automático...")
+    
+    try:
+        # Intentar varias formas de importar el módulo
+        import sys
+        import os
+        
+        # Agregar la ruta del directorio actual al path
+        current_dir = os.path.dirname(node.name())  # Esto no funciona, pero intentamos
+        
+        # Método más directo: ejecutar el código directamente
+        debug_print(f"[DEBUG] Intentando ejecutar fit_to_selected_nodes directamente...")
+        
+        # Copiar la función directamente aquí para evitar problemas de import
+        this = node
+        padding = this["margin_slider"].getValue()
+
+        if this.isSelected:
+            this.setSelected(False)
+        
+        selNodes = nuke.selectedNodes()
+        debug_print(f"[DEBUG] Nodos inicialmente seleccionados: {len(selNodes)}")
+
+        # Si no hay nodos seleccionados, buscar nodos dentro del backdrop
+        if not selNodes:
+            debug_print(f"[DEBUG] No hay nodos seleccionados, buscando nodos dentro del backdrop")
+            
+            # Buscar nodos dentro del backdrop (función inline)
+            backdrop_left = this.xpos()
+            backdrop_top = this.ypos()
+            backdrop_right = backdrop_left + this.screenWidth()
+            backdrop_bottom = backdrop_top + this.screenHeight()
+            
+            nodes_inside = []
+            all_nodes = nuke.allNodes()
+            
+            for node_check in all_nodes:
+                if node_check == this or node_check.Class() == 'Root':
+                    continue
+                    
+                node_left = node_check.xpos()
+                node_top = node_check.ypos()
+                node_right = node_left + node_check.screenWidth()
+                node_bottom = node_top + node_check.screenHeight()
+                
+                if (node_left >= backdrop_left and 
+                    node_top >= backdrop_top and 
+                    node_right <= backdrop_right and 
+                    node_bottom <= backdrop_bottom):
+                    
+                    nodes_inside.append(node_check)
+            
+            selNodes = nodes_inside
+            
+            if not selNodes:
+                debug_print(f"[DEBUG] No hay nodos dentro del backdrop para hacer autofit")
+                return
+            
+            debug_print(f"[DEBUG] Encontrados {len(selNodes)} nodos dentro del backdrop para autofit")
+
+        # Continuar con el cálculo de autofit
+        if selNodes:
+            bdX = min([node_calc.xpos() for node_calc in selNodes])
+            bdY = min([node_calc.ypos() for node_calc in selNodes])
+            bdW = max([node_calc.xpos() + node_calc.screenWidth() for node_calc in selNodes]) - bdX
+            bdH = max([node_calc.ypos() + node_calc.screenHeight() for node_calc in selNodes]) - bdY
+
+            debug_print(f"[DEBUG] Límites calculados: X={bdX}, Y={bdY}, W={bdW}, H={bdH}")
+            
+            # Aplicar padding y calcular nuevas dimensiones
+            bdX_new = bdX - padding
+            bdY_new = bdY - padding  
+            bdW_new = bdW + (2 * padding)
+            bdH_new = bdH + (2 * padding)
+            
+            # Aplicar los nuevos valores al backdrop
+            this["xpos"].setValue(bdX_new)
+            this["ypos"].setValue(bdY_new)
+            this["bdwidth"].setValue(bdW_new)
+            this["bdheight"].setValue(bdH_new)
+            
+            debug_print(f"[DEBUG] Autofit aplicado: X={bdX_new}, Y={bdY_new}, W={bdW_new}, H={bdH_new}")
+        else:
+            debug_print(f"[DEBUG] No se encontraron nodos para autofit")
+        
+    except Exception as e:
+        debug_print(f"[DEBUG ERROR] Error en autofit automático: {str(e)}")
+        import traceback
+        debug_print(f"[DEBUG ERROR] Traceback: {traceback.format_exc()}")
+
 elif knob.name() == 'lga_margin':
     # Sincronizar alignment
     debug_print(f"[DEBUG] lga_margin changed to: '{knob.value()}'")

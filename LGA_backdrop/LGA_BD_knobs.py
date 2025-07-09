@@ -306,6 +306,9 @@ def add_remaining_knobs_if_missing(node, existing_margin_alignment):
     resize_knobs = create_resize_section(50)  # default margin value
     for knob in resize_knobs:
         if knob.name() not in node.knobs():
+            # Asegurar que los sliders tengan NO_ANIMATION
+            if hasattr(knob, "setFlag") and knob.name() == "margin_slider":
+                knob.setFlag(nuke.NO_ANIMATION)
             node.addKnob(knob)
 
     # Divider 3
@@ -318,6 +321,9 @@ def add_remaining_knobs_if_missing(node, existing_margin_alignment):
     zorder_knobs = create_zorder_section(0)  # default z value
     for knob in zorder_knobs:
         if knob.name() not in node.knobs():
+            # Asegurar que el slider zorder tenga NO_ANIMATION
+            if hasattr(knob, "setFlag") and knob.name() == "zorder":
+                knob.setFlag(nuke.NO_ANIMATION)
             node.addKnob(knob)
 
 

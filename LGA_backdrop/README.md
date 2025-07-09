@@ -29,8 +29,8 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 - **8 Colores básicos**: Red, Green, Blue, Yellow, Cyan, Magenta, Orange, Purple
 
 ### Sección de Resize
-- **Margin**: Slider para configurar el margen del auto fit (rango 10-200)
-- **Auto Fit**: Botón para redimensionar automáticamente abarcando nodos seleccionados o nodos dentro del backdrop
+- **Margin**: Slider automático para configurar el margen del auto fit (rango 10-200) - ejecuta autofit al cambiar
+- **Auto Fit**: Botón para redimensionar manualmente abarcando nodos seleccionados o nodos dentro del backdrop
 
 ### Sección de Z-Order (copiada de oz_backdrop)
 - **Z Order**: Slider con labels "Back" y "Front" (rango -5 a +5)
@@ -56,7 +56,7 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
   - `add_all_knobs()`: Maneja creación condicional de knobs, evitando duplicación y preservando valores
   - `add_knobs_to_existing_backdrops()`: Callback onScriptLoad que agrega knobs faltantes a backdrops existentes
 - **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_callbacks.py`**:
-  - `knob_changed_script()`: Sincroniza cambios entre `lga_note_font_size` ↔ `note_font_size` y maneja alignment HTML
+  - `knob_changed_script()`: Sincroniza cambios entre knobs y ejecuta autofit automático en cambios de `margin_slider`
 - **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_fit.py`**:
   - `fit_to_selected_nodes()`: Redimensiona backdrop usando valor del margin slider o nodos internos
   - `find_nodes_inside_backdrop()`: Encuentra eficientemente nodos dentro del backdrop actual
@@ -83,6 +83,11 @@ if "nuevo_knob" not in node.knobs():
 - **Optimización**: Usa `find_nodes_inside_backdrop()` que emplea `nuke.allNodes()` optimizado internamente
 - **Debug extensivo**: Sistema de debug prints para monitorear el proceso de búsqueda y cálculo de límites
 - **Soporte completo**: Funciona con todos los tipos de nodos incluidos otros backdrops dentro del backdrop principal
+
+### Autofit Automático con Margin Slider
+- **Autofit en tiempo real**: El slider de margin ejecuta autofit automáticamente al cambiar su valor
+- **Sin necesidad de botón**: No es necesario hacer clic en el botón Auto Fit, el cambio es inmediato
+- **Callback inteligente**: Usa `knob_changed_script()` para detectar cambios en `margin_slider` y ejecutar la función automáticamente
 
 ### Métodos de Optimización
 - **`nuke.allNodes()`**: Función nativa optimizada que es la forma más eficiente de obtener nodos en Nuke
