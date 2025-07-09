@@ -8,6 +8,7 @@ _______________________________________________
 """
 
 import nuke
+import os
 from PySide2 import QtWidgets, QtGui, QtCore
 
 
@@ -22,7 +23,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
     def setup_ui(self):
         """Configura la interfaz de usuario"""
         self.setWindowTitle("StickyNote Editor")
-        self.setFixedSize(300, 280)
+        self.setFixedSize(300, 320)
         self.setStyleSheet("background-color: #242527; color: #FFFFFF;")
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
 
@@ -154,6 +155,58 @@ class StickyNoteEditor(QtWidgets.QDialog):
         margin_y_layout.addWidget(self.margin_y_slider)
         margin_y_layout.addWidget(self.margin_y_value)
 
+        # Botones de flechas
+        arrows_layout = QtWidgets.QHBoxLayout()
+        arrows_label = QtWidgets.QLabel("Arrows:")
+        arrows_label.setStyleSheet("color: #AAAAAA; font-size: 11px;")
+
+        # Botón de flecha derecha
+        self.right_arrow_button = QtWidgets.QPushButton()
+        self.right_arrow_button.setToolTip("Add right arrow")
+        self.right_arrow_button.setFixedSize(QtCore.QSize(28, 28))
+        self.right_arrow_button.setSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )
+
+        # Rutas de los iconos
+        icons_path = os.path.join(os.path.dirname(__file__), "icons")
+        self.right_arrow_icon_path = os.path.join(icons_path, "lga_right_arrow.png")
+        self.right_arrow_hover_icon_path = os.path.join(
+            icons_path, "lga_right_arrow_hover.png"
+        )
+
+        # Cargar el icono normal
+        if os.path.exists(self.right_arrow_icon_path):
+            icon = QtGui.QIcon(self.right_arrow_icon_path)
+            self.right_arrow_button.setIcon(icon)
+            self.right_arrow_button.setIconSize(QtCore.QSize(20, 20))
+
+        # Aplicar estilo CSS al botón
+        self.right_arrow_button.setStyleSheet(
+            """
+            QPushButton {
+                background-color: rgb(50, 50, 50);
+                border: none;
+                padding: 0px;
+            }
+            QPushButton:hover {
+                background-color: rgb(50, 50, 50);
+            }
+            QPushButton:pressed {
+                background-color: rgb(70, 70, 70);
+            }
+        """
+        )
+
+        # Conectar eventos del botón
+        self.right_arrow_button.clicked.connect(self.on_right_arrow_clicked)
+        self.right_arrow_button.enterEvent = self.on_right_arrow_enter
+        self.right_arrow_button.leaveEvent = self.on_right_arrow_leave
+
+        arrows_layout.addWidget(arrows_label)
+        arrows_layout.addWidget(self.right_arrow_button)
+        arrows_layout.addStretch()  # Spacer para empujar todo a la izquierda
+
         # Ayuda
         help_label = QtWidgets.QLabel(
             '<span style="font-size:9pt; color:#666666;">ESC para cerrar</span>'
@@ -166,6 +219,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
         main_layout.addLayout(font_size_layout)
         main_layout.addLayout(margin_x_layout)
         main_layout.addLayout(margin_y_layout)
+        main_layout.addLayout(arrows_layout)
         main_layout.addWidget(help_label)
 
         self.setLayout(main_layout)
@@ -344,6 +398,27 @@ class StickyNoteEditor(QtWidgets.QDialog):
             self.margin_y_value.setText(str(value))
             # Actualizar el texto con el nuevo margin
             self.on_text_changed()
+
+    def on_right_arrow_clicked(self):
+        """Callback cuando se hace click en el botón de flecha derecha"""
+        # Por ahora no hace nada, solo placeholder
+        print("Right arrow button clicked!")
+
+    def on_right_arrow_enter(self, event):
+        """Cambia el icono a la version hover cuando el ratón entra"""
+        if hasattr(self, "right_arrow_button") and os.path.exists(
+            self.right_arrow_hover_icon_path
+        ):
+            self.right_arrow_button.setIcon(
+                QtGui.QIcon(self.right_arrow_hover_icon_path)
+            )
+
+    def on_right_arrow_leave(self, event):
+        """Cambia el icono a la version normal cuando el ratón sale"""
+        if hasattr(self, "right_arrow_button") and os.path.exists(
+            self.right_arrow_icon_path
+        ):
+            self.right_arrow_button.setIcon(QtGui.QIcon(self.right_arrow_icon_path))
 
     def keyPressEvent(self, event):
         """Maneja los eventos de teclado"""
