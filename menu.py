@@ -94,7 +94,7 @@ import LGA_StickyNote
 
 n.addCommand(
     "  Create StickyNote",
-    "LGA_StickyNote.run_sticky_note()",
+    "LGA_StickyNote.run_sticky_note_editor()",
     "Shift+n",
     shortcutContext=2,
     icon=icon_LTPB,
