@@ -296,10 +296,13 @@ class StickyNoteEditor(QtWidgets.QDialog):
         # Detectar margin Y (líneas vacías al inicio y final)
         margin_y_detected = 0
         if lines:
-            # Contar líneas vacías al inicio
+            # Contar líneas vacías al inicio (que contengan solo espacios del margin X)
             start_empty = 0
             for line in lines:
-                if line.strip() == "":
+                # Una línea vacía del margin Y contendría solo espacios del margin X
+                if line.strip() == "" or (
+                    margin_detected > 0 and line == " " * (margin_detected * 2)
+                ):
                     start_empty += 1
                 else:
                     break
@@ -307,7 +310,9 @@ class StickyNoteEditor(QtWidgets.QDialog):
             # Contar líneas vacías al final
             end_empty = 0
             for line in reversed(lines):
-                if line.strip() == "":
+                if line.strip() == "" or (
+                    margin_detected > 0 and line == " " * (margin_detected * 2)
+                ):
                     end_empty += 1
                 else:
                     break
@@ -317,11 +322,12 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
             # Remover las líneas vacías del margin Y para el texto limpio
             if margin_y_detected > 0:
-                lines = (
-                    lines[margin_y_detected:-margin_y_detected]
-                    if margin_y_detected < len(lines) // 2
-                    else lines
-                )
+                # Asegurar que no removemos todas las líneas
+                if margin_y_detected * 2 < len(lines):
+                    lines = lines[margin_y_detected:-margin_y_detected]
+                else:
+                    lines = lines  # Mantener las líneas originales si el margin Y es muy grande
+
                 # Recalcular clean_text sin las líneas del margin Y
                 clean_text = ""
                 for line in lines:
@@ -401,8 +407,47 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
     def on_right_arrow_clicked(self):
         """Callback cuando se hace click en el botón de flecha derecha"""
-        # Por ahora no hace nada, solo placeholder
-        print("Right arrow button clicked!")
+        if not self.sticky_node:
+            return
+
+        current_text = self.text_edit.toPlainText()
+        lines = current_text.split("\n")
+
+        if not lines:
+            return
+
+        # Encontrar la línea central
+        center_line_index = len(lines) // 2
+        center_line = lines[center_line_index]
+
+        # Verificar si ya existe "-->" en la línea central
+        if "-->" in center_line:
+            # Remover la flecha
+            new_center_line = center_line.replace("-->", "").strip()
+        else:
+            # Agregar la flecha
+            if center_line.strip():
+                new_center_line = center_line + " -->"
+            else:
+                new_center_line = "-->"
+
+        # Actualizar la línea en el array
+        lines[center_line_index] = new_center_line
+
+        # Reconstruir el texto
+        new_text = "\n".join(lines)
+
+        # Actualizar el editor
+        self.text_edit.blockSignals(True)
+        self.text_edit.setPlainText(new_text)
+        self.text_edit.blockSignals(False)
+
+        # Actualizar el sticky note
+        self.on_text_changed()
+
+        print(
+            f"Flecha derecha {'removida' if '-->' not in new_center_line else 'agregada'} en línea central"
+        )
 
     def on_right_arrow_enter(self, event):
         """Cambia el icono a la version hover cuando el ratón entra"""
