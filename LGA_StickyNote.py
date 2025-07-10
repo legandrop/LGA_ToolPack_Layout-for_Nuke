@@ -22,26 +22,20 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
     def setup_ui(self):
         """Configura la interfaz de usuario"""
-        self.setWindowTitle("StickyNote Editor")
         self.setFixedSize(300, 320)
-        self.setStyleSheet("background-color: #242527; color: #FFFFFF;")
+        self.setStyleSheet("background-color: #1f1f1f; color: #CCCCCC;")
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
 
         # Layout principal
         main_layout = QtWidgets.QVBoxLayout()
-
-        # Titulo
-        title = QtWidgets.QLabel("<b>StickyNote Editor</b>")
-        title.setAlignment(QtCore.Qt.AlignCenter)
-        title.setStyleSheet("color: #AAAAAA; font-size: 14px; margin-bottom: 10px;")
 
         # Campo de texto
         self.text_edit = QtWidgets.QTextEdit()
         self.text_edit.setStyleSheet(
             """
             QTextEdit {
-                background-color: #1A1A1A;
-                border: 1px solid #555555;
+                background-color: #1e1e1e;
+                border: 1px solid #3D3D3D;
                 border-radius: 5px;
                 padding: 5px;
                 font-size: 12px;
@@ -53,7 +47,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
         # Slider de font size
         font_size_layout = QtWidgets.QHBoxLayout()
         font_size_label = QtWidgets.QLabel("Font Size:")
-        font_size_label.setStyleSheet("color: #AAAAAA; font-size: 11px;")
+        font_size_label.setStyleSheet("color: #AAAAAA; font-size: 12px;")
 
         self.font_size_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.font_size_slider.setRange(10, 100)
@@ -61,24 +55,24 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.font_size_slider.setStyleSheet(
             """
             QSlider::groove:horizontal {
-                border: 1px solid #555555;
-                height: 8px;
-                background: #1A1A1A;
+                border: 0px solid #555555;
+                height: 2px;
+                background: #6C6C6C;
                 border-radius: 4px;
             }
             QSlider::handle:horizontal {
                 background: #AAAAAA;
                 border: 1px solid #555555;
-                width: 18px;
-                margin: -2px 0;
-                border-radius: 3px;
+                width: 4px;
+                margin: -6px 0;
+                border-radius: 10px;
             }
         """
         )
 
         self.font_size_value = QtWidgets.QLabel("20")
         self.font_size_value.setStyleSheet(
-            "color: #AAAAAA; font-size: 11px; min-width: 25px;"
+            "color: #AAAAAA; font-size: 12px; min-width: 25px;"
         )
 
         font_size_layout.addWidget(font_size_label)
@@ -88,7 +82,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
         # Slider de margin X
         margin_x_layout = QtWidgets.QHBoxLayout()
         margin_x_label = QtWidgets.QLabel("Margin X:")
-        margin_x_label.setStyleSheet("color: #AAAAAA; font-size: 11px;")
+        margin_x_label.setStyleSheet("color: #AAAAAA; font-size: 12px;")
 
         self.margin_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.margin_slider.setRange(0, 10)
@@ -113,7 +107,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
         self.margin_value = QtWidgets.QLabel("0")
         self.margin_value.setStyleSheet(
-            "color: #AAAAAA; font-size: 11px; min-width: 25px;"
+            "color: #AAAAAA; font-size: 12px; min-width: 25px;"
         )
 
         margin_x_layout.addWidget(margin_x_label)
@@ -123,7 +117,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
         # Slider de margin Y
         margin_y_layout = QtWidgets.QHBoxLayout()
         margin_y_label = QtWidgets.QLabel("Margin Y:")
-        margin_y_label.setStyleSheet("color: #AAAAAA; font-size: 11px;")
+        margin_y_label.setStyleSheet("color: #AAAAAA; font-size: 12px;")
 
         self.margin_y_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.margin_y_slider.setRange(0, 4)
@@ -148,7 +142,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
         self.margin_y_value = QtWidgets.QLabel("0")
         self.margin_y_value.setStyleSheet(
-            "color: #AAAAAA; font-size: 11px; min-width: 25px;"
+            "color: #AAAAAA; font-size: 12px; min-width: 25px;"
         )
 
         margin_y_layout.addWidget(margin_y_label)
@@ -158,7 +152,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
         # Botones de flechas
         arrows_layout = QtWidgets.QHBoxLayout()
         arrows_label = QtWidgets.QLabel("Arrows:")
-        arrows_label.setStyleSheet("color: #AAAAAA; font-size: 11px;")
+        arrows_label.setStyleSheet("color: #AAAAAA; font-size: 12px;")
 
         # Botón de flecha derecha
         self.right_arrow_button = QtWidgets.QPushButton()
@@ -214,7 +208,6 @@ class StickyNoteEditor(QtWidgets.QDialog):
         help_label.setAlignment(QtCore.Qt.AlignCenter)
 
         # Agregar widgets al layout
-        main_layout.addWidget(title)
         main_layout.addWidget(self.text_edit)
         main_layout.addLayout(font_size_layout)
         main_layout.addLayout(margin_x_layout)
