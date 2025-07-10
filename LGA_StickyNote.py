@@ -224,12 +224,13 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.right_arrow_button.setStyleSheet(
             """
             QPushButton {
-                background-color: rgb(50, 50, 50);
+                background-color: rgb(60, 60, 60);
                 border: none;
                 padding: 0px;
+                border-radius: 8px;
             }
             QPushButton:hover {
-                background-color: rgb(50, 50, 50);
+                background-color: rgb(80, 80, 80);
             }
             QPushButton:pressed {
                 background-color: rgb(70, 70, 70);
