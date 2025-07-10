@@ -11,6 +11,12 @@ import nuke
 import os
 from PySide2 import QtWidgets, QtGui, QtCore
 
+# Colores para el gradiente
+BLUE_COLOR = "#9370DB"
+VIOLET_COLOR = "#4169E1"
+HANDLE_SIZE = 12 # Tamaño del handle del slider
+LINE_HEIGHT = 25 # Altura de cada linea de control
+
 
 class StickyNoteEditor(QtWidgets.QDialog):
     def __init__(self):
@@ -22,9 +28,9 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
     def setup_ui(self):
         """Configura la interfaz de usuario"""
-        self.setFixedSize(300, 320)
         self.setStyleSheet("background-color: #1f1f1f; color: #CCCCCC;")
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        self.adjustSize()
 
         # Layout principal
         main_layout = QtWidgets.QVBoxLayout()
@@ -46,121 +52,160 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
         # Slider de font size
         font_size_layout = QtWidgets.QHBoxLayout()
-        font_size_label = QtWidgets.QLabel("Font Size:")
+        font_size_layout.insertSpacing(0, 5) # Añadir espacio a la izquierda del label
+        font_size_label = QtWidgets.QLabel("Font Size")
         font_size_label.setStyleSheet("color: #AAAAAA; font-size: 12px;")
+        font_size_label.setFixedHeight(LINE_HEIGHT) # Asegurar altura de la etiqueta
+        font_size_label.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed) # Asegurar que la altura sea fija
 
         self.font_size_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.font_size_slider.setRange(10, 100)
         self.font_size_slider.setValue(20)
+        self.font_size_slider.setFixedHeight(LINE_HEIGHT) # Asegurar altura del slider
+        self.font_size_slider.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed) # El slider puede expandirse horizontalmente, pero la altura es fija
         self.font_size_slider.setStyleSheet(
-            """
-            QSlider::groove:horizontal {
+            f"""
+            QSlider::groove:horizontal {{
                 border: 0px solid #555555;
                 height: 2px;
-                background: #6C6C6C;
+                background: #545454;
                 border-radius: 4px;
-            }
-            QSlider::handle:horizontal {
+            }}
+            QSlider::sub-page:horizontal {{
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 {BLUE_COLOR}, stop:1 {VIOLET_COLOR});
+                border-radius: 4px;
+            }}
+            QSlider::handle:horizontal {{
                 background: #AAAAAA;
                 border: 1px solid #555555;
-                width: 4px;
-                margin: -6px 0;
-                border-radius: 10px;
-            }
+                width: {HANDLE_SIZE}px;
+                height: {HANDLE_SIZE}px;
+                margin: -6px 0; /* Centrar el handle verticalmente */
+                border-radius: 7px;
+            }}
         """
         )
 
         self.font_size_value = QtWidgets.QLabel("20")
         self.font_size_value.setStyleSheet(
-            "color: #AAAAAA; font-size: 12px; min-width: 25px;"
+            "color: #AAAAAA; font-size: 12px;"
         )
+        self.font_size_value.setFixedHeight(LINE_HEIGHT) # Asegurar altura de la etiqueta de valor
+        self.font_size_value.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed) # Asegurar que la altura sea fija
 
         font_size_layout.addWidget(font_size_label)
         font_size_layout.addWidget(self.font_size_slider)
         font_size_layout.addWidget(self.font_size_value)
+        font_size_layout.addSpacing(5) # Añadir espacio a la derecha del valor
 
         # Slider de margin X
         margin_x_layout = QtWidgets.QHBoxLayout()
-        margin_x_label = QtWidgets.QLabel("Margin X:")
+        margin_x_layout.insertSpacing(0, 5) # Añadir espacio a la izquierda del label
+        margin_x_label = QtWidgets.QLabel("Margin X")
         margin_x_label.setStyleSheet("color: #AAAAAA; font-size: 12px;")
+        margin_x_label.setFixedHeight(LINE_HEIGHT) # Asegurar altura de la etiqueta
+        margin_x_label.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed) # Asegurar que la altura sea fija
 
         self.margin_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.margin_slider.setRange(0, 10)
         self.margin_slider.setValue(0)
+        self.margin_slider.setFixedHeight(LINE_HEIGHT) # Asegurar altura del slider
+        self.margin_slider.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed) # El slider puede expandirse horizontalmente, pero la altura es fija
         self.margin_slider.setStyleSheet(
-            """
-            QSlider::groove:horizontal {
-                border: 1px solid #555555;
-                height: 8px;
-                background: #1A1A1A;
+            f"""
+            QSlider::groove:horizontal {{
+                border: 0px solid #555555;
+                height: 2px;
+                background: #545454;
                 border-radius: 4px;
-            }
-            QSlider::handle:horizontal {
+            }}
+            QSlider::sub-page:horizontal {{
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 {BLUE_COLOR}, stop:1 {VIOLET_COLOR});
+                border-radius: 4px;
+            }}
+            QSlider::handle:horizontal {{
                 background: #AAAAAA;
                 border: 1px solid #555555;
-                width: 18px;
-                margin: -2px 0;
-                border-radius: 3px;
-            }
+                width: {HANDLE_SIZE}px;
+                height: {HANDLE_SIZE}px;
+                margin: -6px 0;
+                border-radius: 7px;
+            }}
         """
         )
 
         self.margin_value = QtWidgets.QLabel("0")
         self.margin_value.setStyleSheet(
-            "color: #AAAAAA; font-size: 12px; min-width: 25px;"
+            "color: #AAAAAA; font-size: 12px;"
         )
+        self.margin_value.setFixedHeight(LINE_HEIGHT) # Asegurar altura de la etiqueta de valor
+        self.margin_value.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed) # Asegurar que la altura sea fija
 
         margin_x_layout.addWidget(margin_x_label)
         margin_x_layout.addWidget(self.margin_slider)
         margin_x_layout.addWidget(self.margin_value)
+        margin_x_layout.addSpacing(5) # Añadir espacio a la derecha del valor
 
         # Slider de margin Y
         margin_y_layout = QtWidgets.QHBoxLayout()
-        margin_y_label = QtWidgets.QLabel("Margin Y:")
+        margin_y_layout.insertSpacing(0, 5) # Añadir espacio a la izquierda del label
+        margin_y_label = QtWidgets.QLabel("Margin Y")
         margin_y_label.setStyleSheet("color: #AAAAAA; font-size: 12px;")
+        margin_y_label.setFixedHeight(LINE_HEIGHT) # Asegurar altura de la etiqueta
+        margin_y_label.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed) # Asegurar que la altura sea fija
 
         self.margin_y_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.margin_y_slider.setRange(0, 4)
         self.margin_y_slider.setValue(0)
+        self.margin_y_slider.setFixedHeight(LINE_HEIGHT) # Asegurar altura del slider
+        self.margin_y_slider.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed) # El slider puede expandirse horizontalmente, pero la altura es fija
         self.margin_y_slider.setStyleSheet(
-            """
-            QSlider::groove:horizontal {
-                border: 1px solid #555555;
-                height: 8px;
-                background: #1A1A1A;
+            f"""
+            QSlider::groove:horizontal {{
+                border: 0px solid #555555;
+                height: 2px;
+                background: #545454;
                 border-radius: 4px;
-            }
-            QSlider::handle:horizontal {
+            }}
+            QSlider::sub-page:horizontal {{
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 {BLUE_COLOR}, stop:1 {VIOLET_COLOR});
+                border-radius: 4px;
+            }}
+            QSlider::handle:horizontal {{
                 background: #AAAAAA;
                 border: 1px solid #555555;
-                width: 18px;
-                margin: -2px 0;
-                border-radius: 3px;
-            }
+                width: {HANDLE_SIZE}px;
+                height: {HANDLE_SIZE}px;
+                margin: -6px 0;
+                border-radius: 7px;
+            }}
         """
         )
 
         self.margin_y_value = QtWidgets.QLabel("0")
         self.margin_y_value.setStyleSheet(
-            "color: #AAAAAA; font-size: 12px; min-width: 25px;"
+            "color: #AAAAAA; font-size: 12px;"
         )
+        self.margin_y_value.setFixedHeight(LINE_HEIGHT) # Asegurar altura de la etiqueta de valor
+        self.margin_y_value.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed) # Asegurar que la altura sea fija
 
         margin_y_layout.addWidget(margin_y_label)
         margin_y_layout.addWidget(self.margin_y_slider)
         margin_y_layout.addWidget(self.margin_y_value)
+        margin_y_layout.addSpacing(5) # Añadir espacio a la derecha del valor
 
         # Botones de flechas
         arrows_layout = QtWidgets.QHBoxLayout()
+        arrows_layout.insertSpacing(0, 5) # Añadir espacio a la izquierda del label
         arrows_label = QtWidgets.QLabel("Arrows:")
         arrows_label.setStyleSheet("color: #AAAAAA; font-size: 12px;")
+        arrows_label.setFixedHeight(LINE_HEIGHT) # Asegurar altura de la etiqueta
+        arrows_label.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed) # Asegurar que la altura sea fija
 
         # Botón de flecha derecha
         self.right_arrow_button = QtWidgets.QPushButton()
         self.right_arrow_button.setToolTip("Add right arrow")
-        self.right_arrow_button.setFixedSize(QtCore.QSize(28, 28))
-        self.right_arrow_button.setSizePolicy(
-            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
-        )
+        self.right_arrow_button.setFixedSize(QtCore.QSize(LINE_HEIGHT, LINE_HEIGHT)) # Ajustar tamaño del botón
 
         # Rutas de los iconos
         icons_path = os.path.join(os.path.dirname(__file__), "icons")
@@ -201,11 +246,6 @@ class StickyNoteEditor(QtWidgets.QDialog):
         arrows_layout.addWidget(self.right_arrow_button)
         arrows_layout.addStretch()  # Spacer para empujar todo a la izquierda
 
-        # Ayuda
-        help_label = QtWidgets.QLabel(
-            '<span style="font-size:9pt; color:#666666;">ESC para cerrar</span>'
-        )
-        help_label.setAlignment(QtCore.Qt.AlignCenter)
 
         # Agregar widgets al layout
         main_layout.addWidget(self.text_edit)
@@ -213,7 +253,6 @@ class StickyNoteEditor(QtWidgets.QDialog):
         main_layout.addLayout(margin_x_layout)
         main_layout.addLayout(margin_y_layout)
         main_layout.addLayout(arrows_layout)
-        main_layout.addWidget(help_label)
 
         self.setLayout(main_layout)
 
