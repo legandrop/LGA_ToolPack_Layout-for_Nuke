@@ -11,11 +11,21 @@ import nuke
 import os
 from PySide2 import QtWidgets, QtGui, QtCore
 
+
+# Variable global para activar o desactivar los prints
+DEBUG = True
+
+
+def debug_print(*message):
+    if DEBUG:
+        print(*message)
+
+
 # Colores para el gradiente
 BLUE_COLOR = "#9370DB"
 VIOLET_COLOR = "#4169E1"
-HANDLE_SIZE = 12 # Tamaño del handle del slider
-LINE_HEIGHT = 25 # Altura de cada linea de control
+HANDLE_SIZE = 12  # Tamaño del handle del slider
+LINE_HEIGHT = 25  # Altura de cada linea de control
 
 
 class StickyNoteEditor(QtWidgets.QDialog):
@@ -52,17 +62,21 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
         # Slider de font size
         font_size_layout = QtWidgets.QHBoxLayout()
-        font_size_layout.insertSpacing(0, 5) # Añadir espacio a la izquierda del label
+        font_size_layout.insertSpacing(0, 5)  # Añadir espacio a la izquierda del label
         font_size_label = QtWidgets.QLabel("Font Size")
         font_size_label.setStyleSheet("color: #AAAAAA; font-size: 12px;")
-        font_size_label.setFixedHeight(LINE_HEIGHT) # Asegurar altura de la etiqueta
-        font_size_label.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed) # Asegurar que la altura sea fija
+        font_size_label.setFixedHeight(LINE_HEIGHT)  # Asegurar altura de la etiqueta
+        font_size_label.setSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )  # Asegurar que la altura sea fija
 
         self.font_size_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.font_size_slider.setRange(10, 100)
         self.font_size_slider.setValue(20)
-        self.font_size_slider.setFixedHeight(LINE_HEIGHT) # Asegurar altura del slider
-        self.font_size_slider.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed) # El slider puede expandirse horizontalmente, pero la altura es fija
+        self.font_size_slider.setFixedHeight(LINE_HEIGHT)  # Asegurar altura del slider
+        self.font_size_slider.setSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed
+        )  # El slider puede expandirse horizontalmente, pero la altura es fija
         self.font_size_slider.setStyleSheet(
             f"""
             QSlider::groove:horizontal {{
@@ -87,30 +101,36 @@ class StickyNoteEditor(QtWidgets.QDialog):
         )
 
         self.font_size_value = QtWidgets.QLabel("20")
-        self.font_size_value.setStyleSheet(
-            "color: #AAAAAA; font-size: 12px;"
-        )
-        self.font_size_value.setFixedHeight(LINE_HEIGHT) # Asegurar altura de la etiqueta de valor
-        self.font_size_value.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed) # Asegurar que la altura sea fija
+        self.font_size_value.setStyleSheet("color: #AAAAAA; font-size: 12px;")
+        self.font_size_value.setFixedHeight(
+            LINE_HEIGHT
+        )  # Asegurar altura de la etiqueta de valor
+        self.font_size_value.setSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )  # Asegurar que la altura sea fija
 
         font_size_layout.addWidget(font_size_label)
         font_size_layout.addWidget(self.font_size_slider)
         font_size_layout.addWidget(self.font_size_value)
-        font_size_layout.addSpacing(5) # Añadir espacio a la derecha del valor
+        font_size_layout.addSpacing(5)  # Añadir espacio a la derecha del valor
 
         # Slider de margin X
         margin_x_layout = QtWidgets.QHBoxLayout()
-        margin_x_layout.insertSpacing(0, 5) # Añadir espacio a la izquierda del label
+        margin_x_layout.insertSpacing(0, 5)  # Añadir espacio a la izquierda del label
         margin_x_label = QtWidgets.QLabel("Margin X")
         margin_x_label.setStyleSheet("color: #AAAAAA; font-size: 12px;")
-        margin_x_label.setFixedHeight(LINE_HEIGHT) # Asegurar altura de la etiqueta
-        margin_x_label.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed) # Asegurar que la altura sea fija
+        margin_x_label.setFixedHeight(LINE_HEIGHT)  # Asegurar altura de la etiqueta
+        margin_x_label.setSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )  # Asegurar que la altura sea fija
 
         self.margin_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.margin_slider.setRange(0, 10)
         self.margin_slider.setValue(0)
-        self.margin_slider.setFixedHeight(LINE_HEIGHT) # Asegurar altura del slider
-        self.margin_slider.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed) # El slider puede expandirse horizontalmente, pero la altura es fija
+        self.margin_slider.setFixedHeight(LINE_HEIGHT)  # Asegurar altura del slider
+        self.margin_slider.setSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed
+        )  # El slider puede expandirse horizontalmente, pero la altura es fija
         self.margin_slider.setStyleSheet(
             f"""
             QSlider::groove:horizontal {{
@@ -135,30 +155,36 @@ class StickyNoteEditor(QtWidgets.QDialog):
         )
 
         self.margin_value = QtWidgets.QLabel("0")
-        self.margin_value.setStyleSheet(
-            "color: #AAAAAA; font-size: 12px;"
-        )
-        self.margin_value.setFixedHeight(LINE_HEIGHT) # Asegurar altura de la etiqueta de valor
-        self.margin_value.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed) # Asegurar que la altura sea fija
+        self.margin_value.setStyleSheet("color: #AAAAAA; font-size: 12px;")
+        self.margin_value.setFixedHeight(
+            LINE_HEIGHT
+        )  # Asegurar altura de la etiqueta de valor
+        self.margin_value.setSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )  # Asegurar que la altura sea fija
 
         margin_x_layout.addWidget(margin_x_label)
         margin_x_layout.addWidget(self.margin_slider)
         margin_x_layout.addWidget(self.margin_value)
-        margin_x_layout.addSpacing(5) # Añadir espacio a la derecha del valor
+        margin_x_layout.addSpacing(5)  # Añadir espacio a la derecha del valor
 
         # Slider de margin Y
         margin_y_layout = QtWidgets.QHBoxLayout()
-        margin_y_layout.insertSpacing(0, 5) # Añadir espacio a la izquierda del label
+        margin_y_layout.insertSpacing(0, 5)  # Añadir espacio a la izquierda del label
         margin_y_label = QtWidgets.QLabel("Margin Y")
         margin_y_label.setStyleSheet("color: #AAAAAA; font-size: 12px;")
-        margin_y_label.setFixedHeight(LINE_HEIGHT) # Asegurar altura de la etiqueta
-        margin_y_label.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed) # Asegurar que la altura sea fija
+        margin_y_label.setFixedHeight(LINE_HEIGHT)  # Asegurar altura de la etiqueta
+        margin_y_label.setSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )  # Asegurar que la altura sea fija
 
         self.margin_y_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.margin_y_slider.setRange(0, 4)
         self.margin_y_slider.setValue(0)
-        self.margin_y_slider.setFixedHeight(LINE_HEIGHT) # Asegurar altura del slider
-        self.margin_y_slider.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed) # El slider puede expandirse horizontalmente, pero la altura es fija
+        self.margin_y_slider.setFixedHeight(LINE_HEIGHT)  # Asegurar altura del slider
+        self.margin_y_slider.setSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed
+        )  # El slider puede expandirse horizontalmente, pero la altura es fija
         self.margin_y_slider.setStyleSheet(
             f"""
             QSlider::groove:horizontal {{
@@ -183,29 +209,35 @@ class StickyNoteEditor(QtWidgets.QDialog):
         )
 
         self.margin_y_value = QtWidgets.QLabel("0")
-        self.margin_y_value.setStyleSheet(
-            "color: #AAAAAA; font-size: 12px;"
-        )
-        self.margin_y_value.setFixedHeight(LINE_HEIGHT) # Asegurar altura de la etiqueta de valor
-        self.margin_y_value.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed) # Asegurar que la altura sea fija
+        self.margin_y_value.setStyleSheet("color: #AAAAAA; font-size: 12px;")
+        self.margin_y_value.setFixedHeight(
+            LINE_HEIGHT
+        )  # Asegurar altura de la etiqueta de valor
+        self.margin_y_value.setSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )  # Asegurar que la altura sea fija
 
         margin_y_layout.addWidget(margin_y_label)
         margin_y_layout.addWidget(self.margin_y_slider)
         margin_y_layout.addWidget(self.margin_y_value)
-        margin_y_layout.addSpacing(5) # Añadir espacio a la derecha del valor
+        margin_y_layout.addSpacing(5)  # Añadir espacio a la derecha del valor
 
         # Botones de flechas
         arrows_layout = QtWidgets.QHBoxLayout()
-        arrows_layout.insertSpacing(0, 5) # Añadir espacio a la izquierda del label
+        arrows_layout.insertSpacing(0, 5)  # Añadir espacio a la izquierda del label
         arrows_label = QtWidgets.QLabel("Arrows:")
         arrows_label.setStyleSheet("color: #AAAAAA; font-size: 12px;")
-        arrows_label.setFixedHeight(LINE_HEIGHT) # Asegurar altura de la etiqueta
-        arrows_label.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed) # Asegurar que la altura sea fija
+        arrows_label.setFixedHeight(LINE_HEIGHT)  # Asegurar altura de la etiqueta
+        arrows_label.setSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )  # Asegurar que la altura sea fija
 
         # Botón de flecha derecha
         self.right_arrow_button = QtWidgets.QPushButton()
         self.right_arrow_button.setToolTip("Add right arrow")
-        self.right_arrow_button.setFixedSize(QtCore.QSize(LINE_HEIGHT, LINE_HEIGHT)) # Ajustar tamaño del botón
+        self.right_arrow_button.setFixedSize(
+            QtCore.QSize(LINE_HEIGHT, LINE_HEIGHT)
+        )  # Ajustar tamaño del botón
 
         # Rutas de los iconos
         icons_path = os.path.join(os.path.dirname(__file__), "icons")
@@ -224,16 +256,16 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.right_arrow_button.setStyleSheet(
             """
             QPushButton {
-                background-color: rgb(60, 60, 60);
+                background-color: #1f1f1f;
                 border: none;
                 padding: 0px;
                 border-radius: 8px;
             }
             QPushButton:hover {
-                background-color: rgb(80, 80, 80);
+                background-color: #1f1f1f;
             }
             QPushButton:pressed {
-                background-color: rgb(70, 70, 70);
+                background-color: #1f1f1f;
             }
         """
         )
@@ -246,7 +278,6 @@ class StickyNoteEditor(QtWidgets.QDialog):
         arrows_layout.addWidget(arrows_label)
         arrows_layout.addWidget(self.right_arrow_button)
         arrows_layout.addStretch()  # Spacer para empujar todo a la izquierda
-
 
         # Agregar widgets al layout
         main_layout.addWidget(self.text_edit)
@@ -287,111 +318,117 @@ class StickyNoteEditor(QtWidgets.QDialog):
         if not self.sticky_node:
             return
 
-        # Cargar texto (removiendo espacios del margin para mostrarlo limpio en el editor)
+        # Cargar texto
         current_text = self.sticky_node["label"].value()
+        debug_print(f"Texto actual del StickyNote: '{current_text}'")
 
-        # Intentar detectar el margin actual basado en los espacios al inicio y final
-        lines = current_text.split("\n")
-        margin_detected = 0
-        if lines and lines[0]:
-            # Contar espacios al inicio de la primera línea
-            left_spaces = len(lines[0]) - len(lines[0].lstrip(" "))
-            # Contar espacios al final de la primera línea
-            right_spaces = len(lines[0]) - len(lines[0].rstrip(" "))
-            # Usar el menor de los dos como margin (asumiendo que son iguales)
-            margin_detected = min(left_spaces, right_spaces)
+        # Si el sticky note esta vacio o solo contiene espacios, inicializar los margenes a 0
+        if not current_text.strip():
+            margin_y_detected = 0
+            total_margin_x_detected = 0
+            margin_x_for_slider = 0
+            final_clean_text = ""
+            lines_processed_for_y_margin = []
+        else:
+            lines = current_text.split("\n")
 
-        # Remover los espacios del margin para mostrar texto limpio
-        clean_text = ""
-        for line in lines:
-            # Remover espacios del inicio y final según el margin detectado
-            if len(line) >= margin_detected * 2:
-                # Remover espacios del inicio y final
-                clean_line = line[margin_detected:] if margin_detected > 0 else line
-                if margin_detected > 0 and clean_line.endswith(" " * margin_detected):
-                    clean_line = clean_line[:-margin_detected]
-                clean_text += clean_line + "\n"
-            else:
-                clean_text += line + "\n"
-        clean_text = clean_text.rstrip("\n")  # Remover último salto de línea
+            # --- Deteccion de Margin X ---
+            total_margin_x_detected = 0
+            if lines and lines[0]:
+                left_spaces = len(lines[0]) - len(lines[0].lstrip(" "))
+                right_spaces = len(lines[0]) - len(lines[0].rstrip(" "))
+                total_margin_x_detected = min(left_spaces, right_spaces)
+                debug_print(f"Primera linea: '{lines[0]}'")
+                debug_print(
+                    f"Espacios a la izquierda detectados (total): {left_spaces}"
+                )
+                debug_print(f"Espacios a la derecha detectados (total): {right_spaces}")
+                debug_print(
+                    f"Total Margin X detectado en el texto: {total_margin_x_detected}"
+                )
 
-        self.text_edit.blockSignals(True)  # Evitar callback recursivo
-        self.text_edit.setPlainText(clean_text)
+            # El valor del slider es la mitad del total de espacios detectados
+            margin_x_for_slider = total_margin_x_detected // 2
+            debug_print(f"Margen X para el slider (por lado): {margin_x_for_slider}")
+
+            # --- Deteccion de Margin Y ---
+            margin_y_detected = 0
+            lines_processed_for_y_margin = list(
+                lines
+            )  # Copia de las lineas para trabajar
+
+            if lines:
+                start_empty = 0
+                for i, line in enumerate(lines):
+                    # Una linea vacia de Margin Y, despues de aplicar Margin X, deberia tener ' ' * total_margin_x_detected
+                    if line.strip() == "" or (
+                        total_margin_x_detected > 0
+                        and line == " " * total_margin_x_detected
+                    ):
+                        start_empty += 1
+                    else:
+                        break
+
+                end_empty = 0
+                for i in reversed(range(len(lines))):
+                    line = lines[i]
+                    if line.strip() == "" or (
+                        total_margin_x_detected > 0
+                        and line == " " * total_margin_x_detected
+                    ):
+                        end_empty += 1
+                    else:
+                        break
+
+                # Usar el menor como margin Y. Asegurarse que no se remuevan todas las lineas.
+                margin_y_detected = min(start_empty, end_empty)
+                debug_print(f"Lineas vacias al inicio detectadas: {start_empty}")
+                debug_print(f"Lineas vacias al final detectadas: {end_empty}")
+                debug_print(f"Margen Y detectado: {margin_y_detected}")
+
+                # Remover las lineas vacias del margin Y
+                if margin_y_detected * 2 < len(lines):
+                    lines_processed_for_y_margin = lines[
+                        margin_y_detected : len(lines) - margin_y_detected
+                    ]
+                else:
+                    lines_processed_for_y_margin = (
+                        lines  # Si el margin Y es muy grande, no remover nada
+                    )
+
+            # --- Limpiar texto aplicando los margenes detectados ---
+            clean_text_lines = []
+            for line in lines_processed_for_y_margin:
+                clean_line = line
+                # Remover espacios de Margin X
+                if len(clean_line) >= total_margin_x_detected:
+                    clean_line = clean_line[margin_x_for_slider:]
+                    if clean_line.endswith(" " * margin_x_for_slider):
+                        clean_line = clean_line[:-margin_x_for_slider]
+                clean_text_lines.append(clean_line)
+
+            final_clean_text = "\n".join(clean_text_lines)
+            debug_print(f"Texto limpio para el editor: '{final_clean_text}'")
+
+        self.text_edit.blockSignals(True)
+        self.text_edit.setPlainText(final_clean_text)
         self.text_edit.blockSignals(False)
 
         # Cargar font size
         current_font_size = int(self.sticky_node["note_font_size"].value())
-        self.font_size_slider.blockSignals(True)  # Evitar callback recursivo
+        self.font_size_slider.blockSignals(True)
         self.font_size_slider.setValue(current_font_size)
         self.font_size_value.setText(str(current_font_size))
         self.font_size_slider.blockSignals(False)
 
-        # Detectar margin Y (líneas vacías al inicio y final)
-        margin_y_detected = 0
-        if lines:
-            # Contar líneas vacías al inicio (que contengan solo espacios del margin X)
-            start_empty = 0
-            for line in lines:
-                # Una línea vacía del margin Y contendría solo espacios del margin X
-                if line.strip() == "" or (
-                    margin_detected > 0 and line == " " * (margin_detected * 2)
-                ):
-                    start_empty += 1
-                else:
-                    break
-
-            # Contar líneas vacías al final
-            end_empty = 0
-            for line in reversed(lines):
-                if line.strip() == "" or (
-                    margin_detected > 0 and line == " " * (margin_detected * 2)
-                ):
-                    end_empty += 1
-                else:
-                    break
-
-            # Usar el menor como margin Y
-            margin_y_detected = min(start_empty, end_empty)
-
-            # Remover las líneas vacías del margin Y para el texto limpio
-            if margin_y_detected > 0:
-                # Asegurar que no removemos todas las líneas
-                if margin_y_detected * 2 < len(lines):
-                    lines = lines[margin_y_detected:-margin_y_detected]
-                else:
-                    lines = lines  # Mantener las líneas originales si el margin Y es muy grande
-
-                # Recalcular clean_text sin las líneas del margin Y
-                clean_text = ""
-                for line in lines:
-                    # Remover espacios del inicio y final según el margin detectado
-                    if len(line) >= margin_detected * 2:
-                        # Remover espacios del inicio y final
-                        clean_line = (
-                            line[margin_detected:] if margin_detected > 0 else line
-                        )
-                        if margin_detected > 0 and clean_line.endswith(
-                            " " * margin_detected
-                        ):
-                            clean_line = clean_line[:-margin_detected]
-                        clean_text += clean_line + "\n"
-                    else:
-                        clean_text += line + "\n"
-                clean_text = clean_text.rstrip("\n")  # Remover último salto de línea
-
-                # Actualizar el texto en el editor
-                self.text_edit.blockSignals(True)
-                self.text_edit.setPlainText(clean_text)
-                self.text_edit.blockSignals(False)
-
         # Cargar margin X
-        self.margin_slider.blockSignals(True)  # Evitar callback recursivo
-        self.margin_slider.setValue(margin_detected)
-        self.margin_value.setText(str(margin_detected))
+        self.margin_slider.blockSignals(True)
+        self.margin_slider.setValue(margin_x_for_slider)
+        self.margin_value.setText(str(margin_x_for_slider))
         self.margin_slider.blockSignals(False)
 
         # Cargar margin Y
-        self.margin_y_slider.blockSignals(True)  # Evitar callback recursivo
+        self.margin_y_slider.blockSignals(True)
         self.margin_y_slider.setValue(margin_y_detected)
         self.margin_y_value.setText(str(margin_y_detected))
         self.margin_y_slider.blockSignals(False)
