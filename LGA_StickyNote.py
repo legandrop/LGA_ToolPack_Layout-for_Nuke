@@ -36,17 +36,90 @@ class StickyNoteEditor(QtWidgets.QDialog):
         super(StickyNoteEditor, self).__init__()
 
         self.sticky_node = None
+        self.drag_position = None  # Para el arrastre de la ventana
         self.setup_ui()
         self.setup_connections()
 
     def setup_ui(self):
         """Configura la interfaz de usuario"""
-        self.setStyleSheet("background-color: #1f1f1f; color: #CCCCCC;")
-        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        # Configurar ventana sin frame
+        self.setWindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.Window)
+        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+
+        self.setStyleSheet("background-color: transparent;")
         self.adjustSize()
 
         # Layout principal
         main_layout = QtWidgets.QVBoxLayout()
+        main_layout.setContentsMargins(10, 10, 10, 10)  # Margen para la sombra
+        main_layout.setSpacing(0)
+
+        # Frame principal con sombra
+        self.main_frame = QtWidgets.QFrame()
+        self.main_frame.setStyleSheet(
+            """
+            QFrame {
+                background-color: #1f1f1f;
+                border: 1px solid #555555;
+                border-radius: 10px;
+                color: #CCCCCC;
+            }
+        """
+        )
+
+        # Aplicar sombra al frame
+        shadow = QtWidgets.QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(15)
+        shadow.setColor(QtGui.QColor(0, 0, 0, 100))
+        shadow.setOffset(0, 2)
+        self.main_frame.setGraphicsEffect(shadow)
+
+        # Layout del frame principal
+        frame_layout = QtWidgets.QVBoxLayout(self.main_frame)
+        frame_layout.setContentsMargins(0, 0, 0, 0)
+        frame_layout.setSpacing(0)
+
+        # Barra de título personalizada
+        self.title_bar = QtWidgets.QLabel("StickyNote Editor")
+        self.title_bar.setFixedHeight(30)
+        self.title_bar.setStyleSheet(
+            """
+            QLabel {
+                background-color: #444; 
+                color: white; 
+                padding-left: 10px;
+                border-top-left-radius: 10px;
+                border-top-right-radius: 10px;
+                border-bottom-left-radius: 0px;
+                border-bottom-right-radius: 0px;
+                border: none;
+                font-weight: bold;
+            }
+        """
+        )
+        self.title_bar.setAlignment(QtCore.Qt.AlignVCenter)
+
+        # Conectar eventos para arrastrar
+        self.title_bar.mousePressEvent = self.start_move
+        self.title_bar.mouseMoveEvent = self.move_window
+        self.title_bar.mouseReleaseEvent = self.stop_move
+
+        frame_layout.addWidget(self.title_bar)
+
+        # Contenedor para el contenido con padding
+        content_widget = QtWidgets.QWidget()
+        content_widget.setStyleSheet(
+            """
+            QWidget {
+                background-color: #1f1f1f;
+                border: none;
+                border-bottom-left-radius: 10px;
+                border-bottom-right-radius: 10px;
+            }
+        """
+        )
+        content_layout = QtWidgets.QVBoxLayout(content_widget)
+        content_layout.setContentsMargins(10, 10, 10, 10)
 
         # Campo de texto
         self.text_edit = QtWidgets.QTextEdit()
@@ -67,7 +140,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
         font_size_layout = QtWidgets.QHBoxLayout()
         font_size_layout.insertSpacing(0, 5)  # Añadir espacio a la izquierda del label
         font_size_label = QtWidgets.QLabel("Font Size")
-        font_size_label.setStyleSheet("color: #AAAAAA; font-size: 12px;")
+        font_size_label.setStyleSheet("color: #AAAAAA; font-size: 12px; border: none;")
         font_size_label.setFixedHeight(LINE_HEIGHT)  # Asegurar altura de la etiqueta
         font_size_label.setSizePolicy(
             QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
@@ -104,7 +177,9 @@ class StickyNoteEditor(QtWidgets.QDialog):
         )
 
         self.font_size_value = QtWidgets.QLabel("20")
-        self.font_size_value.setStyleSheet("color: #AAAAAA; font-size: 12px;")
+        self.font_size_value.setStyleSheet(
+            "color: #AAAAAA; font-size: 12px; border: none;"
+        )
         self.font_size_value.setFixedHeight(
             LINE_HEIGHT
         )  # Asegurar altura de la etiqueta de valor
@@ -121,7 +196,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
         margin_x_layout = QtWidgets.QHBoxLayout()
         margin_x_layout.insertSpacing(0, 5)  # Añadir espacio a la izquierda del label
         margin_x_label = QtWidgets.QLabel("Margin X")
-        margin_x_label.setStyleSheet("color: #AAAAAA; font-size: 12px;")
+        margin_x_label.setStyleSheet("color: #AAAAAA; font-size: 12px; border: none;")
         margin_x_label.setFixedHeight(LINE_HEIGHT)  # Asegurar altura de la etiqueta
         margin_x_label.setSizePolicy(
             QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
@@ -158,7 +233,9 @@ class StickyNoteEditor(QtWidgets.QDialog):
         )
 
         self.margin_value = QtWidgets.QLabel("0")
-        self.margin_value.setStyleSheet("color: #AAAAAA; font-size: 12px;")
+        self.margin_value.setStyleSheet(
+            "color: #AAAAAA; font-size: 12px; border: none;"
+        )
         self.margin_value.setFixedHeight(
             LINE_HEIGHT
         )  # Asegurar altura de la etiqueta de valor
@@ -175,7 +252,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
         margin_y_layout = QtWidgets.QHBoxLayout()
         margin_y_layout.insertSpacing(0, 5)  # Añadir espacio a la izquierda del label
         margin_y_label = QtWidgets.QLabel("Margin Y")
-        margin_y_label.setStyleSheet("color: #AAAAAA; font-size: 12px;")
+        margin_y_label.setStyleSheet("color: #AAAAAA; font-size: 12px; border: none;")
         margin_y_label.setFixedHeight(LINE_HEIGHT)  # Asegurar altura de la etiqueta
         margin_y_label.setSizePolicy(
             QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
@@ -212,7 +289,9 @@ class StickyNoteEditor(QtWidgets.QDialog):
         )
 
         self.margin_y_value = QtWidgets.QLabel("0")
-        self.margin_y_value.setStyleSheet("color: #AAAAAA; font-size: 12px;")
+        self.margin_y_value.setStyleSheet(
+            "color: #AAAAAA; font-size: 12px; border: none;"
+        )
         self.margin_y_value.setFixedHeight(
             LINE_HEIGHT
         )  # Asegurar altura de la etiqueta de valor
@@ -229,7 +308,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
         arrows_layout = QtWidgets.QHBoxLayout()
         arrows_layout.insertSpacing(0, 5)  # Añadir espacio a la izquierda del label
         arrows_label = QtWidgets.QLabel("Arrows:")
-        arrows_label.setStyleSheet("color: #AAAAAA; font-size: 12px;")
+        arrows_label.setStyleSheet("color: #AAAAAA; font-size: 12px; border: none;")
         arrows_label.setFixedHeight(LINE_HEIGHT)  # Asegurar altura de la etiqueta
         arrows_label.setSizePolicy(
             QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
@@ -282,14 +361,36 @@ class StickyNoteEditor(QtWidgets.QDialog):
         arrows_layout.addWidget(self.right_arrow_button)
         arrows_layout.addStretch()  # Spacer para empujar todo a la izquierda
 
-        # Agregar widgets al layout
-        main_layout.addWidget(self.text_edit)
-        main_layout.addLayout(font_size_layout)
-        main_layout.addLayout(margin_x_layout)
-        main_layout.addLayout(margin_y_layout)
-        main_layout.addLayout(arrows_layout)
+        # Agregar widgets al layout de contenido
+        content_layout.addWidget(self.text_edit)
+        content_layout.addLayout(font_size_layout)
+        content_layout.addLayout(margin_x_layout)
+        content_layout.addLayout(margin_y_layout)
+        content_layout.addLayout(arrows_layout)
+
+        # Agregar el contenedor al layout del frame
+        frame_layout.addWidget(content_widget)
+
+        # Agregar el frame principal al layout principal
+        main_layout.addWidget(self.main_frame)
 
         self.setLayout(main_layout)
+
+    def start_move(self, event):
+        """Inicia el movimiento de la ventana"""
+        if event.button() == QtCore.Qt.LeftButton:
+            self.drag_position = event.globalPos() - self.frameGeometry().topLeft()
+            event.accept()
+
+    def move_window(self, event):
+        """Mueve la ventana durante el arrastre"""
+        if self.drag_position and event.buttons() & QtCore.Qt.LeftButton:
+            self.move(event.globalPos() - self.drag_position)
+            event.accept()
+
+    def stop_move(self, event):
+        """Detiene el movimiento de la ventana"""
+        self.drag_position = None
 
     def setup_connections(self):
         """Configura las conexiones de señales"""
