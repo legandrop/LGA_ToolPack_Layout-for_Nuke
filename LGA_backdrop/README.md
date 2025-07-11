@@ -21,8 +21,9 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 ### Tab "backdrop" 
 - **Label**: Link directo al `label` nativo del BackdropNode usando `Link_Knob`
 - **Font Size**: Slider numérico (`lga_note_font_size`) sincronizado con `note_font_size` nativo
-- **Font**: Link directo al `note_font` nativo del BackdropNode con dropdown de fuentes y controles Bold/Italic integrados
-- **Margin**: Dropdown (`lga_margin`) para alineación del texto (Left/Center/Right) con aplicación automática de tags HTML
+- **Margin**: Dropdown (`lga_margin`) para alineación del texto (Left/Center/Right) ubicado en la misma línea que Font Size
+- **Font**: Link directo al `note_font` nativo del BackdropNode con dropdown de fuentes y controles Bold/Italic integrados (ubicado en línea separada)
+- **Save Defaults**: Botón con icono `lga_bd_save.png` integrado al final de la línea de Font (después de los controles Bold/Italic)
 
 ### Sección de Colores
 - **Widget de Colores Avanzado**: Implementación de botones estilo swatch con sistema de variaciones usando PyCustom_Knob
@@ -42,12 +43,13 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 ### Sección de Z-Order (copiada de oz_backdrop)
 - **Z Order**: Slider con labels "Back" y "Front" (rango -10 a +10)
 
-### Sección de Save Defaults
-- **Save as Default**: Botón con icono `lga_bd_save.png` que guarda las configuraciones actuales como valores por defecto
-- **Posicionamiento**: Ubicado al final del backdrop, alineado completamente a la derecha
+### Funcionalidad Save Defaults
+- **Save as Default**: Botón con icono `lga_bd_save.png` integrado al final de la línea de Font
+- **Posicionamiento**: Ubicado después de los controles Bold/Italic en la línea de Font
 - **Tooltip**: "Save current properties as default for new backdrops"
 - **Funcionalidad**: Guarda font size, font name, bold, italic, align y margin en archivo de configuración
 - **Sincronización**: Extrae valores actuales del backdrop incluyendo font size slider y alignment dropdown
+- **Widget Compacto**: Tamaño fijo (28x28px) sin spacers para integración perfecta en línea
 
 ## Sistema de Configuración de Defaults
 
@@ -114,9 +116,9 @@ El sistema de configuración sigue el mismo patrón que `LGA_ToolPack_settings.p
   - `add_all_knobs()`: Maneja creación condicional de knobs, evitando duplicación y preservando valores
   - `add_knobs_to_existing_backdrops()`: Callback onScriptLoad que agrega knobs faltantes a backdrops existentes
   - `ColorSwatchWidget()`: Clase avanzada con sistema de variaciones, tracking interno y algoritmos de conversión HLS
-  - `LGA_SaveDefaultsWidget()`: Widget personalizado para botón Save que integra funcionalidad de guardado
-  - `create_save_defaults_section()`: Crea sección del botón Save Defaults al final del backdrop
-  - Widget expandible horizontalmente con botón alineado completamente a la derecha
+  - `LGA_SaveDefaultsWidget()`: Widget personalizado compacto para botón Save integrado en línea de Font
+  - `create_font_section()`: Crea sección de Font con label, dropdown y botón Save Defaults integrado
+  - Widget compacto (28x28px) sin spacers para integración perfecta en línea
   - `_generate_color_variations()`: Genera 5 variaciones por color usando interpolación de luminancia y saturación
   - `_cycle_color_variation()`: Maneja el ciclo inteligente entre variaciones con tracking interno
   - `_apply_random_color()`: Aplica colores RGB completamente aleatorios con reset de tracking

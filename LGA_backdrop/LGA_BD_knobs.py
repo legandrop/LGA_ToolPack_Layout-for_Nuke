@@ -545,19 +545,12 @@ class LGA_SaveDefaultsWidget(QtWidgets.QWidget):
         main_layout.setContentsMargins(
             0, 0, 0, 0
         )  # Eliminar márgenes internos del layout
-        main_layout.setSpacing(10)  # Eliminar espacio entre los widgets del layout
+        main_layout.setSpacing(0)  # Eliminar espacio entre los widgets del layout
         main_layout.setAlignment(
-            QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
-        )  # Alinear contenido a la DERECHA y verticalmente centrado
+            QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
+        )  # Alinear contenido a la IZQUIERDA y verticalmente centrado
 
-        # Añadir un spacer expansivo para consumir el espacio restante a la IZQUIERDA
-        main_layout.addSpacerItem(
-            QtWidgets.QSpacerItem(
-                0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-            )
-        )
-
-        # Botón para el icono
+        # Botón para el icono (sin spacers)
         self.save_button = QtWidgets.QPushButton()  # Cambiado a self.save_button
         self.save_button.setToolTip(
             "Save current properties as default for new backdrops"
@@ -596,11 +589,11 @@ class LGA_SaveDefaultsWidget(QtWidgets.QWidget):
 
         main_layout.addWidget(self.save_button)  # Añadir self.save_button al layout
 
-        # Establecer tamaño para el widget completo (expandible horizontalmente)
-        self.setFixedHeight(32)  # Altura fija
+        # Establecer tamaño para el widget completo (fijo, no expandible)
+        self.setFixedSize(QtCore.QSize(28, 28))  # Tamaño fijo igual al botón
         self.setSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed
-        )  # Expandible horizontalmente, altura fija
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )  # Tamaño fijo, no expandible
 
     def enterEvent(self, event):
         """Cambia el icono a la version hover cuando el raton entra."""
