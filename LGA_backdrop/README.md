@@ -40,6 +40,10 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 - **Margin**: Slider automático para configurar el margen del auto fit (rango 10-200) - ejecuta autofit completo al cambiar (preserva Z-order)
 - **Auto Fit**: Botón para redimensionar manualmente abarcando nodos seleccionados o nodos dentro del backdrop (preserva Z-order)
 
+### Sección de Appearance
+- **Appearance**: Link directo al dropdown nativo `appearance` del BackdropNode (Fill/Border)
+- **Border Width**: Link directo al slider nativo `border_width` del BackdropNode (solo activo cuando appearance está en Border)
+
 ### Sección de Z-Order (copiada de oz_backdrop)
 - **Z Order**: Slider con labels "Back" y "Front" (rango -10 a +10)
 

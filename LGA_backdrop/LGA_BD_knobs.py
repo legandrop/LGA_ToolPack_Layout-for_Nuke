@@ -809,6 +809,27 @@ def create_resize_section(margin_value=50):
     return knobs
 
 
+def create_appearance_section():
+    """Crea la sección de Appearance con dropdown y width slider"""
+    knobs = []
+
+    # Label principal para Appearance (en nueva línea)
+    appearance_label = nuke.Text_Knob("appearance_label", "", "Appearance ")
+    appearance_label.setFlag(nuke.STARTLINE)  # Nueva línea
+
+    # Link al dropdown nativo de appearance
+    appearance_link = nuke.Link_Knob("appearance_link", "")
+    appearance_link.clearFlag(nuke.STARTLINE)  # En la misma línea que el label
+
+    # Link al slider nativo de border_width
+    border_width_link = nuke.Link_Knob("border_width_link", "")
+    border_width_link.clearFlag(nuke.STARTLINE)  # En la misma línea
+
+    knobs.extend([appearance_label, appearance_link, border_width_link])
+
+    return knobs
+
+
 def create_zorder_section(z_value=0):
     """Crea la seccion de Z-order"""
     knobs = []
@@ -929,6 +950,17 @@ def add_remaining_knobs_if_missing(node, existing_margin_alignment):
             if hasattr(knob, "setFlag") and knob.name() == "margin_slider":
                 knob.setFlag(nuke.NO_ANIMATION)
             node.addKnob(knob)
+
+    # Appearance section (nueva sección)
+    appearance_knobs = create_appearance_section()
+    for knob in appearance_knobs:
+        if knob.name() not in node.knobs():
+            node.addKnob(knob)
+            # Hacer el link con los knobs nativos
+            if knob.name() == "appearance_link":
+                knob.makeLink(node.name(), "appearance")
+            elif knob.name() == "border_width_link":
+                knob.makeLink(node.name(), "border_width")
 
     # Divider 3 (antes de la sección de z-order)
     if "divider_3" not in node.knobs():
