@@ -42,19 +42,17 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
     def setup_ui(self):
         """Configura la interfaz de usuario"""
-        # Configurar ventana sin frame
+        # Configurar ventana contenedora transparente
         self.setWindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.Window)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
-
         self.setStyleSheet("background-color: transparent;")
-        self.adjustSize()
 
-        # Layout principal
+        # Layout principal con márgenes para la sombra
         main_layout = QtWidgets.QVBoxLayout()
-        main_layout.setContentsMargins(10, 10, 10, 10)  # Margen para la sombra
+        main_layout.setContentsMargins(15, 15, 15, 15)  # Margen para la sombra
         main_layout.setSpacing(0)
 
-        # Frame principal con sombra
+        # Frame principal que contendrá todo el contenido
         self.main_frame = QtWidgets.QFrame()
         self.main_frame.setStyleSheet(
             """
@@ -67,12 +65,12 @@ class StickyNoteEditor(QtWidgets.QDialog):
         """
         )
 
-        # Aplicar sombra al frame
-        shadow = QtWidgets.QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(15)
-        shadow.setColor(QtGui.QColor(0, 0, 0, 100))
-        shadow.setOffset(0, 2)
-        self.main_frame.setGraphicsEffect(shadow)
+        # Aplicar sombra al frame principal
+        self.shadow = QtWidgets.QGraphicsDropShadowEffect()
+        self.shadow.setBlurRadius(15)
+        self.shadow.setColor(QtGui.QColor(0, 0, 0, 180))
+        self.shadow.setOffset(3, 3)
+        self.main_frame.setGraphicsEffect(self.shadow)
 
         # Layout del frame principal
         frame_layout = QtWidgets.QVBoxLayout(self.main_frame)
@@ -375,6 +373,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
         main_layout.addWidget(self.main_frame)
 
         self.setLayout(main_layout)
+        self.adjustSize()  # Ajustar tamaño después de configurar todo
 
     def start_move(self, event):
         """Inicia el movimiento de la ventana"""
