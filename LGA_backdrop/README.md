@@ -127,9 +127,9 @@ El sistema de configuración sigue el mismo patrón que `LGA_ToolPack_settings.p
   - `LGA_SaveDefaultsWidget()`: Widget personalizado expandido para botón Save integrado en línea de Style con label "Save"
   - `create_font_section()`: Crea sección de Font con label y dropdown (Save Defaults movido a Style)
   - Widget expandido (73x28px) con label 35px + botón 28x28px para integración perfecta en línea
-  - `_generate_color_variations()`: Genera 5 variaciones por color usando interpolación de luminancia y saturación
-  - `_cycle_color_variation()`: Maneja el ciclo inteligente entre variaciones con tracking interno
-  - `_apply_random_color()`: Aplica colores RGB completamente aleatorios con reset de tracking
+  - `_generate_color_variations()`: Genera 5 variaciones por color para ambas filas usando interpolación de luminancia y saturación
+  - `_cycle_color_variation(color_name, row_number)`: Maneja el ciclo inteligente entre variaciones con tracking interno por fila
+  - `_apply_random_color(row_number)`: Aplica colores RGB aleatorios con saturación según la fila especificada
   - `_rgb_to_hls()` y `_hls_to_rgb()`: Funciones de conversión de espacios de color para variaciones precisas
   - `create_lga_color_swatch_buttons()`: Crea PyCustom_Knob con clase registrada globalmente para persistencia
 - **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_callbacks.py`**:
@@ -163,19 +163,34 @@ MIN_LIGHTNESS = 0.3    # Luminancia mínima (0.0 = negro, 1.0 = blanco)
 MAX_LIGHTNESS = 0.8    # Luminancia máxima 
 MIN_SATURATION = 0.4   # Saturación mínima (0.0 = gris, 1.0 = color puro)
 MAX_SATURATION = 1.0   # Saturación máxima
+SecondRow_SatuMult = 0.43  # Multiplicador de saturación para la segunda fila
 ```
+
+### Sistema de Dos Filas
+- **Primera fila**: Botones con saturación completa para colores más vibrantes
+- **Segunda fila**: Botones con saturación reducida (multiplicada por `SecondRow_SatuMult`) para colores más apagados
+- **Botón Random**: Cada fila tiene su propio botón random con gradiente ajustado según la saturación correspondiente
+- **Independencia**: Cada fila mantiene su propio ciclo de variaciones independiente
 
 ### Comportamiento del Sistema
 - **Primera vez**: Al hacer clic en un color, se aplica la variación 0 (más oscura/menos saturada)
 - **Clicks repetidos**: Cicla automáticamente entre las 5 variaciones (0→1→2→3→4→0...)
-- **Cambio de familia**: Al cambiar a otro color, reinicia desde variación 0
-- **Random**: El botón random resetea el tracking y genera RGB completamente aleatorio
-- **Gray especial**: Solo varía luminancia manteniendo saturación en 0 para efectos monocromáticos
+- **Cambio de familia o fila**: Al cambiar a otro color o fila diferente, reinicia desde variación 0
+- **Random por fila**: El botón random resetea el tracking y genera RGB según la saturación de su fila
+- **Gray especial**: Solo varía luminancia en ambas filas, aplicando el multiplicador en la segunda fila
 
 ### Tracking Interno
-El sistema usa variables internas para mantener estado:
+El sistema usa variables internas para mantener estado por fila:
 - `_last_applied_color`: Nombre de la última familia de color aplicada
 - `_last_applied_index`: Índice de la última variación aplicada (0-4)
+- `_last_applied_row`: Fila de la última variación aplicada (1 o 2)
+
+### Funciones Principales en `LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_knobs.py`
+- **`_generate_color_variations()`**: Genera variaciones para ambas filas con saturación diferenciada
+- **`_cycle_color_variation(color_name, row_number)`**: Maneja el ciclo inteligente por fila
+- **`_apply_random_color(row_number)`**: Aplica colores RGB aleatorios según la fila
+- **`_get_current_color_info()`**: Identifica color actual incluyendo la fila de origen
+- **`_create_layout()`**: Crea layout vertical con dos filas horizontales de botones
 
 ## Funcionalidad Autofit Mejorada
 
