@@ -322,94 +322,66 @@ class StickyNoteEditor(QtWidgets.QDialog):
         current_text = self.sticky_node["label"].value()
         debug_print(f"Texto actual del StickyNote: '{current_text}'")
 
-        # Si el sticky note esta vacio o solo contiene espacios, inicializar los margenes a 0
-        if not current_text.strip():
-            margin_y_detected = 0
-            total_margin_x_detected = 0
-            margin_x_for_slider = 0
-            final_clean_text = ""
-            lines_processed_for_y_margin = []
-        else:
-            lines = current_text.split("\n")
+        lines = current_text.split("\n")
 
-            # --- Deteccion de Margin X ---
-            total_margin_x_detected = 0
-            if lines and lines[0]:
-                left_spaces = len(lines[0]) - len(lines[0].lstrip(" "))
-                right_spaces = len(lines[0]) - len(lines[0].rstrip(" "))
-                total_margin_x_detected = min(left_spaces, right_spaces)
-                debug_print(f"Primera linea: '{lines[0]}'")
-                debug_print(
-                    f"Espacios a la izquierda detectados (total): {left_spaces}"
-                )
-                debug_print(f"Espacios a la derecha detectados (total): {right_spaces}")
-                debug_print(
-                    f"Total Margin X detectado en el texto: {total_margin_x_detected}"
-                )
+        # Valores por defecto
+        margin_x_detected = 0
+        margin_y_detected = 0
+        final_clean_text = ""
 
-            # El valor del slider es la mitad del total de espacios detectados
-            margin_x_for_slider = total_margin_x_detected // 2
-            debug_print(f"Margen X para el slider (por lado): {margin_x_for_slider}")
-
-            # --- Deteccion de Margin Y ---
-            margin_y_detected = 0
-            lines_processed_for_y_margin = list(
-                lines
-            )  # Copia de las lineas para trabajar
-
-            if lines:
-                start_empty = 0
-                for i, line in enumerate(lines):
-                    # Una linea vacia de Margin Y, despues de aplicar Margin X, deberia tener ' ' * total_margin_x_detected
-                    if line.strip() == "" or (
-                        total_margin_x_detected > 0
-                        and line == " " * total_margin_x_detected
-                    ):
-                        start_empty += 1
-                    else:
-                        break
-
-                end_empty = 0
-                for i in reversed(range(len(lines))):
-                    line = lines[i]
-                    if line.strip() == "" or (
-                        total_margin_x_detected > 0
-                        and line == " " * total_margin_x_detected
-                    ):
-                        end_empty += 1
-                    else:
-                        break
-
-                # Usar el menor como margin Y. Asegurarse que no se remuevan todas las lineas.
-                margin_y_detected = min(start_empty, end_empty)
-                debug_print(f"Lineas vacias al inicio detectadas: {start_empty}")
-                debug_print(f"Lineas vacias al final detectadas: {end_empty}")
-                debug_print(f"Margen Y detectado: {margin_y_detected}")
-
-                # Remover las lineas vacias del margin Y
-                if margin_y_detected * 2 < len(lines):
-                    lines_processed_for_y_margin = lines[
-                        margin_y_detected : len(lines) - margin_y_detected
-                    ]
-                else:
-                    lines_processed_for_y_margin = (
-                        lines  # Si el margin Y es muy grande, no remover nada
+        if current_text.strip():
+            # --- Detección de Margin X: buscar primera línea con contenido ---
+            for line in lines:
+                if line.strip():
+                    leading = len(line) - len(line.lstrip(" "))
+                    trailing = len(line) - len(line.rstrip(" "))
+                    margin_x_detected = min(leading, trailing)
+                    debug_print(
+                        f"Margen X detectado en línea con contenido: {margin_x_detected}"
                     )
+                    break
 
-            # --- Limpiar texto aplicando los margenes detectados ---
-            clean_text_lines = []
-            for line in lines_processed_for_y_margin:
-                clean_line = line
-                # Remover espacios de Margin X
-                if len(clean_line) >= total_margin_x_detected:
-                    clean_line = clean_line[margin_x_for_slider:]
-                    if clean_line.endswith(" " * margin_x_for_slider):
-                        clean_line = clean_line[:-margin_x_for_slider]
-                clean_text_lines.append(clean_line)
+            # --- Detección de Margin Y: líneas vacías al inicio y al final ---
+            start_empty = 0
+            for line in lines:
+                if line.strip() == "":
+                    start_empty += 1
+                else:
+                    break
 
-            final_clean_text = "\n".join(clean_text_lines)
-            debug_print(f"Texto limpio para el editor: '{final_clean_text}'")
+            end_empty = 0
+            for line in reversed(lines):
+                if line.strip() == "":
+                    end_empty += 1
+                else:
+                    break
 
+            margin_y_detected = min(start_empty, end_empty)
+            debug_print(
+                f"Lineas vacías inicio: {start_empty}, fin: {end_empty}, margin Y: {margin_y_detected}"
+            )
+
+            # --- Extraer solo las líneas de contenido sin margin Y ---
+            if margin_y_detected * 2 < len(lines):
+                content_lines = lines[
+                    margin_y_detected : len(lines) - margin_y_detected
+                ]
+            else:
+                content_lines = []
+
+            # --- Limpiar espacios laterales según margin X detectado ---
+            clean_lines = []
+            for line in content_lines:
+                if margin_x_detected > 0 and len(line) >= 2 * margin_x_detected:
+                    clean_line = line[margin_x_detected : len(line) - margin_x_detected]
+                else:
+                    # Si no hay margin X o la línea es muy corta, solo strip
+                    clean_line = line.strip()
+                clean_lines.append(clean_line)
+
+            final_clean_text = "\n".join(clean_lines)
+
+        # Actualizar QTextEdit sin disparar señales
         self.text_edit.blockSignals(True)
         self.text_edit.setPlainText(final_clean_text)
         self.text_edit.blockSignals(False)
@@ -423,8 +395,8 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
         # Cargar margin X
         self.margin_slider.blockSignals(True)
-        self.margin_slider.setValue(margin_x_for_slider)
-        self.margin_value.setText(str(margin_x_for_slider))
+        self.margin_slider.setValue(margin_x_detected)
+        self.margin_value.setText(str(margin_x_detected))
         self.margin_slider.blockSignals(False)
 
         # Cargar margin Y
