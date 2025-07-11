@@ -117,6 +117,17 @@ if USE_LGA_BACKDROP:
         shortcutContext=2,
         icon=icon_LTPB,
     )
+
+    # Importar el LGA_backdropReplacer para LGA_backdrop
+    import LGA_backdropReplacer
+
+    n.addCommand(
+        "  Replace with LGA_Backdrop",
+        "LGA_backdropReplacer.replace_with_lga_backdrop()",
+        "Ctrl+b",
+        shortcutContext=2,
+        icon=icon_LTPB,
+    )
 else:
     # Importar el oz_backdrop
     nuke.pluginAddPath("./oz_backdrop")
@@ -131,17 +142,16 @@ else:
         icon=icon_LTPB,
     )
 
+    # Importar el LGA_oz_backdropReplacer para oz_backdrop
+    import LGA_oz_backdropReplacer
 
-# Importar el LGA_oz_backdropReplacer
-import LGA_oz_backdropReplacer
-
-n.addCommand(
-    "  Replace with Oz_Backdrop",
-    "LGA_oz_backdropReplacer.replace_with_oz_backdrop()",
-    "Ctrl+b",
-    shortcutContext=2,
-    icon=icon_LTPB,
-)
+    n.addCommand(
+        "  Replace with Oz_Backdrop",
+        "LGA_oz_backdropReplacer.replace_with_oz_backdrop()",
+        "Ctrl+b",
+        shortcutContext=2,
+        icon=icon_LTPB,
+    )
 
 
 # Importar el ku_labeler (con shortcut shift+n)

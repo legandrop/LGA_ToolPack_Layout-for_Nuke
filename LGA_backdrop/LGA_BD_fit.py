@@ -7,7 +7,7 @@ import nuke
 from PySide2.QtGui import QFontMetrics, QFont
 
 # Variable global para activar o desactivar los prints
-DEBUG = True
+DEBUG = False
 
 
 def debug_print(*message):
