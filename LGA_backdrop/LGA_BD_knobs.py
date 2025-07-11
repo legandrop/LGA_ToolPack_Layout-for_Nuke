@@ -713,7 +713,13 @@ def create_font_section():
     font_link = nuke.Link_Knob("note_font_link", "")  # Sin label
     font_link.clearFlag(nuke.STARTLINE)  # En la misma línea que el label Font
 
-    knobs.extend([font_label, font_link])
+    # Widget de save defaults al final de la línea de font
+    save_defaults_widget = nuke.PyCustom_Knob(
+        "lga_save_defaults", "", "nuke.LGA_SaveDefaultsWidget(nuke.thisNode())"
+    )
+    save_defaults_widget.clearFlag(nuke.STARTLINE)  # En la misma línea
+
+    knobs.extend([font_label, font_link, save_defaults_widget])
     return knobs
 
 
@@ -958,17 +964,8 @@ def add_remaining_knobs_if_missing(node, existing_margin_alignment):
         if knob.name() not in node.knobs():
             node.addKnob(knob)
 
-    # Divider 5 (antes de la sección de save defaults)
-    if "divider_5" not in node.knobs():
-        divider5 = nuke.Text_Knob("divider_5", "", "")
-        divider5.setFlag(nuke.STARTLINE)
-        node.addKnob(divider5)
-
-    # Save Defaults section (al final)
-    save_defaults_knobs = create_save_defaults_section()
-    for knob in save_defaults_knobs:
-        if knob.name() not in node.knobs():
-            node.addKnob(knob)
+    # Nota: Save Defaults section ahora está integrada en la font section
+    # por lo que no necesitamos crear una sección separada
 
 
 def add_knobs_to_existing_backdrops():
