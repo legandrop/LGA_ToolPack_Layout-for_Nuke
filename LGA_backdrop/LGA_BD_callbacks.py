@@ -286,6 +286,15 @@ def add_knobs_to_existing_backdrops():
         )
         fix_animation_flags(node)
 
+        # FORZAR NO_ANIMATION al border_width nativo específicamente
+        if "border_width" in node.knobs():
+            border_width_knob = node["border_width"]
+            if hasattr(border_width_knob, "setFlag"):
+                border_width_knob.setFlag(nuke.NO_ANIMATION)
+                debug_print(
+                    f"[DEBUG] FORCED NO_ANIMATION to native border_width for existing backdrop: {node.name()}"
+                )
+
     debug_print(f"[DEBUG] add_knobs_to_existing_backdrops completed")
 
 

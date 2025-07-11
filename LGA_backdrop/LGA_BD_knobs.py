@@ -971,6 +971,14 @@ def add_remaining_knobs_if_missing(node, existing_margin_alignment):
                 knob.makeLink(node.name(), "appearance")
             elif knob.name() == "border_width_link":
                 knob.makeLink(node.name(), "border_width")
+                # INMEDIATAMENTE aplicar NO_ANIMATION al knob nativo border_width
+                if "border_width" in node.knobs():
+                    border_width_knob = node["border_width"]
+                    if hasattr(border_width_knob, "setFlag"):
+                        border_width_knob.setFlag(nuke.NO_ANIMATION)
+                        debug_print(
+                            f"[DEBUG] Applied NO_ANIMATION to native border_width IMMEDIATELY after link"
+                        )
 
     # Divider 3 (antes de la sección de z-order)
     if "divider_3" not in node.knobs():
