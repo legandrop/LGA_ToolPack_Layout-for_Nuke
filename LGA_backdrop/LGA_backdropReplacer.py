@@ -13,6 +13,15 @@ import nukescripts
 import os
 import sys
 
+# Variable global para activar o desactivar los debug_prints
+DEBUG = False
+
+
+def debug_print(*message):
+    if DEBUG:
+        print(*message)
+
+
 # Obtener la ruta del directorio donde se encuentra el script actual
 script_dir = os.path.dirname(__file__)
 
@@ -48,7 +57,7 @@ def create_lga_backdrop_silent(
     Crea un LGA_backdrop sin mostrar el dialogo de entrada de texto.
     Esta funcion replica la logica de autoBackdrop() pero sin interaccion del usuario.
     """
-    print(f"[DEBUG] Creating LGA_backdrop with text: '{user_text}'")
+    debug_print(f"Creating LGA_backdrop with text: '{user_text}'")
 
     # Cargar valores por defecto desde configuracion
     try:
@@ -58,9 +67,9 @@ def create_lga_backdrop_silent(
         default_italic = backdrop_defaults["italic"]
         default_align = backdrop_defaults["align"]
         margin_value = backdrop_defaults["margin"]
-        print(f"[DEBUG] Loaded backdrop defaults: {backdrop_defaults}")
+        debug_print(f"Loaded backdrop defaults: {backdrop_defaults}")
     except Exception as e:
-        print(f"[DEBUG] Error loading backdrop defaults, using hardcoded values: {e}")
+        debug_print(f"Error loading backdrop defaults, using hardcoded values: {e}")
         # Usar valores hardcoded como fallback
         default_font_name = "Verdana"
         default_bold = False
@@ -104,28 +113,24 @@ def create_lga_backdrop_silent(
     if "zorder" in n.knobs():
         current_z_order = n["z_order"].getValue()
         n["zorder"].setValue(current_z_order)
-        print(
-            f"[DEBUG] Sincronizado slider zorder con z_order nativo: {current_z_order}"
-        )
+        debug_print(f"Sincronizado slider zorder con z_order nativo: {current_z_order}")
 
     # Sincronizar el margin slider con el valor por defecto cargado
     if "margin_slider" in n.knobs():
         n["margin_slider"].setValue(margin_value)
-        print(
-            f"[DEBUG] Sincronizado margin slider con valor por defecto: {margin_value}"
-        )
+        debug_print(f"Sincronizado margin slider con valor por defecto: {margin_value}")
 
     # Sincronizar el font size slider con el valor por defecto cargado
     if "lga_note_font_size" in n.knobs():
         n["lga_note_font_size"].setValue(note_font_size)
-        print(
-            f"[DEBUG] Sincronizado font size slider con valor por defecto: {note_font_size}"
+        debug_print(
+            f"Sincronizado font size slider con valor por defecto: {note_font_size}"
         )
 
     # Configurar callbacks
     LGA_BD_callbacks.setup_callbacks(n)
 
-    print(f"[DEBUG] LGA_backdrop created successfully: {n.name()}")
+    debug_print(f"LGA_backdrop created successfully: {n.name()}")
     return n
 
 
@@ -141,14 +146,14 @@ def replace_with_lga_backdrop():
     if selected_backdrops:
         # Si hay backdrops seleccionados, reemplaza solo esos
         nodes_to_replace = selected_backdrops
-        print(
-            f"[DEBUG] Reemplazando {len(selected_backdrops)} backdrop(s) seleccionado(s)"
+        debug_print(
+            f"Reemplazando {len(selected_backdrops)} backdrop(s) seleccionado(s)"
         )
     else:
         # Si no hay backdrops seleccionados, reemplaza todos
         nodes_to_replace = [n for n in nuke.allNodes() if n.Class() == "BackdropNode"]
-        print(
-            f"[DEBUG] Reemplazando todos los backdrops del proyecto: {len(nodes_to_replace)}"
+        debug_print(
+            f"Reemplazando todos los backdrops del proyecto: {len(nodes_to_replace)}"
         )
 
     if not nodes_to_replace:
@@ -193,14 +198,14 @@ def replace_with_lga_backdrop():
             # Guardar el nombre del nodo antes de eliminarlo
             node_name = node.name()
 
-            print(f"[DEBUG] Procesando backdrop: {node_name}")
-            print(f"[DEBUG] - Label: '{label}'")
-            print(f"[DEBUG] - Font size: {note_font_size}")
-            print(f"[DEBUG] - Position: ({xpos}, {ypos})")
-            print(f"[DEBUG] - Size: {bdwidth}x{bdheight}")
-            print(f"[DEBUG] - Z-order: {z_order}")
-            print(f"[DEBUG] - Appearance: {appearance}")
-            print(f"[DEBUG] - Border width: {border_width}")
+            debug_print(f"Procesando backdrop: {node_name}")
+            debug_print(f"- Label: '{label}'")
+            debug_print(f"- Font size: {note_font_size}")
+            debug_print(f"- Position: ({xpos}, {ypos})")
+            debug_print(f"- Size: {bdwidth}x{bdheight}")
+            debug_print(f"- Z-order: {z_order}")
+            debug_print(f"- Appearance: {appearance}")
+            debug_print(f"- Border width: {border_width}")
 
             # Limpiar etiquetas HTML del label para obtener texto plano
             stripped_label = strip_html_tags(label)
@@ -227,8 +232,8 @@ def replace_with_lga_backdrop():
             nuke.delete(node)
             replaced_count += 1
 
-            print(
-                f"[DEBUG] Backdrop reemplazado exitosamente: {node_name} -> {new_bd.name()}"
+            debug_print(
+                f"Backdrop reemplazado exitosamente: {node_name} -> {new_bd.name()}"
             )
 
         except Exception as e:
@@ -237,25 +242,25 @@ def replace_with_lga_backdrop():
                 node_name = node.name()
             except:
                 node_name = "Unknown"
-            print(f"[ERROR] Error al reemplazar backdrop {node_name}: {e}")
+            debug_print(f"[ERROR] Error al reemplazar backdrop {node_name}: {e}")
             continue
 
-    # Mostrar resultado
+    # Mostrar resultado solo en consola (sin ventana popup)
     if replaced_count > 0:
-        nuke.message(
+        debug_print(
             f"Se reemplazaron {replaced_count} backdrop(s) con LGA_backdrop exitosamente."
         )
     else:
-        nuke.message("No se pudo reemplazar ningun backdrop.")
+        debug_print("No se pudo reemplazar ningun backdrop.")
 
     # Importar y ejecutar LGA_backdropZorder despues de reemplazar los backdrops
     try:
         import LGA_backdropZorder
 
         LGA_backdropZorder.order_all_backdrops()
-        print("[DEBUG] LGA_backdropZorder ejecutado exitosamente")
+        debug_print("LGA_backdropZorder ejecutado exitosamente")
     except Exception as e:
-        print(f"[DEBUG] Error al ejecutar LGA_backdropZorder.py: {e}")
+        debug_print(f"Error al ejecutar LGA_backdropZorder.py: {e}")
 
 
 if __name__ == "__main__":

@@ -21,7 +21,7 @@ def find_nodes_inside_backdrop(backdrop):
     Esta implementación optimizada evita iterar innecesariamente por todos los nodos del script.
     """
     debug_print(
-        f"[DEBUG] find_nodes_inside_backdrop - Buscando nodos dentro del backdrop: {backdrop.name()}"
+        f"find_nodes_inside_backdrop - Buscando nodos dentro del backdrop: {backdrop.name()}"
     )
 
     # Obtener límites del backdrop
@@ -31,7 +31,7 @@ def find_nodes_inside_backdrop(backdrop):
     backdrop_bottom = backdrop_top + backdrop.screenHeight()
 
     debug_print(
-        f"[DEBUG] Backdrop bounds: left={backdrop_left}, top={backdrop_top}, right={backdrop_right}, bottom={backdrop_bottom}"
+        f"Backdrop bounds: left={backdrop_left}, top={backdrop_top}, right={backdrop_right}, bottom={backdrop_bottom}"
     )
 
     nodes_inside = []
@@ -39,7 +39,7 @@ def find_nodes_inside_backdrop(backdrop):
     # Usar nuke.allNodes() que es la forma más eficiente en Nuke
     # Esta función está optimizada internamente y es preferible a métodos de filtrado manual
     all_nodes = nuke.allNodes()
-    debug_print(f"[DEBUG] Total nodos en el script: {len(all_nodes)}")
+    debug_print(f"Total nodos en el script: {len(all_nodes)}")
 
     for node in all_nodes:
         # Excluir el backdrop mismo y nodos Root
@@ -61,13 +61,9 @@ def find_nodes_inside_backdrop(backdrop):
         ):
 
             nodes_inside.append(node)
-            debug_print(
-                f"[DEBUG] Nodo dentro del backdrop: {node.name()} ({node.Class()})"
-            )
+            debug_print(f"Nodo dentro del backdrop: {node.name()} ({node.Class()})")
 
-    debug_print(
-        f"[DEBUG] Total nodos encontrados dentro del backdrop: {len(nodes_inside)}"
-    )
+    debug_print(f"Total nodos encontrados dentro del backdrop: {len(nodes_inside)}")
     return nodes_inside
 
 
@@ -164,13 +160,11 @@ def fit_to_selected_nodes():
         this.setSelected(False)
 
     selNodes = nuke.selectedNodes()
-    debug_print(f"[DEBUG] Nodos inicialmente seleccionados: {len(selNodes)}")
+    debug_print(f"Nodos inicialmente seleccionados: {len(selNodes)}")
 
     # NUEVA FUNCIONALIDAD: Si no hay nodos seleccionados, buscar nodos dentro del backdrop
     if not selNodes:
-        debug_print(
-            f"[DEBUG] No hay nodos seleccionados, buscando nodos dentro del backdrop"
-        )
+        debug_print(f"No hay nodos seleccionados, buscando nodos dentro del backdrop")
         selNodes = find_nodes_inside_backdrop(this)
 
         if not selNodes:
@@ -178,14 +172,12 @@ def fit_to_selected_nodes():
             return
 
         debug_print(
-            f"[DEBUG] Encontrados {len(selNodes)} nodos dentro del backdrop para autofit"
+            f"Encontrados {len(selNodes)} nodos dentro del backdrop para autofit"
         )
 
         # Mostrar qué nodos se encontraron
         node_names = [f"{node.name()} ({node.Class()})" for node in selNodes]
-        debug_print(
-            f"[DEBUG] Nodos que se usarán para autofit: {', '.join(node_names)}"
-        )
+        debug_print(f"Nodos que se usarán para autofit: {', '.join(node_names)}")
 
     # Obtener el texto y tamano de fuente del backdrop actual
     user_text = this["label"].getValue()
@@ -197,7 +189,7 @@ def fit_to_selected_nodes():
     bdW = max([node.xpos() + node.screenWidth() for node in selNodes]) - bdX
     bdH = max([node.ypos() + node.screenHeight() for node in selNodes]) - bdY
 
-    debug_print(f"[DEBUG] Límites calculados: X={bdX}, Y={bdY}, W={bdW}, H={bdH}")
+    debug_print(f"Límites calculados: X={bdX}, Y={bdY}, W={bdW}, H={bdH}")
 
     # Calcular el tamano adicional necesario para el texto
     extra_top = calculate_extra_top(user_text, note_font_size)
@@ -262,10 +254,10 @@ def fit_to_selected_nodes():
     # if "zorder" in this.knobs():
     #     this["zorder"].setValue(zOrder)
     #     debug_print(
-    #         f"[DEBUG] Sincronizado slider zorder con z_order en autofit: {zOrder}"
+    #         f"Sincronizado slider zorder con z_order en autofit: {zOrder}"
     #     )
 
     debug_print(
-        f"[DEBUG] Autofit aplicado SIN modificar Z-order: X={bdX}, Y={bdY}, W={bdW}, H={bdH}"
+        f"Autofit aplicado SIN modificar Z-order: X={bdX}, Y={bdY}, W={bdW}, H={bdH}"
     )
-    debug_print(f"[DEBUG] Z-order preservado (no modificado por autofit)")
+    debug_print(f"Z-order preservado (no modificado por autofit)")

@@ -64,9 +64,9 @@ def get_config_directory():
     # Crear directorio si no existe
     try:
         os.makedirs(config_dir, exist_ok=True)
-        debug_print(f"[DEBUG] Config directory: {config_dir}")
+        debug_print(f"Config directory: {config_dir}")
     except Exception as e:
-        debug_print(f"[DEBUG] Error creating config directory: {e}")
+        debug_print(f"Error creating config directory: {e}")
         return None
 
     return config_dir
@@ -81,7 +81,7 @@ def get_config_path():
         return None
 
     config_path = os.path.join(config_dir, CONFIG_FILE_NAME)
-    debug_print(f"[DEBUG] Config file path: {config_path}")
+    debug_print(f"Config file path: {config_path}")
     return config_path
 
 
@@ -91,11 +91,11 @@ def ensure_config_exists():
     """
     config_path = get_config_path()
     if not config_path:
-        debug_print("[DEBUG] Cannot create config - invalid path")
+        debug_print("Cannot create config - invalid path")
         return False
 
     if os.path.exists(config_path):
-        debug_print(f"[DEBUG] Config file already exists: {config_path}")
+        debug_print(f"Config file already exists: {config_path}")
         return True
 
     # Crear archivo con valores por defecto
@@ -114,10 +114,10 @@ def ensure_config_exists():
     try:
         with open(config_path, "w") as configfile:
             config.write(configfile)
-        debug_print(f"[DEBUG] Created config file with defaults: {config_path}")
+        debug_print(f"Created config file with defaults: {config_path}")
         return True
     except Exception as e:
-        debug_print(f"[DEBUG] Error creating config file: {e}")
+        debug_print(f"Error creating config file: {e}")
         return False
 
 
@@ -142,7 +142,7 @@ def get_backdrop_defaults():
 
     config_path = get_config_path()
     if not config_path or not os.path.exists(config_path):
-        debug_print("[DEBUG] Config file not found, using hardcoded defaults")
+        debug_print("Config file not found, using hardcoded defaults")
         return defaults
 
     config = configparser.ConfigParser()
@@ -150,7 +150,7 @@ def get_backdrop_defaults():
         config.read(config_path)
 
         if not config.has_section(CONFIG_SECTION):
-            debug_print(f"[DEBUG] Section {CONFIG_SECTION} not found, using defaults")
+            debug_print(f"Section {CONFIG_SECTION} not found, using defaults")
             return defaults
 
         # Leer valores del archivo, con fallback a defaults
@@ -186,11 +186,11 @@ def get_backdrop_defaults():
             "border_width": border_width,
         }
 
-        debug_print(f"[DEBUG] Loaded backdrop defaults: {loaded_defaults}")
+        debug_print(f"Loaded backdrop defaults: {loaded_defaults}")
         return loaded_defaults
 
     except Exception as e:
-        debug_print(f"[DEBUG] Error reading config file: {e}")
+        debug_print(f"Error reading config file: {e}")
         return defaults
 
 
@@ -215,7 +215,7 @@ def save_backdrop_defaults(
     """
     config_path = get_config_path()
     if not config_path:
-        debug_print("[DEBUG] Cannot save config - invalid path")
+        debug_print("Cannot save config - invalid path")
         return False
 
     # Asegurar que el directorio existe
@@ -228,7 +228,7 @@ def save_backdrop_defaults(
         try:
             config.read(config_path)
         except Exception as e:
-            debug_print(f"[DEBUG] Error reading existing config: {e}")
+            debug_print(f"Error reading existing config: {e}")
 
     # Asegurar que la sección existe
     if not config.has_section(CONFIG_SECTION):
@@ -248,14 +248,14 @@ def save_backdrop_defaults(
         with open(config_path, "w") as configfile:
             config.write(configfile)
 
-        debug_print(f"[DEBUG] Backdrop defaults saved successfully to: {config_path}")
+        debug_print(f"Backdrop defaults saved successfully to: {config_path}")
         debug_print(
-            f"[DEBUG] Saved values: font_size={font_size}, font_name={font_name}, bold={bold}, italic={italic}, align={align}, margin={margin}, appearance={appearance}, border_width={border_width}"
+            f"Saved values: font_size={font_size}, font_name={font_name}, bold={bold}, italic={italic}, align={align}, margin={margin}, appearance={appearance}, border_width={border_width}"
         )
         return True
 
     except Exception as e:
-        debug_print(f"[DEBUG] Error saving backdrop defaults: {e}")
+        debug_print(f"Error saving backdrop defaults: {e}")
         return False
 
 
@@ -284,16 +284,16 @@ def extract_current_backdrop_settings(node):
         if "note_font" in node.knobs():
             try:
                 note_font_knob = node["note_font"]
-                debug_print(f"[DEBUG] note_font knob type: {type(note_font_knob)}")
-                debug_print(f"[DEBUG] note_font knob class: {note_font_knob.Class()}")
+                debug_print(f"note_font knob type: {type(note_font_knob)}")
+                debug_print(f"note_font knob class: {note_font_knob.Class()}")
 
                 # Intentar diferentes métodos para obtener el valor
                 if hasattr(note_font_knob, "value"):
                     note_font_value = note_font_knob.value()
-                    debug_print(f"[DEBUG] note_font.value(): '{note_font_value}'")
+                    debug_print(f"note_font.value(): '{note_font_value}'")
                 else:
                     note_font_value = note_font_knob.getValue()
-                    debug_print(f"[DEBUG] note_font.getValue(): '{note_font_value}'")
+                    debug_print(f"note_font.getValue(): '{note_font_value}'")
 
                 # Solo procesar si es string y no numérico
                 if (
@@ -306,15 +306,15 @@ def extract_current_backdrop_settings(node):
                         bold = "Bold" in font_parts
                         italic = "Italic" in font_parts
                         debug_print(
-                            f"[DEBUG] Parsed font: name='{font_name}', bold={bold}, italic={italic}"
+                            f"Parsed font: name='{font_name}', bold={bold}, italic={italic}"
                         )
                 else:
                     debug_print(
-                        f"[DEBUG] note_font value is not a valid font string: '{note_font_value}'"
+                        f"note_font value is not a valid font string: '{note_font_value}'"
                     )
 
             except Exception as e:
-                debug_print(f"[DEBUG] Error processing note_font: {e}")
+                debug_print(f"Error processing note_font: {e}")
                 # Mantener valores por defecto
 
         # Alignment
@@ -322,19 +322,17 @@ def extract_current_backdrop_settings(node):
         if "lga_margin" in node.knobs():
             align_value = node["lga_margin"].getValue()
             debug_print(
-                f"[DEBUG] lga_margin raw value: '{align_value}' (type: {type(align_value)})"
+                f"lga_margin raw value: '{align_value}' (type: {type(align_value)})"
             )
             # El dropdown devuelve un índice, convertir a string
             if isinstance(align_value, (int, float)):
                 align_options = ["left", "center", "right"]
                 if 0 <= int(align_value) < len(align_options):
                     align = align_options[int(align_value)]
-                    debug_print(
-                        f"[DEBUG] Converted align index {align_value} to '{align}'"
-                    )
+                    debug_print(f"Converted align index {align_value} to '{align}'")
             else:
                 align = str(align_value)
-                debug_print(f"[DEBUG] Using align value as string: '{align}'")
+                debug_print(f"Using align value as string: '{align}'")
 
         # Margin
         margin = DEFAULT_MARGIN
@@ -346,7 +344,7 @@ def extract_current_backdrop_settings(node):
         if "appearance" in node.knobs():
             appearance_value = node["appearance"].getValue()
             debug_print(
-                f"[DEBUG] appearance raw value: '{appearance_value}' (type: {type(appearance_value)})"
+                f"appearance raw value: '{appearance_value}' (type: {type(appearance_value)})"
             )
             # El dropdown devuelve un índice, convertir a string
             if isinstance(appearance_value, (int, float)):
@@ -354,11 +352,11 @@ def extract_current_backdrop_settings(node):
                 if 0 <= int(appearance_value) < len(appearance_options):
                     appearance = appearance_options[int(appearance_value)]
                     debug_print(
-                        f"[DEBUG] Converted appearance index {appearance_value} to '{appearance}'"
+                        f"Converted appearance index {appearance_value} to '{appearance}'"
                     )
             else:
                 appearance = str(appearance_value)
-                debug_print(f"[DEBUG] Using appearance value as string: '{appearance}'")
+                debug_print(f"Using appearance value as string: '{appearance}'")
 
         # Border Width
         border_width = DEFAULT_BORDER_WIDTH
@@ -376,11 +374,11 @@ def extract_current_backdrop_settings(node):
             "border_width": border_width,
         }
 
-        debug_print(f"[DEBUG] Extracted backdrop settings: {settings}")
+        debug_print(f"Extracted backdrop settings: {settings}")
         return settings
 
     except Exception as e:
-        debug_print(f"[DEBUG] Error extracting backdrop settings: {e}")
+        debug_print(f"Error extracting backdrop settings: {e}")
         # Return defaults en caso de error
         return {
             "font_size": DEFAULT_FONT_SIZE,

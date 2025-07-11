@@ -171,14 +171,14 @@ class ColorSwatchWidget(QtWidgets.QWidget):
         default_rgb = (58, 58, 58)  # Color por defecto
 
         if not self.node:
-            debug_print(f"[DEBUG] No node available")
+            debug_print(f"No node available")
             return None, default_rgb, -1
 
         try:
             current_color_value = self.node["tile_color"].getValue()
-            debug_print(f"[DEBUG] Current tile_color value: {current_color_value}")
+            debug_print(f"Current tile_color value: {current_color_value}")
         except:
-            debug_print(f"[DEBUG] Error getting tile_color value")
+            debug_print(f"Error getting tile_color value")
             return None, default_rgb, -1
 
         # Convertir el valor de color de Nuke a RGB
@@ -191,23 +191,23 @@ class ColorSwatchWidget(QtWidgets.QWidget):
                 g = (current_color_value >> 16) & 0xFF
                 b = (current_color_value >> 8) & 0xFF
                 current_rgb = (r, g, b)
-                debug_print(f"[DEBUG] Converted to RGB: {current_rgb}")
+                debug_print(f"Converted to RGB: {current_rgb}")
             else:
                 current_rgb = default_rgb
-                debug_print(f"[DEBUG] Using default RGB (not int): {current_rgb}")
+                debug_print(f"Using default RGB (not int): {current_rgb}")
 
         # Buscar en qué familia de color está y en qué variación
         if hasattr(self, "color_variations") and self.color_variations:
-            debug_print(f"[DEBUG] Searching in color variations...")
+            debug_print(f"Searching in color variations...")
             for color_name, variations in self.color_variations.items():
                 if variations:
                     debug_print(
-                        f"[DEBUG] Checking {color_name} with {len(variations)} variations"
+                        f"Checking {color_name} with {len(variations)} variations"
                     )
                     for i, rgb in enumerate(variations):
                         if rgb and len(rgb) == 3:
                             debug_print(
-                                f"[DEBUG] Comparing current {current_rgb} with {color_name}[{i}] {rgb}"
+                                f"Comparing current {current_rgb} with {color_name}[{i}] {rgb}"
                             )
                             # Tolerancia para comparación de colores
                             if (
@@ -215,20 +215,16 @@ class ColorSwatchWidget(QtWidgets.QWidget):
                                 and abs(current_rgb[1] - rgb[1]) <= 5
                                 and abs(current_rgb[2] - rgb[2]) <= 5
                             ):
-                                debug_print(
-                                    f"[DEBUG] MATCH FOUND: {color_name} variation {i}"
-                                )
+                                debug_print(f"MATCH FOUND: {color_name} variation {i}")
                                 return color_name, current_rgb, i
                         else:
-                            debug_print(
-                                f"[DEBUG] Invalid RGB in {color_name}[{i}]: {rgb}"
-                            )
+                            debug_print(f"Invalid RGB in {color_name}[{i}]: {rgb}")
                 else:
-                    debug_print(f"[DEBUG] No variations for {color_name}")
+                    debug_print(f"No variations for {color_name}")
         else:
-            debug_print(f"[DEBUG] No color_variations available")
+            debug_print(f"No color_variations available")
 
-        debug_print(f"[DEBUG] No match found for RGB: {current_rgb}")
+        debug_print(f"No match found for RGB: {current_rgb}")
         return None, current_rgb, -1
 
     def _create_layout(self):
@@ -317,7 +313,7 @@ class ColorSwatchWidget(QtWidgets.QWidget):
             or not self.color_variations
             or color_name not in self.color_variations
         ):
-            debug_print(f"[DEBUG] No variations available for {color_name}")
+            debug_print(f"No variations available for {color_name}")
             return
 
         # Usar tracking interno en lugar de detección de color actual
@@ -325,12 +321,12 @@ class ColorSwatchWidget(QtWidgets.QWidget):
             # Si el último color aplicado es de la misma familia, avanzar al siguiente
             next_index = (self._last_applied_index + 1) % 5  # Loop de 0 a 4
             debug_print(
-                f"[DEBUG] Current {color_name} variation: {self._last_applied_index}, next: {next_index}"
+                f"Current {color_name} variation: {self._last_applied_index}, next: {next_index}"
             )
         else:
             # Si no es de la misma familia o es la primera vez, empezar desde 0
             next_index = 0
-            debug_print(f"[DEBUG] Starting {color_name} variations from index 0")
+            debug_print(f"Starting {color_name} variations from index 0")
 
         # Aplicar la nueva variación
         variations = self.color_variations.get(color_name)
@@ -353,18 +349,16 @@ class ColorSwatchWidget(QtWidgets.QWidget):
                     self._last_applied_index = next_index
 
                     debug_print(
-                        f"[DEBUG] Applied {color_name} variation {next_index}: RGB({r}, {g}, {b}) = {hex_color}"
+                        f"Applied {color_name} variation {next_index}: RGB({r}, {g}, {b}) = {hex_color}"
                     )
                 else:
-                    debug_print(
-                        f"[DEBUG] Error: Invalid node or missing tile_color knob"
-                    )
+                    debug_print(f"Error: Invalid node or missing tile_color knob")
             else:
                 debug_print(
-                    f"[DEBUG] Error: Invalid RGB values for {color_name} variation {next_index}"
+                    f"Error: Invalid RGB values for {color_name} variation {next_index}"
                 )
         else:
-            debug_print(f"[DEBUG] Error: No valid variations found for {color_name}")
+            debug_print(f"Error: No valid variations found for {color_name}")
 
     def _apply_random_color(self):
         """Aplica un color completamente aleatorio"""
@@ -388,11 +382,9 @@ class ColorSwatchWidget(QtWidgets.QWidget):
             self._last_applied_color = None
             self._last_applied_index = -1
 
-            debug_print(
-                f"[DEBUG] Applied random color: RGB({r}, {g}, {b}) = {hex_color}"
-            )
+            debug_print(f"Applied random color: RGB({r}, {g}, {b}) = {hex_color}")
         else:
-            debug_print(f"[DEBUG] Error: Invalid node or missing tile_color knob")
+            debug_print(f"Error: Invalid node or missing tile_color knob")
 
     def makeUI(self):
         return self
@@ -505,9 +497,9 @@ class LGA_AutoFitControlWidget(QtWidgets.QWidget):
             import LGA_BD_fit
 
             LGA_BD_fit.fit_to_selected_nodes()
-            debug_print("[DEBUG] LGA_BD_fit.fit_to_selected_nodes() called")
+            debug_print("LGA_BD_fit.fit_to_selected_nodes() called")
         except Exception as e:
-            debug_print(f"[DEBUG] Error calling fit_to_selected_nodes: {e}")
+            debug_print(f"Error calling fit_to_selected_nodes: {e}")
 
     def makeUI(self):
         return self
@@ -633,7 +625,7 @@ class LGA_SaveDefaultsWidget(QtWidgets.QWidget):
             import LGA_BD_config
 
             if not self.node:
-                debug_print("[DEBUG] No node available for saving defaults")
+                debug_print("No node available for saving defaults")
                 return
 
             # Extraer configuraciones actuales del backdrop
@@ -654,16 +646,16 @@ class LGA_SaveDefaultsWidget(QtWidgets.QWidget):
             )
 
             if success:
-                debug_print("[DEBUG] Backdrop defaults saved successfully")
+                debug_print("Backdrop defaults saved successfully")
                 # Mostrar mensaje de confirmación usando nuke.message
                 try:
                     import nuke
 
                     nuke.message("Backdrop defaults saved successfully!")
                 except:
-                    debug_print("[DEBUG] Could not show nuke.message")
+                    debug_print("Could not show nuke.message")
             else:
-                debug_print("[DEBUG] Failed to save backdrop defaults")
+                debug_print("Failed to save backdrop defaults")
                 try:
                     import nuke
 
@@ -671,16 +663,16 @@ class LGA_SaveDefaultsWidget(QtWidgets.QWidget):
                         "Failed to save backdrop defaults. Check console for details."
                     )
                 except:
-                    debug_print("[DEBUG] Could not show nuke.message")
+                    debug_print("Could not show nuke.message")
 
         except Exception as e:
-            debug_print(f"[DEBUG] Error saving backdrop defaults: {e}")
+            debug_print(f"Error saving backdrop defaults: {e}")
             try:
                 import nuke
 
                 nuke.message(f"Error saving backdrop defaults: {e}")
             except:
-                debug_print("[DEBUG] Could not show nuke.message")
+                debug_print("Could not show nuke.message")
 
     def makeUI(self):
         return self
@@ -902,25 +894,25 @@ def create_save_defaults_section():
 
 def add_all_knobs(node, text_label="", existing_margin_alignment="left"):
     """Agrega todos los knobs personalizados al BackdropNode pero solo si no existen"""
-    debug_print(f"[DEBUG] Adding knobs to node: {node.name()}")
+    debug_print(f"Adding knobs to node: {node.name()}")
 
     # Verificar si ya tiene el tab Backdrop y los knobs principales
     if "backdrop" in node.knobs() and "label_link" in node.knobs():
-        debug_print(f"[DEBUG] Knobs already exist, skipping recreation")
+        debug_print(f"Knobs already exist, skipping recreation")
         return
 
     # Crear tab backdrop solo si no existe
     if "backdrop" not in node.knobs():
         backdrop_tab = nuke.Tab_Knob("backdrop")
         node.addKnob(backdrop_tab)
-        debug_print(f"[DEBUG] Created backdrop tab")
+        debug_print(f"Created backdrop tab")
 
     # Crear link al label nativo solo si no existe (como en el ejemplo)
     if "label_link" not in node.knobs():
         label_link = nuke.Link_Knob("label_link", "Label")
         label_link.makeLink(node.name(), "label")
         node.addKnob(label_link)
-        debug_print(f"[DEBUG] Created label_link to native label")
+        debug_print(f"Created label_link to native label")
 
         # Si tenemos texto para asignar, hacerlo al label nativo
         if text_label:
@@ -931,7 +923,7 @@ def add_all_knobs(node, text_label="", existing_margin_alignment="left"):
         lga_font_size_knob = create_font_size_knob(42)  # usar la función original
         lga_font_size_knob.setFlag(nuke.STARTLINE | nuke.NO_ANIMATION)
         node.addKnob(lga_font_size_knob)
-        debug_print(f"[DEBUG] Created font size slider")
+        debug_print(f"Created font size slider")
 
     # Crear margin dropdown solo si no existe (EN LA MISMA LÍNEA que font size)
     if "lga_margin" not in node.knobs():
@@ -941,7 +933,7 @@ def add_all_knobs(node, text_label="", existing_margin_alignment="left"):
         margin_dropdown.setValue(existing_margin_alignment)
         margin_dropdown.clearFlag(nuke.STARTLINE)  # En la misma línea que font size
         node.addKnob(margin_dropdown)
-        debug_print(f"[DEBUG] Created margin dropdown")
+        debug_print(f"Created margin dropdown")
 
     # Crear font section (label + dropdown) solo si no existe
     if "font_label" not in node.knobs():
@@ -951,12 +943,12 @@ def add_all_knobs(node, text_label="", existing_margin_alignment="left"):
                 node.addKnob(knob)
                 if knob.name() == "note_font_link":
                     knob.makeLink(node.name(), "note_font")
-        debug_print(f"[DEBUG] Created font section (label + dropdown)")
+        debug_print(f"Created font section (label + dropdown)")
 
     # Agregar el resto de los knobs usando las funciones existentes si no existen
     add_remaining_knobs_if_missing(node, existing_margin_alignment)
 
-    debug_print(f"[DEBUG] Finished adding all knobs")
+    debug_print(f"Finished adding all knobs")
 
 
 def add_remaining_knobs_if_missing(node, existing_margin_alignment):
@@ -999,7 +991,7 @@ def add_remaining_knobs_if_missing(node, existing_margin_alignment):
                     if hasattr(border_width_knob, "setFlag"):
                         border_width_knob.setFlag(nuke.NO_ANIMATION)
                         debug_print(
-                            f"[DEBUG] Applied NO_ANIMATION to native border_width IMMEDIATELY after link"
+                            f"Applied NO_ANIMATION to native border_width IMMEDIATELY after link"
                         )
 
     # Divider 3 (antes de la sección de z-order)
@@ -1038,7 +1030,7 @@ def add_knobs_to_existing_backdrops():
     Busca BackdropNodes existentes en el script actual y les agrega/actualiza knobs personalizados.
     Se ejecuta cuando se carga un script.
     """
-    debug_print(f"[DEBUG] add_knobs_to_existing_backdrops called - onScriptLoad")
+    debug_print(f"add_knobs_to_existing_backdrops called - onScriptLoad")
 
     # Buscar todos los BackdropNodes en el script actual
     backdrop_nodes = [
@@ -1046,18 +1038,18 @@ def add_knobs_to_existing_backdrops():
     ]
 
     if not backdrop_nodes:
-        debug_print(f"[DEBUG] Found 0 BackdropNode(s)")
-        debug_print(f"[DEBUG] add_knobs_to_existing_backdrops completed")
+        debug_print(f"Found 0 BackdropNode(s)")
+        debug_print(f"add_knobs_to_existing_backdrops completed")
         return
 
-    debug_print(f"[DEBUG] Found {len(backdrop_nodes)} BackdropNode(s)")
+    debug_print(f"Found {len(backdrop_nodes)} BackdropNode(s)")
 
     for node in backdrop_nodes:
-        debug_print(f"[DEBUG] Processing node: {node.name()}")
+        debug_print(f"Processing node: {node.name()}")
 
         # Obtener el valor del label nativo para preservarlo
         existing_label_value = node["label"].getValue()
-        debug_print(f"[DEBUG] Using label value: '{existing_label_value}'")
+        debug_print(f"Using label value: '{existing_label_value}'")
 
         # Limpiar el texto para detectar alignment
         clean_text = existing_label_value
@@ -1078,11 +1070,11 @@ def add_knobs_to_existing_backdrops():
         else:
             existing_margin_alignment = "left"
 
-        debug_print(f"[DEBUG] Clean text: '{clean_text}'")
+        debug_print(f"Clean text: '{clean_text}'")
 
         # Llamar a add_all_knobs con el texto limpio
         add_all_knobs(node, clean_text, existing_margin_alignment)
 
-        debug_print(f"[DEBUG] Finished processing node: {node.name()}")
+        debug_print(f"Finished processing node: {node.name()}")
 
-    debug_print(f"[DEBUG] add_knobs_to_existing_backdrops completed")
+    debug_print(f"add_knobs_to_existing_backdrops completed")

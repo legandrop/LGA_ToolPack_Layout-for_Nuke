@@ -208,7 +208,7 @@ def autoBackdrop():
         )
         zOrder = min_contained_z - 1
         print(
-            f"[DEBUG] Backdrop will contain {len(backdrops_contained)} backdrops. Setting Z to {zOrder} (min contained Z was {min_contained_z})"
+            f"Backdrop will contain {len(backdrops_contained)} backdrops. Setting Z to {zOrder} (min contained Z was {min_contained_z})"
         )
 
     # Cargar valores por defecto desde configuración
@@ -222,9 +222,9 @@ def autoBackdrop():
         margin_value = backdrop_defaults["margin"]
         default_appearance = backdrop_defaults["appearance"]
         default_border_width = backdrop_defaults["border_width"]
-        print(f"[DEBUG] Loaded backdrop defaults: {backdrop_defaults}")
+        print(f"Loaded backdrop defaults: {backdrop_defaults}")
     except Exception as e:
-        print(f"[DEBUG] Error loading backdrop defaults, using hardcoded values: {e}")
+        print(f"Error loading backdrop defaults, using hardcoded values: {e}")
         # Usar valores hardcoded como fallback
         note_font_size = 42
         default_font_name = "Verdana"
@@ -298,23 +298,17 @@ def autoBackdrop():
     if "zorder" in n.knobs():
         current_z_order = n["z_order"].getValue()
         n["zorder"].setValue(current_z_order)
-        print(
-            f"[DEBUG] Sincronizado slider zorder con z_order nativo: {current_z_order}"
-        )
+        print(f"Sincronizado slider zorder con z_order nativo: {current_z_order}")
 
     # IMPORTANTE: Sincronizar el margin slider con el valor por defecto cargado
     if "margin_slider" in n.knobs():
         n["margin_slider"].setValue(margin_value)
-        print(
-            f"[DEBUG] Sincronizado margin slider con valor por defecto: {margin_value}"
-        )
+        print(f"Sincronizado margin slider con valor por defecto: {margin_value}")
 
     # IMPORTANTE: Sincronizar el font size slider con el valor por defecto cargado
     if "lga_note_font_size" in n.knobs():
         n["lga_note_font_size"].setValue(note_font_size)
-        print(
-            f"[DEBUG] Sincronizado font size slider con valor por defecto: {note_font_size}"
-        )
+        print(f"Sincronizado font size slider con valor por defecto: {note_font_size}")
 
     # Configurar callbacks
     LGA_BD_callbacks.setup_callbacks(n)

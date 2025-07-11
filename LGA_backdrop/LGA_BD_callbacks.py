@@ -47,7 +47,7 @@ elif knob.name() == 'z_order':
 elif knob.name() == 'label_link':
     # Manejar cambios en el label
     text_value = knob.value()
-    debug_print(f"[DEBUG] label_link changed to: '{text_value}'")
+    debug_print(f"label_link changed to: '{text_value}'")
 
 elif knob.name() == 'lga_note_font_size':
     # Sincronizar el font size personalizado con el knob note_font_size nativo del BackdropNode
@@ -57,8 +57,8 @@ elif knob.name() == 'lga_note_font_size':
 
 elif knob.name() == 'margin_slider':
     # NUEVA FUNCIONALIDAD: Auto fit automático cuando cambia el margin slider
-    debug_print(f"[DEBUG] margin_slider changed to: {knob.value()}")
-    debug_print(f"[DEBUG] Ejecutando autofit automático completo...")
+    debug_print(f"margin_slider changed to: {knob.value()}")
+    debug_print(f"Ejecutando autofit automático completo...")
     
     try:
         # Usar la misma lógica que la función fit_to_selected_nodes pero SIN cambiar Z-order
@@ -69,11 +69,11 @@ elif knob.name() == 'margin_slider':
             this.setSelected(False)
         
         selNodes = nuke.selectedNodes()
-        debug_print(f"[DEBUG] Nodos inicialmente seleccionados: {len(selNodes)}")
+        debug_print(f"Nodos inicialmente seleccionados: {len(selNodes)}")
 
         # Si no hay nodos seleccionados, buscar nodos dentro del backdrop
         if not selNodes:
-            debug_print(f"[DEBUG] No hay nodos seleccionados, buscando nodos dentro del backdrop")
+            debug_print(f"No hay nodos seleccionados, buscando nodos dentro del backdrop")
             
             # Buscar nodos dentro del backdrop (función inline copiada de fit_to_selected_nodes)
             backdrop_left = this.xpos()
@@ -103,11 +103,11 @@ elif knob.name() == 'margin_slider':
             selNodes = nodes_inside
             
             if not selNodes:
-                debug_print(f"[DEBUG] No hay nodos dentro del backdrop para hacer autofit")
+                debug_print(f"No hay nodos dentro del backdrop para hacer autofit")
                 # No hacer nada si no hay nodos
                 pass
             else:
-                debug_print(f"[DEBUG] Encontrados {len(selNodes)} nodos dentro del backdrop para autofit")
+                debug_print(f"Encontrados {len(selNodes)} nodos dentro del backdrop para autofit")
 
         # Continuar con el cálculo de autofit completo solo si hay nodos
         if selNodes:
@@ -121,7 +121,7 @@ elif knob.name() == 'margin_slider':
             bdW = max([node_calc.xpos() + node_calc.screenWidth() for node_calc in selNodes]) - bdX
             bdH = max([node_calc.ypos() + node_calc.screenHeight() for node_calc in selNodes]) - bdY
 
-            debug_print(f"[DEBUG] Límites calculados básicos: X={bdX}, Y={bdY}, W={bdW}, H={bdH}")
+            debug_print(f"Límites calculados básicos: X={bdX}, Y={bdY}, W={bdW}, H={bdH}")
             
             # ===== AQUÍ VIENE LA LÓGICA COMPLETA DE TEXTO (copiada de fit_to_selected_nodes) =====
             
@@ -162,11 +162,11 @@ elif knob.name() == 'margin_slider':
             
             # Calcular el tamaño adicional necesario para el texto
             extra_top = calculate_extra_top_inline(user_text, note_font_size)
-            debug_print(f"[DEBUG] extra_top fit: {extra_top}")
+            debug_print(f"extra_top fit: {extra_top}")
             
             # Calcular el ancho mínimo necesario para el texto
             min_horizontal = calculate_min_horizontal_inline(user_text, note_font_size)
-            debug_print(f"[DEBUG] min_horizontal nuevo: {min_horizontal}")
+            debug_print(f"min_horizontal nuevo: {min_horizontal}")
             
             # Expandir los límites para dejar un pequeño borde (IGUAL QUE LA FUNCIÓN PRO)
             if padding < extra_top:
@@ -174,21 +174,21 @@ elif knob.name() == 'margin_slider':
             else:
                 top = -padding
             
-            debug_print(f"[DEBUG] top nuevo fit: {top}")
+            debug_print(f"top nuevo fit: {top}")
             bottom = padding
-            debug_print(f"[DEBUG] bottom nuevo fit: {bottom}")
+            debug_print(f"bottom nuevo fit: {bottom}")
             
             # Ajustar los valores de left y right para asegurar el mínimo horizontal
             left = -1 * padding
-            debug_print(f"[DEBUG] left nuevo: {left}")
+            debug_print(f"left nuevo: {left}")
             additional_width = max(0, min_horizontal - bdW)
             left_adjustment = additional_width / 2
             right_adjustment = additional_width / 2
             
             right = padding + right_adjustment
-            debug_print(f"[DEBUG] right nuevo: {right}")
+            debug_print(f"right nuevo: {right}")
             left -= left_adjustment
-            debug_print(f"[DEBUG] left ajustado: {left}")
+            debug_print(f"left ajustado: {left}")
             
             bdX += left
             bdY += top
@@ -201,10 +201,10 @@ elif knob.name() == 'margin_slider':
             this["ypos"].setValue(bdY)
             this["bdheight"].setValue(bdH)
             
-            debug_print(f"[DEBUG] Autofit COMPLETO aplicado: X={bdX}, Y={bdY}, W={bdW}, H={bdH}")
-            debug_print(f"[DEBUG] Z-order NO modificado (preservado)")
+            debug_print(f"Autofit COMPLETO aplicado: X={bdX}, Y={bdY}, W={bdW}, H={bdH}")
+            debug_print(f"Z-order NO modificado (preservado)")
         else:
-            debug_print(f"[DEBUG] No se encontraron nodos para autofit")
+            debug_print(f"No se encontraron nodos para autofit")
         
     except Exception as e:
         debug_print(f"[DEBUG ERROR] Error en autofit automático: {str(e)}")
@@ -213,11 +213,11 @@ elif knob.name() == 'margin_slider':
 
 elif knob.name() == 'lga_margin':
     # Sincronizar alignment
-    debug_print(f"[DEBUG] lga_margin changed to: '{knob.value()}'")
+    debug_print(f"lga_margin changed to: '{knob.value()}'")
     
     # Obtener el texto actual del label nativo (limpiar tags previos)
     current_text = node['label'].value()
-    debug_print(f"[DEBUG] Current label text: '{current_text}'")
+    debug_print(f"Current label text: '{current_text}'")
     
     # Limpiar tags de alignment previos
     clean_text = current_text
@@ -233,7 +233,7 @@ elif knob.name() == 'lga_margin':
     elif knob.value() == "right":
         formatted_text = '<div align="right">' + formatted_text + '</div>'
     
-    debug_print(f"[DEBUG] Final formatted text: '{formatted_text}'")
+    debug_print(f"Final formatted text: '{formatted_text}'")
     node['label'].setValue(formatted_text)
 
 """
@@ -244,16 +244,16 @@ def add_knobs_to_existing_backdrops():
     Asegura que los knobs personalizados se anadan a los BackdropNodes existentes.
     Esta funcion se llama al cargar un script.
     """
-    debug_print(f"[DEBUG] add_knobs_to_existing_backdrops called - onScriptLoad")
+    debug_print(f"add_knobs_to_existing_backdrops called - onScriptLoad")
     backdrop_nodes = nuke.allNodes("BackdropNode")
-    debug_print(f"[DEBUG] Found {len(backdrop_nodes)} BackdropNode(s)")
+    debug_print(f"Found {len(backdrop_nodes)} BackdropNode(s)")
 
     for node in backdrop_nodes:
-        debug_print(f"[DEBUG] Processing node: {node.name()}")
+        debug_print(f"Processing node: {node.name()}")
 
         # Usar el label nativo
         user_text = node["label"].value()
-        debug_print(f"[DEBUG] Using native label value: '{user_text}'")
+        debug_print(f"Using native label value: '{user_text}'")
 
         # Detectar y limpiar formato del texto (solo alignment, no bold/italic)
         clean_text = user_text
@@ -276,16 +276,14 @@ def add_knobs_to_existing_backdrops():
 
         clean_text = re.sub(r"</?[bi]>", "", clean_text)
 
-        debug_print(f"[DEBUG] Clean text: '{clean_text}'")
+        debug_print(f"Clean text: '{clean_text}'")
 
-        debug_print(f"[DEBUG] Calling add_all_knobs for node: {node.name()}")
+        debug_print(f"Calling add_all_knobs for node: {node.name()}")
         LGA_BD_knobs.add_all_knobs(node, clean_text, existing_margin_alignment)
-        debug_print(f"[DEBUG] Finished processing node: {node.name()}")
+        debug_print(f"Finished processing node: {node.name()}")
 
         # NUEVA FUNCIONALIDAD: Asegurar que los sliders no tengan animación
-        debug_print(
-            f"[DEBUG] Aplicando NO_ANIMATION a sliders para node: {node.name()}"
-        )
+        debug_print(f"Aplicando NO_ANIMATION a sliders para node: {node.name()}")
         fix_animation_flags(node)
 
         # FORZAR NO_ANIMATION al border_width nativo específicamente
@@ -294,10 +292,10 @@ def add_knobs_to_existing_backdrops():
             if hasattr(border_width_knob, "setFlag"):
                 border_width_knob.setFlag(nuke.NO_ANIMATION)
                 debug_print(
-                    f"[DEBUG] FORCED NO_ANIMATION to native border_width for existing backdrop: {node.name()}"
+                    f"FORCED NO_ANIMATION to native border_width for existing backdrop: {node.name()}"
                 )
 
-    debug_print(f"[DEBUG] add_knobs_to_existing_backdrops completed")
+    debug_print(f"add_knobs_to_existing_backdrops completed")
 
 
 def fix_animation_flags(node):
@@ -316,10 +314,10 @@ def fix_animation_flags(node):
             knob = node[knob_name]
             if hasattr(knob, "setFlag"):
                 knob.setFlag(nuke.NO_ANIMATION)
-                debug_print(f"[DEBUG] Applied NO_ANIMATION to {knob_name}")
+                debug_print(f"Applied NO_ANIMATION to {knob_name}")
             else:
                 debug_print(
-                    f"[DEBUG] Could not apply NO_ANIMATION to {knob_name} - no setFlag method"
+                    f"Could not apply NO_ANIMATION to {knob_name} - no setFlag method"
                 )
 
     # También aplicar NO_ANIMATION al knob nativo border_width si existe
@@ -327,10 +325,10 @@ def fix_animation_flags(node):
         border_width_knob = node["border_width"]
         if hasattr(border_width_knob, "setFlag"):
             border_width_knob.setFlag(nuke.NO_ANIMATION)
-            debug_print(f"[DEBUG] Applied NO_ANIMATION to native border_width")
+            debug_print(f"Applied NO_ANIMATION to native border_width")
         else:
             debug_print(
-                f"[DEBUG] Could not apply NO_ANIMATION to native border_width - no setFlag method"
+                f"Could not apply NO_ANIMATION to native border_width - no setFlag method"
             )
 
 

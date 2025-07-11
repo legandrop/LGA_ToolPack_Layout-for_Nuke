@@ -149,7 +149,7 @@ Para añadir nuevos knobs personalizados al tab "backdrop":
 if "nuevo_knob" not in node.knobs():
     nuevo_knob = nuke.String_Knob("nuevo_knob", "Nuevo Knob")
     node.addKnob(nuevo_knob)
-    debug_print(f"[DEBUG] Created nuevo_knob")
+    debug_print(f"Created nuevo_knob")
 ```
 
 **⚠️ Importante**: Siempre usar verificación `if "knob_name" not in node.knobs():` para evitar duplicación al recargar scripts.
