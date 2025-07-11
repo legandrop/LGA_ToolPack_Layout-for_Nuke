@@ -539,15 +539,25 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.show()
 
     def position_window_relative_to_sticky(self):
-        """Posiciona la ventana respecto al StickyNote"""
+        """Posiciona la ventana respecto al StickyNote con tamaño dinámico."""
+        # Asegurarnos de que la ventana tenga el tamaño correcto
+        self.adjustSize()
+        window_width = self.width()
+        window_height = self.height()
+
         if not self.sticky_node:
             # Fallback al cursor si no hay sticky note
             cursor_pos = QtGui.QCursor.pos()
-            self.move(QtCore.QPoint(cursor_pos.x() - 150, cursor_pos.y() - 100))
+            self.move(
+                QtCore.QPoint(
+                    cursor_pos.x() - window_width // 2,
+                    cursor_pos.y() - window_height // 2,
+                )
+            )
             return
 
         try:
-            # Posición del nodo en el DAG
+            # Posición del nodo en el DAG (centro)
             node_x = self.sticky_node.xpos() + self.sticky_node.screenWidth() // 2
             node_y = self.sticky_node.ypos() + self.sticky_node.screenHeight() // 2
 
@@ -555,11 +565,11 @@ class StickyNoteEditor(QtWidgets.QDialog):
             zoom = nuke.zoom()
             center_x, center_y = nuke.center()
 
-            # Diferencia relativa al centro, ajustada por el zoom
+            # Delta desde el centro, ajustado por zoom
             delta_x = (node_x - center_x) * zoom
             delta_y = (node_y - center_y) * zoom
 
-            # Buscar el widget del DAG
+            # Encontrar widget DAG
             dag_widget = None
             for widget in QtWidgets.QApplication.allWidgets():
                 if "DAG" in widget.objectName():
@@ -567,77 +577,63 @@ class StickyNoteEditor(QtWidgets.QDialog):
                     break
 
             if not dag_widget:
-                debug_print("No se encontró el DAG widget, usando posición del cursor")
+                # Si no encontramos el DAG, fallback al cursor
                 cursor_pos = QtGui.QCursor.pos()
-                self.move(QtCore.QPoint(cursor_pos.x() - 150, cursor_pos.y() - 100))
+                self.move(
+                    QtCore.QPoint(
+                        cursor_pos.x() - window_width // 2,
+                        cursor_pos.y() - window_height // 2,
+                    )
+                )
                 return
 
-            # Esquina superior izquierda del DAG en pantalla
+            # Esquina superior izquierda del DAG
             dag_top_left = dag_widget.mapToGlobal(QtCore.QPoint(0, 0))
 
-            # Coordenadas reales del nodo en pantalla
+            # Coordenadas reales en pantalla
             screen_x = dag_top_left.x() + dag_widget.width() // 2 + delta_x
             screen_y = dag_top_left.y() + dag_widget.height() // 2 + delta_y
 
-            # Obtener dimensiones de la pantalla
-            screen = QtWidgets.QApplication.primaryScreen()
-            avail_space = screen.availableGeometry()
+            avail = QtWidgets.QApplication.primaryScreen().availableGeometry()
 
-            # Dimensiones estimadas de nuestra ventana
-            window_width = 300
-            window_height = 200
-
-            # Calcular posición centrada horizontalmente respecto al sticky
+            # Centro horizontal
             window_x = int(screen_x - window_width // 2)
 
-            # Prioridad 1: Intentar posicionar arriba del sticky
-            # Calcular la coordenada Y del borde superior del sticky en el DAG
-            sticky_top_dag_y = self.sticky_node.ypos()
-            # Aplicar la misma transformación que para el centro
-            delta_top_y = (sticky_top_dag_y - center_y) * zoom
-            sticky_top_screen_y = (
-                dag_top_left.y() + dag_widget.height() // 2 + delta_top_y
-            )
-            # El borde inferior de la UI debe quedar alineado al borde superior del sticky - margen
-            window_y_above = int(sticky_top_screen_y - UI_MARGIN_Y - window_height)
+            # Intentar arriba
+            sticky_top = self.sticky_node.ypos()
+            delta_top = (sticky_top - center_y) * zoom
+            sticky_top_screen = dag_top_left.y() + dag_widget.height() // 2 + delta_top
+            y_above = int(sticky_top_screen - UI_MARGIN_Y - window_height)
 
-            # Verificar si cabe arriba
-            if window_y_above >= avail_space.top():
-                window_y = window_y_above
-                debug_print(
-                    f"Posicionando ventana ARRIBA del sticky en: ({window_x}, {window_y})"
-                )
+            if y_above >= avail.top():
+                window_y = y_above - 50
+                debug_print(f"Arriba: ({window_x}, {window_y})")
             else:
-                # Prioridad 2: Posicionar debajo del sticky
-                # Calcular la coordenada Y del borde inferior del sticky en el DAG
-                sticky_bottom_dag_y = (
-                    self.sticky_node.ypos() + self.sticky_node.screenHeight()
+                # Si no cabe, debajo
+                sticky_bot = self.sticky_node.ypos() + self.sticky_node.screenHeight()
+                delta_bot = (sticky_bot - center_y) * zoom
+                sticky_bot_screen = (
+                    dag_top_left.y() + dag_widget.height() // 2 + delta_bot
                 )
-                # Aplicar la misma transformación que para el centro
-                delta_bottom_y = (sticky_bottom_dag_y - center_y) * zoom
-                sticky_bottom_screen_y = (
-                    dag_top_left.y() + dag_widget.height() // 2 + delta_bottom_y
-                )
-                window_y = int(sticky_bottom_screen_y + UI_MARGIN_Y)
-                debug_print(
-                    f"Posicionando ventana DEBAJO del sticky en: ({window_x}, {window_y})"
-                )
+                window_y = int(sticky_bot_screen + UI_MARGIN_Y)
+                debug_print(f"Debajo: ({window_x}, {window_y})")
 
-            # Asegurar que la ventana esté dentro de los límites de la pantalla
-            window_x = min(
-                max(window_x, avail_space.left()), avail_space.right() - window_width
-            )
-            window_y = min(
-                max(window_y, avail_space.top()), avail_space.bottom() - window_height
-            )
+            # Ajustar para que no salga de pantalla
+            window_x = min(max(window_x, avail.left()), avail.right() - window_width)
+            window_y = min(max(window_y, avail.top()), avail.bottom() - window_height)
 
             self.move(QtCore.QPoint(window_x, window_y))
 
         except Exception as e:
             debug_print(f"Error al posicionar ventana: {e}")
-            # Fallback al cursor en caso de error
+            # Fallback al cursor
             cursor_pos = QtGui.QCursor.pos()
-            self.move(QtCore.QPoint(cursor_pos.x() - 150, cursor_pos.y() - 100))
+            self.move(
+                QtCore.QPoint(
+                    cursor_pos.x() - window_width // 2,
+                    cursor_pos.y() - window_height // 2,
+                )
+            )
 
 
 # Variables globales
