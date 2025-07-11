@@ -701,6 +701,22 @@ def create_font_size_knob(default_size=42):
     return size
 
 
+def create_font_section():
+    """Crea la seccion de font con label y dropdown en linea separada"""
+    knobs = []
+
+    # Label para Font
+    font_label = nuke.Text_Knob("font_label", "", "       Font ")
+    font_label.setFlag(nuke.STARTLINE)  # Nueva línea
+
+    # Link al knob note_font nativo que incluye dropdown y controles Bold/Italic
+    font_link = nuke.Link_Knob("note_font_link", "")  # Sin label
+    font_link.clearFlag(nuke.STARTLINE)  # En la misma línea que el label Font
+
+    knobs.extend([font_label, font_link])
+    return knobs
+
+
 def create_font_bold_section(bold_value=False, italic_value=False):
     """Crea la seccion de font bold e italic usando controles nativos de Nuke"""
     knobs = []
@@ -871,23 +887,25 @@ def add_all_knobs(node, text_label="", existing_margin_alignment="left"):
         node.addKnob(lga_font_size_knob)
         debug_print(f"[DEBUG] Created font size slider")
 
-    # Crear link de font bold/italic solo si no existe (SIN LABEL)
-    if "note_font_link" not in node.knobs():
-        font_link = nuke.Link_Knob("note_font_link", "")  # Sin label
-        font_link.clearFlag(nuke.STARTLINE)  # En la misma línea que font size
-        node.addKnob(font_link)
-        font_link.makeLink(node.name(), "note_font")
-        debug_print(f"[DEBUG] Created and configured note_font_link")
-
-    # Crear margin dropdown solo si no existe (SIN LABEL)
+    # Crear margin dropdown solo si no existe (EN LA MISMA LÍNEA que font size)
     if "lga_margin" not in node.knobs():
         margin_dropdown = nuke.Enumeration_Knob(
             "lga_margin", "", ["left", "center", "right"]
         )
         margin_dropdown.setValue(existing_margin_alignment)
-        margin_dropdown.clearFlag(nuke.STARTLINE)  # En la misma línea
+        margin_dropdown.clearFlag(nuke.STARTLINE)  # En la misma línea que font size
         node.addKnob(margin_dropdown)
         debug_print(f"[DEBUG] Created margin dropdown")
+
+    # Crear font section (label + dropdown) solo si no existe
+    if "font_label" not in node.knobs():
+        font_section_knobs = create_font_section()
+        for knob in font_section_knobs:
+            if knob.name() not in node.knobs():
+                node.addKnob(knob)
+                if knob.name() == "note_font_link":
+                    knob.makeLink(node.name(), "note_font")
+        debug_print(f"[DEBUG] Created font section (label + dropdown)")
 
     # Agregar el resto de los knobs usando las funciones existentes si no existen
     add_remaining_knobs_if_missing(node, existing_margin_alignment)
