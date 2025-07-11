@@ -51,7 +51,9 @@ elif knob.name() == 'label_link':
 
 elif knob.name() == 'lga_note_font_size':
     # Sincronizar el font size personalizado con el knob note_font_size nativo del BackdropNode
-    node['note_font_size'].setValue(knob.value())
+    value = int(round(knob.value())) # Forzar valor entero
+    node['note_font_size'].setValue(value)
+    knob.setValue(value) # Asegurar que el slider muestre el valor entero
 
 elif knob.name() == 'margin_slider':
     # NUEVA FUNCIONALIDAD: Auto fit automático cuando cambia el margin slider
