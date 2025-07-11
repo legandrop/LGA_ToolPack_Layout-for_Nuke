@@ -293,7 +293,12 @@ def fix_animation_flags(node):
     """
     Aplica el flag NO_ANIMATION a todos los sliders que no deben tener animación
     """
-    slider_knobs = ["margin_slider", "zorder", "lga_note_font_size"]
+    slider_knobs = [
+        "margin_slider",
+        "zorder",
+        "lga_note_font_size",
+        "border_width_link",
+    ]
 
     for knob_name in slider_knobs:
         if knob_name in node.knobs():

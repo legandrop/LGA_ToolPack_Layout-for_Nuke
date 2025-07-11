@@ -814,7 +814,7 @@ def create_appearance_section():
     knobs = []
 
     # Label principal para Appearance (en nueva línea)
-    appearance_label = nuke.Text_Knob("appearance_label", "", "Appearance ")
+    appearance_label = nuke.Text_Knob("appearance_label", "", "      Style ")
     appearance_label.setFlag(nuke.STARTLINE)  # Nueva línea
 
     # Link al dropdown nativo de appearance
