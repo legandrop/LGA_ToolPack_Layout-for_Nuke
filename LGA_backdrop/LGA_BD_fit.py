@@ -148,12 +148,15 @@ def nodeIsInside(node, backdropNode):
     return topLeft and bottomRight
 
 
-def fit_to_selected_nodes():
+def fit_to_selected_nodes(backdrop_node=None):
     """
     Redimensiona el backdrop para abarcar todos los nodos seleccionados.
     Si no hay nodos seleccionados, busca automáticamente todos los nodos dentro del backdrop.
+
+    Args:
+        backdrop_node: Opcional. Node del backdrop a redimensionar. Si no se proporciona, usa nuke.thisNode()
     """
-    this = nuke.thisNode()
+    this = backdrop_node if backdrop_node else nuke.thisNode()
     padding = this["margin_slider"].getValue()
 
     if this.isSelected:

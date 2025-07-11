@@ -645,8 +645,8 @@ class LGA_AutoFitControlWidget(QtWidgets.QWidget):
         try:
             import LGA_BD_fit
 
-            LGA_BD_fit.fit_to_selected_nodes()
-            debug_print("LGA_BD_fit.fit_to_selected_nodes() called")
+            LGA_BD_fit.fit_to_selected_nodes(self.node)
+            debug_print("LGA_BD_fit.fit_to_selected_nodes() called with node reference")
         except Exception as e:
             debug_print(f"Error calling fit_to_selected_nodes: {e}")
 
