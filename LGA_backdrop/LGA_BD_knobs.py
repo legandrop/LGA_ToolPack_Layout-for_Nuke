@@ -459,10 +459,10 @@ class LGA_AutoFitControlWidget(QtWidgets.QWidget):
         icon = QtGui.QIcon(icon_path)
         fit_button.setIcon(icon)
         fit_button.setIconSize(
-            QtCore.QSize(24, 24)
+            QtCore.QSize(21, 21)
         )  # Reducir el tamaño del icono en 10px
         fit_button.setFixedSize(
-            QtCore.QSize(32, 32)
+            QtCore.QSize(25, 25)
         )  # Mantener el tamaño del botón igual
         fit_button.setSizePolicy(
             QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
@@ -472,7 +472,7 @@ class LGA_AutoFitControlWidget(QtWidgets.QWidget):
         fit_button.setStyleSheet(
             """
             QPushButton {
-                background-color: rgb(58, 58, 58); /* Color de fondo similar a los otros botones */
+                background-color: rgb(50, 50, 50); /* Color de fondo similar a los otros botones */
                 border: none;
                 padding: 0px; /* Añadir padding por defecto del botón */
             }
@@ -496,7 +496,7 @@ class LGA_AutoFitControlWidget(QtWidgets.QWidget):
 
         # Establecer tamaño fijo para el widget completo (label + espacio + botón)
         self.setFixedSize(
-            QtCore.QSize(98, 32)
+            QtCore.QSize(95, 25)
         )  # Ancho fijo para el widget que contiene el label y el botón
 
     def _on_fit_button_clicked(self):
@@ -517,7 +517,7 @@ class LGA_AutoFitControlWidget(QtWidgets.QWidget):
 
     def sizeHint(self):
         """Define el tamaño preferido del widget para el sistema de layout."""
-        return QtCore.QSize(84, 24)  # Devolver el tamaño fijo deseado
+        return QtCore.QSize(95, 25)  # Devolver el tamaño fijo deseado
 
 
 nuke.LGA_AutoFitControlWidget = LGA_AutoFitControlWidget
@@ -576,10 +576,10 @@ class LGA_SaveDefaultsWidget(QtWidgets.QWidget):
         icon = QtGui.QIcon(self._icon_path)
         self.save_button.setIcon(icon)
         self.save_button.setIconSize(
-            QtCore.QSize(22, 22)
+            QtCore.QSize(21, 21)
         )  # Tamaño de icono establecido por el usuario
         self.save_button.setFixedSize(
-            QtCore.QSize(26, 26)
+            QtCore.QSize(25, 25)
         )  # Tamaño de botón establecido por el usuario
         self.save_button.setSizePolicy(
             QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
@@ -608,8 +608,8 @@ class LGA_SaveDefaultsWidget(QtWidgets.QWidget):
         # Establecer tamaño para el widget completo (label + espacio + botón)
         self.setFixedSize(
             QtCore.QSize(
-                76, 26
-            )  # Ancho para label (50) + espacio (5) + botón (26) = 81
+                75, 25
+            )  # Ancho para label (50) + espacio (5) + botón (25) = 80
         )
         self.setSizePolicy(
             QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
@@ -691,7 +691,7 @@ class LGA_SaveDefaultsWidget(QtWidgets.QWidget):
     def sizeHint(self):
         """Define el tamaño preferido del widget para el sistema de layout."""
         return QtCore.QSize(
-            81, 26
+            75, 25
         )  # Devolver el tamaño preferido (label + espacio + botón)
 
 
