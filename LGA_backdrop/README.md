@@ -41,19 +41,21 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 
 ### Sección de Style
 - **Style**: Link directo al dropdown nativo `appearance` del BackdropNode (Fill/Border)
-- **Border Width**: Link directo al slider nativo `border_width` del BackdropNode (solo activo cuando appearance está en Border)
-- **Save Defaults**: Botón con icono `lga_bd_save.png` integrado al final de la línea de Style (movido desde Font)
+- **Border Width**: Link directo al slider nativo `border_width` del BackdropNode (solo activo cuando appearance está en Border, con flag NO_ANIMATION)
+- **Save Label**: Label de texto "Save" antes del botón
+- **Save Defaults**: Botón con icono `lga_bd_save.png` (32x32px, mismo tamaño que Auto Fit) integrado al final de la línea de Style (movido desde Font)
 
 ### Sección de Z-Order (copiada de oz_backdrop)
 - **Z Order**: Slider con labels "Back" y "Front" (rango -10 a +10)
 
 ### Funcionalidad Save Defaults
 - **Save as Default**: Botón con icono `lga_bd_save.png` integrado al final de la línea de Style
-- **Posicionamiento**: Ubicado después del slider Border Width en la línea de Style
-- **Tooltip**: "Save current properties as default for new backdrops"
-- **Funcionalidad**: Guarda font size, font name, bold, italic, align y margin en archivo de configuración
-- **Sincronización**: Extrae valores actuales del backdrop incluyendo font size slider y alignment dropdown
-- **Widget Compacto**: Tamaño fijo (28x28px) sin spacers para integración perfecta en línea
+- **Posicionamiento**: Ubicado después del slider Border Width en la línea de Style, precedido por label "Save"
+- **Tamaño**: 28x28px con icono 22x22px
+- **Tooltip**: "Save current font, style and margin properties as default for new backdrops"
+- **Funcionalidad**: Guarda font size, font name, bold, italic, align, margin, appearance y border_width en archivo de configuración
+- **Sincronización**: Extrae valores actuales del backdrop incluyendo todas las propiedades de font, style y margin
+- **Widget Expandido**: Tamaño total 73x28px (label 35px + espacio 5px + botón 28px + margen 5px) para integración perfecta en línea
 
 ## Sistema de Configuración de Defaults
 
@@ -72,6 +74,8 @@ El sistema de configuración sigue el mismo patrón que `LGA_ToolPack_settings.p
 - **Italic**: Estado del italic (por defecto: False)
 - **Align**: Alineación del texto (por defecto: "left")
 - **Margin**: Valor del margin slider (por defecto: 50)
+- **Appearance**: Tipo de style Fill/Border (por defecto: "Fill")
+- **Border Width**: Ancho del borde (por defecto: 1.0)
 
 ### Comportamiento
 - **Al crear backdrop nuevo**: Se cargan automáticamente los valores guardados como defaults
@@ -120,9 +124,9 @@ El sistema de configuración sigue el mismo patrón que `LGA_ToolPack_settings.p
   - `add_all_knobs()`: Maneja creación condicional de knobs, evitando duplicación y preservando valores
   - `add_knobs_to_existing_backdrops()`: Callback onScriptLoad que agrega knobs faltantes a backdrops existentes
   - `ColorSwatchWidget()`: Clase avanzada con sistema de variaciones, tracking interno y algoritmos de conversión HLS
-  - `LGA_SaveDefaultsWidget()`: Widget personalizado compacto para botón Save integrado en línea de Style
+  - `LGA_SaveDefaultsWidget()`: Widget personalizado expandido para botón Save integrado en línea de Style con label "Save"
   - `create_font_section()`: Crea sección de Font con label y dropdown (Save Defaults movido a Style)
-  - Widget compacto (28x28px) sin spacers para integración perfecta en línea
+  - Widget expandido (73x28px) con label 35px + botón 28x28px para integración perfecta en línea
   - `_generate_color_variations()`: Genera 5 variaciones por color usando interpolación de luminancia y saturación
   - `_cycle_color_variation()`: Maneja el ciclo inteligente entre variaciones con tracking interno
   - `_apply_random_color()`: Aplica colores RGB completamente aleatorios con reset de tracking

@@ -545,12 +545,27 @@ class LGA_SaveDefaultsWidget(QtWidgets.QWidget):
         main_layout.setContentsMargins(
             0, 0, 0, 0
         )  # Eliminar márgenes internos del layout
-        main_layout.setSpacing(0)  # Eliminar espacio entre los widgets del layout
+        main_layout.setSpacing(0)  # Espacio pequeño entre label y botón
         main_layout.setAlignment(
             QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
         )  # Alinear contenido a la IZQUIERDA y verticalmente centrado
 
-        # Botón para el icono (sin spacers)
+        # Label para el texto "Save"
+        save_label = QtWidgets.QLabel("   Save")
+        save_label.setFixedWidth(50)  # Ancho fijo más amplio para el label (antes 35)
+        save_label.setMinimumWidth(50)
+        save_label.setMaximumWidth(50)
+        save_label.setSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )  # Asegurar tamaño fijo
+        save_label.setStyleSheet(
+            "QLabel { padding: 0px; margin: 0px; text-align: left; }"
+        )  # Eliminar padding y margen del label, alinear texto a la izquierda
+        save_label.setAlignment(
+            QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
+        )  # Alinear texto
+
+        # Botón para el icono
         self.save_button = QtWidgets.QPushButton()  # Cambiado a self.save_button
         self.save_button.setToolTip(
             "Save current font, style and margin properties as default for new backdrops"
@@ -561,11 +576,11 @@ class LGA_SaveDefaultsWidget(QtWidgets.QWidget):
         icon = QtGui.QIcon(self._icon_path)
         self.save_button.setIcon(icon)
         self.save_button.setIconSize(
-            QtCore.QSize(20, 20)
-        )  # Reducir el tamaño del icono en 10px
+            QtCore.QSize(22, 22)
+        )  # Tamaño de icono establecido por el usuario
         self.save_button.setFixedSize(
-            QtCore.QSize(28, 28)
-        )  # Mantener el tamaño del botón igual
+            QtCore.QSize(26, 26)
+        )  # Tamaño de botón establecido por el usuario
         self.save_button.setSizePolicy(
             QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
         )  # Asegurar tamaño fijo del botón
@@ -587,10 +602,15 @@ class LGA_SaveDefaultsWidget(QtWidgets.QWidget):
         """
         )
 
+        main_layout.addWidget(save_label)
         main_layout.addWidget(self.save_button)  # Añadir self.save_button al layout
 
-        # Establecer tamaño para el widget completo (fijo, no expandible)
-        self.setFixedSize(QtCore.QSize(28, 28))  # Tamaño fijo igual al botón
+        # Establecer tamaño para el widget completo (label + espacio + botón)
+        self.setFixedSize(
+            QtCore.QSize(
+                76, 26
+            )  # Ancho para label (50) + espacio (5) + botón (26) = 81
+        )
         self.setSizePolicy(
             QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
         )  # Tamaño fijo, no expandible
@@ -670,7 +690,9 @@ class LGA_SaveDefaultsWidget(QtWidgets.QWidget):
 
     def sizeHint(self):
         """Define el tamaño preferido del widget para el sistema de layout."""
-        return QtCore.QSize(28, 28)  # Devolver el tamaño preferido expandible
+        return QtCore.QSize(
+            81, 26
+        )  # Devolver el tamaño preferido (label + espacio + botón)
 
 
 nuke.LGA_SaveDefaultsWidget = LGA_SaveDefaultsWidget
