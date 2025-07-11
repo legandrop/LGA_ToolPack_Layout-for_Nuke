@@ -23,6 +23,8 @@ CONFIG_BOLD_KEY = "bold"
 CONFIG_ITALIC_KEY = "italic"
 CONFIG_ALIGN_KEY = "align"
 CONFIG_MARGIN_KEY = "margin"
+CONFIG_APPEARANCE_KEY = "appearance"
+CONFIG_BORDER_WIDTH_KEY = "border_width"
 
 # Valores por defecto
 DEFAULT_FONT_SIZE = 50
@@ -31,6 +33,8 @@ DEFAULT_BOLD = False
 DEFAULT_ITALIC = False
 DEFAULT_ALIGN = "left"
 DEFAULT_MARGIN = 50
+DEFAULT_APPEARANCE = "Fill"
+DEFAULT_BORDER_WIDTH = 1.0
 
 
 def debug_print(*message):
@@ -104,6 +108,8 @@ def ensure_config_exists():
     config.set(CONFIG_SECTION, CONFIG_ITALIC_KEY, str(DEFAULT_ITALIC))
     config.set(CONFIG_SECTION, CONFIG_ALIGN_KEY, DEFAULT_ALIGN)
     config.set(CONFIG_SECTION, CONFIG_MARGIN_KEY, str(DEFAULT_MARGIN))
+    config.set(CONFIG_SECTION, CONFIG_APPEARANCE_KEY, DEFAULT_APPEARANCE)
+    config.set(CONFIG_SECTION, CONFIG_BORDER_WIDTH_KEY, str(DEFAULT_BORDER_WIDTH))
 
     try:
         with open(config_path, "w") as configfile:
@@ -130,6 +136,8 @@ def get_backdrop_defaults():
         "italic": DEFAULT_ITALIC,
         "align": DEFAULT_ALIGN,
         "margin": DEFAULT_MARGIN,
+        "appearance": DEFAULT_APPEARANCE,
+        "border_width": DEFAULT_BORDER_WIDTH,
     }
 
     config_path = get_config_path()
@@ -160,6 +168,12 @@ def get_backdrop_defaults():
         margin = config.getint(
             CONFIG_SECTION, CONFIG_MARGIN_KEY, fallback=DEFAULT_MARGIN
         )
+        appearance = config.get(
+            CONFIG_SECTION, CONFIG_APPEARANCE_KEY, fallback=DEFAULT_APPEARANCE
+        )
+        border_width = config.getfloat(
+            CONFIG_SECTION, CONFIG_BORDER_WIDTH_KEY, fallback=DEFAULT_BORDER_WIDTH
+        )
 
         loaded_defaults = {
             "font_size": font_size,
@@ -168,6 +182,8 @@ def get_backdrop_defaults():
             "italic": italic,
             "align": align,
             "margin": margin,
+            "appearance": appearance,
+            "border_width": border_width,
         }
 
         debug_print(f"[DEBUG] Loaded backdrop defaults: {loaded_defaults}")
@@ -178,7 +194,9 @@ def get_backdrop_defaults():
         return defaults
 
 
-def save_backdrop_defaults(font_size, font_name, bold, italic, align, margin):
+def save_backdrop_defaults(
+    font_size, font_name, bold, italic, align, margin, appearance, border_width
+):
     """
     Guarda los valores actuales como nuevos defaults
 
@@ -189,6 +207,8 @@ def save_backdrop_defaults(font_size, font_name, bold, italic, align, margin):
         italic (bool): Si está en italic
         align (str): Alineación (left/center/right)
         margin (int): Valor del margin
+        appearance (str): Tipo de appearance (Fill/Border)
+        border_width (float): Ancho del borde
 
     Returns:
         bool: True si se guardó correctamente, False en caso contrario
@@ -222,13 +242,15 @@ def save_backdrop_defaults(font_size, font_name, bold, italic, align, margin):
         config.set(CONFIG_SECTION, CONFIG_ITALIC_KEY, str(italic))
         config.set(CONFIG_SECTION, CONFIG_ALIGN_KEY, str(align))
         config.set(CONFIG_SECTION, CONFIG_MARGIN_KEY, str(margin))
+        config.set(CONFIG_SECTION, CONFIG_APPEARANCE_KEY, str(appearance))
+        config.set(CONFIG_SECTION, CONFIG_BORDER_WIDTH_KEY, str(border_width))
 
         with open(config_path, "w") as configfile:
             config.write(configfile)
 
         debug_print(f"[DEBUG] Backdrop defaults saved successfully to: {config_path}")
         debug_print(
-            f"[DEBUG] Saved values: font_size={font_size}, font_name={font_name}, bold={bold}, italic={italic}, align={align}, margin={margin}"
+            f"[DEBUG] Saved values: font_size={font_size}, font_name={font_name}, bold={bold}, italic={italic}, align={align}, margin={margin}, appearance={appearance}, border_width={border_width}"
         )
         return True
 
@@ -319,6 +341,30 @@ def extract_current_backdrop_settings(node):
         if "margin_slider" in node.knobs():
             margin = int(node["margin_slider"].getValue())
 
+        # Appearance
+        appearance = DEFAULT_APPEARANCE
+        if "appearance" in node.knobs():
+            appearance_value = node["appearance"].getValue()
+            debug_print(
+                f"[DEBUG] appearance raw value: '{appearance_value}' (type: {type(appearance_value)})"
+            )
+            # El dropdown devuelve un índice, convertir a string
+            if isinstance(appearance_value, (int, float)):
+                appearance_options = ["Fill", "Border"]
+                if 0 <= int(appearance_value) < len(appearance_options):
+                    appearance = appearance_options[int(appearance_value)]
+                    debug_print(
+                        f"[DEBUG] Converted appearance index {appearance_value} to '{appearance}'"
+                    )
+            else:
+                appearance = str(appearance_value)
+                debug_print(f"[DEBUG] Using appearance value as string: '{appearance}'")
+
+        # Border Width
+        border_width = DEFAULT_BORDER_WIDTH
+        if "border_width" in node.knobs():
+            border_width = float(node["border_width"].getValue())
+
         settings = {
             "font_size": font_size,
             "font_name": font_name,
@@ -326,6 +372,8 @@ def extract_current_backdrop_settings(node):
             "italic": italic,
             "align": align,
             "margin": margin,
+            "appearance": appearance,
+            "border_width": border_width,
         }
 
         debug_print(f"[DEBUG] Extracted backdrop settings: {settings}")
@@ -341,4 +389,6 @@ def extract_current_backdrop_settings(node):
             "italic": DEFAULT_ITALIC,
             "align": DEFAULT_ALIGN,
             "margin": DEFAULT_MARGIN,
+            "appearance": DEFAULT_APPEARANCE,
+            "border_width": DEFAULT_BORDER_WIDTH,
         }

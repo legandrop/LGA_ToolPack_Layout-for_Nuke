@@ -553,7 +553,7 @@ class LGA_SaveDefaultsWidget(QtWidgets.QWidget):
         # Botón para el icono (sin spacers)
         self.save_button = QtWidgets.QPushButton()  # Cambiado a self.save_button
         self.save_button.setToolTip(
-            "Save current properties as default for new backdrops"
+            "Save current font, style and margin properties as default for new backdrops"
         )
         self.save_button.clicked.connect(self._on_save_button_clicked)
 
@@ -629,6 +629,8 @@ class LGA_SaveDefaultsWidget(QtWidgets.QWidget):
                 current_settings["italic"],
                 current_settings["align"],
                 current_settings["margin"],
+                current_settings["appearance"],
+                current_settings["border_width"],
             )
 
             if success:
@@ -706,13 +708,7 @@ def create_font_section():
     font_link = nuke.Link_Knob("note_font_link", "")  # Sin label
     font_link.clearFlag(nuke.STARTLINE)  # En la misma línea que el label Font
 
-    # Widget de save defaults al final de la línea de font
-    save_defaults_widget = nuke.PyCustom_Knob(
-        "lga_save_defaults", "", "nuke.LGA_SaveDefaultsWidget(nuke.thisNode())"
-    )
-    save_defaults_widget.clearFlag(nuke.STARTLINE)  # En la misma línea
-
-    knobs.extend([font_label, font_link, save_defaults_widget])
+    knobs.extend([font_label, font_link])
     return knobs
 
 
@@ -810,10 +806,10 @@ def create_resize_section(margin_value=50):
 
 
 def create_appearance_section():
-    """Crea la sección de Appearance con dropdown y width slider"""
+    """Crea la sección de Style con dropdown y width slider"""
     knobs = []
 
-    # Label principal para Appearance (en nueva línea)
+    # Label principal para Style (en nueva línea)
     appearance_label = nuke.Text_Knob("appearance_label", "", "      Style ")
     appearance_label.setFlag(nuke.STARTLINE)  # Nueva línea
 
@@ -825,7 +821,15 @@ def create_appearance_section():
     border_width_link = nuke.Link_Knob("border_width_link", "")
     border_width_link.clearFlag(nuke.STARTLINE)  # En la misma línea
 
-    knobs.extend([appearance_label, appearance_link, border_width_link])
+    # Widget de save defaults al final de la línea de style
+    save_defaults_widget = nuke.PyCustom_Knob(
+        "lga_save_defaults", "", "nuke.LGA_SaveDefaultsWidget(nuke.thisNode())"
+    )
+    save_defaults_widget.clearFlag(nuke.STARTLINE)  # En la misma línea
+
+    knobs.extend(
+        [appearance_label, appearance_link, border_width_link, save_defaults_widget]
+    )
 
     return knobs
 
@@ -951,7 +955,13 @@ def add_remaining_knobs_if_missing(node, existing_margin_alignment):
                 knob.setFlag(nuke.NO_ANIMATION)
             node.addKnob(knob)
 
-    # Appearance section (nueva sección)
+    # Divider antes de la sección de Style
+    if "divider_style" not in node.knobs():
+        divider_style = nuke.Text_Knob("divider_style", "", "")
+        divider_style.setFlag(nuke.STARTLINE)
+        node.addKnob(divider_style)
+
+    # Style section (antes Appearance)
     appearance_knobs = create_appearance_section()
     for knob in appearance_knobs:
         if knob.name() not in node.knobs():

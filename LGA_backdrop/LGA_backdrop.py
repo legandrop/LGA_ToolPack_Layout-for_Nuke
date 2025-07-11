@@ -220,6 +220,8 @@ def autoBackdrop():
         default_italic = backdrop_defaults["italic"]
         default_align = backdrop_defaults["align"]
         margin_value = backdrop_defaults["margin"]
+        default_appearance = backdrop_defaults["appearance"]
+        default_border_width = backdrop_defaults["border_width"]
         print(f"[DEBUG] Loaded backdrop defaults: {backdrop_defaults}")
     except Exception as e:
         print(f"[DEBUG] Error loading backdrop defaults, using hardcoded values: {e}")
@@ -230,6 +232,8 @@ def autoBackdrop():
         default_italic = False
         default_align = "left"
         margin_value = 50
+        default_appearance = "Fill"
+        default_border_width = 1.0
 
     # Calcular el tamaño adicional necesario para el texto
     extra_top = LGA_BD_fit.calculate_extra_top(user_text, note_font_size)
@@ -283,6 +287,8 @@ def autoBackdrop():
         note_font=font_value,
         z_order=zOrder,
         label=formatted_user_text,
+        appearance=default_appearance,
+        border_width=default_border_width,
     )
 
     # Agregar todos los knobs personalizados (pasar el alignment por defecto)

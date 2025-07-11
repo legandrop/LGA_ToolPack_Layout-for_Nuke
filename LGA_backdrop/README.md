@@ -23,7 +23,6 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 - **Font Size**: Slider numérico (`lga_note_font_size`) sincronizado con `note_font_size` nativo
 - **Margin**: Dropdown (`lga_margin`) para alineación del texto (Left/Center/Right) ubicado en la misma línea que Font Size
 - **Font**: Link directo al `note_font` nativo del BackdropNode con dropdown de fuentes y controles Bold/Italic integrados (ubicado en línea separada)
-- **Save Defaults**: Botón con icono `lga_bd_save.png` integrado al final de la línea de Font (después de los controles Bold/Italic)
 
 ### Sección de Colores
 - **Widget de Colores Avanzado**: Implementación de botones estilo swatch con sistema de variaciones usando PyCustom_Knob
@@ -40,16 +39,17 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 - **Margin**: Slider automático para configurar el margen del auto fit (rango 10-200) - ejecuta autofit completo al cambiar (preserva Z-order)
 - **Auto Fit**: Botón para redimensionar manualmente abarcando nodos seleccionados o nodos dentro del backdrop (preserva Z-order)
 
-### Sección de Appearance
-- **Appearance**: Link directo al dropdown nativo `appearance` del BackdropNode (Fill/Border)
+### Sección de Style
+- **Style**: Link directo al dropdown nativo `appearance` del BackdropNode (Fill/Border)
 - **Border Width**: Link directo al slider nativo `border_width` del BackdropNode (solo activo cuando appearance está en Border)
+- **Save Defaults**: Botón con icono `lga_bd_save.png` integrado al final de la línea de Style (movido desde Font)
 
 ### Sección de Z-Order (copiada de oz_backdrop)
 - **Z Order**: Slider con labels "Back" y "Front" (rango -10 a +10)
 
 ### Funcionalidad Save Defaults
-- **Save as Default**: Botón con icono `lga_bd_save.png` integrado al final de la línea de Font
-- **Posicionamiento**: Ubicado después de los controles Bold/Italic en la línea de Font
+- **Save as Default**: Botón con icono `lga_bd_save.png` integrado al final de la línea de Style
+- **Posicionamiento**: Ubicado después del slider Border Width en la línea de Style
 - **Tooltip**: "Save current properties as default for new backdrops"
 - **Funcionalidad**: Guarda font size, font name, bold, italic, align y margin en archivo de configuración
 - **Sincronización**: Extrae valores actuales del backdrop incluyendo font size slider y alignment dropdown
@@ -120,8 +120,8 @@ El sistema de configuración sigue el mismo patrón que `LGA_ToolPack_settings.p
   - `add_all_knobs()`: Maneja creación condicional de knobs, evitando duplicación y preservando valores
   - `add_knobs_to_existing_backdrops()`: Callback onScriptLoad que agrega knobs faltantes a backdrops existentes
   - `ColorSwatchWidget()`: Clase avanzada con sistema de variaciones, tracking interno y algoritmos de conversión HLS
-  - `LGA_SaveDefaultsWidget()`: Widget personalizado compacto para botón Save integrado en línea de Font
-  - `create_font_section()`: Crea sección de Font con label, dropdown y botón Save Defaults integrado
+  - `LGA_SaveDefaultsWidget()`: Widget personalizado compacto para botón Save integrado en línea de Style
+  - `create_font_section()`: Crea sección de Font con label y dropdown (Save Defaults movido a Style)
   - Widget compacto (28x28px) sin spacers para integración perfecta en línea
   - `_generate_color_variations()`: Genera 5 variaciones por color usando interpolación de luminancia y saturación
   - `_cycle_color_variation()`: Maneja el ciclo inteligente entre variaciones con tracking interno

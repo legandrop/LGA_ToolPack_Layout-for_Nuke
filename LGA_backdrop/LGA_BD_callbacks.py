@@ -311,6 +311,17 @@ def fix_animation_flags(node):
                     f"[DEBUG] Could not apply NO_ANIMATION to {knob_name} - no setFlag method"
                 )
 
+    # También aplicar NO_ANIMATION al knob nativo border_width si existe
+    if "border_width" in node.knobs():
+        border_width_knob = node["border_width"]
+        if hasattr(border_width_knob, "setFlag"):
+            border_width_knob.setFlag(nuke.NO_ANIMATION)
+            debug_print(f"[DEBUG] Applied NO_ANIMATION to native border_width")
+        else:
+            debug_print(
+                f"[DEBUG] Could not apply NO_ANIMATION to native border_width - no setFlag method"
+            )
+
 
 def setup_callbacks(node):
     """
