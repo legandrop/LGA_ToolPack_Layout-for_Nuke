@@ -10,6 +10,11 @@ _______________________________________________
 import nuke
 import os
 from PySide2 import QtWidgets, QtGui, QtCore
+from LGA_StickyNote_Utils import (
+    StickyNoteStateManager,
+    extract_clean_text_and_margins,
+    format_text_with_margins,
+)
 
 
 # Variable global para activar o desactivar los prints
@@ -44,6 +49,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
         self.sticky_node = None
         self.drag_position = None  # Para el arrastre de la ventana
+        self.state_manager = StickyNoteStateManager()  # Gestor de estado
         self.setup_ui()
         self.setup_connections()
 
@@ -368,12 +374,48 @@ class StickyNoteEditor(QtWidgets.QDialog):
         arrows_layout.addWidget(self.right_arrow_button)
         arrows_layout.addStretch()  # Spacer para empujar todo a la izquierda
 
+        # Botones Cancel y OK
+        buttons_layout = QtWidgets.QHBoxLayout()
+        buttons_layout.setSpacing(10)  # Espacio entre botones
+
+        # Estilo común para ambos botones (grises)
+        button_style = """
+            QPushButton {
+                background-color: #404040;
+                border: 1px solid #555555;
+                border-radius: 5px;
+                color: #CCCCCC;
+                font-size: 12px;
+                padding: 5px;
+            }
+            QPushButton:hover {
+                background-color: #505050;
+            }
+            QPushButton:pressed {
+                background-color: #303030;
+            }
+        """
+
+        self.cancel_button = QtWidgets.QPushButton("Cancel")
+        self.cancel_button.setFixedHeight(30)
+        self.cancel_button.setStyleSheet(button_style)
+
+        self.ok_button = QtWidgets.QPushButton("OK")
+        self.ok_button.setFixedHeight(30)
+        self.ok_button.setStyleSheet(button_style)
+
+        # Agregar botones con igual ancho (mitad cada uno)
+        buttons_layout.addWidget(self.cancel_button)
+        buttons_layout.addWidget(self.ok_button)
+
         # Agregar widgets al layout de contenido
         content_layout.addWidget(self.text_edit)
         content_layout.addLayout(font_size_layout)
         content_layout.addLayout(margin_x_layout)
         content_layout.addLayout(margin_y_layout)
         content_layout.addLayout(arrows_layout)
+        content_layout.addSpacing(10)  # Espacio antes de los botones
+        content_layout.addLayout(buttons_layout)
 
         # Agregar el contenedor al layout del frame
         frame_layout.addWidget(content_widget)
@@ -406,6 +448,8 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.font_size_slider.valueChanged.connect(self.on_font_size_changed)
         self.margin_slider.valueChanged.connect(self.on_margin_changed)
         self.margin_y_slider.valueChanged.connect(self.on_margin_y_changed)
+        self.cancel_button.clicked.connect(self.on_cancel_clicked)
+        self.ok_button.clicked.connect(self.on_ok_clicked)
 
     def get_or_create_sticky_note(self):
         """Obtiene el sticky note seleccionado o crea uno nuevo"""
@@ -417,10 +461,14 @@ class StickyNoteEditor(QtWidgets.QDialog):
         if sticky_notes:
             # Usar el primer StickyNote encontrado
             self.sticky_node = sticky_notes[0]
+            # Guardar estado original para poder restaurarlo
+            self.state_manager.save_original_state(self.sticky_node)
             print(f"Editando StickyNote existente: {self.sticky_node.name()}")
         else:
             # Crear un nuevo StickyNote
             self.sticky_node = nuke.createNode("StickyNote")
+            # Marcar como nuevo para poder eliminarlo si se cancela
+            self.state_manager.set_as_new_node(self.sticky_node)
             print(f"Creado nuevo StickyNote: {self.sticky_node.name()}")
 
         return self.sticky_node
@@ -430,68 +478,14 @@ class StickyNoteEditor(QtWidgets.QDialog):
         if not self.sticky_node:
             return
 
-        # Cargar texto
+        # Cargar texto usando las funciones utilitarias
         current_text = self.sticky_node["label"].value()
         debug_print(f"Texto actual del StickyNote: '{current_text}'")
 
-        lines = current_text.split("\n")
-
-        # Valores por defecto
-        margin_x_detected = 0
-        margin_y_detected = 0
-        final_clean_text = ""
-
-        if current_text.strip():
-            # --- Detección de Margin X: buscar primera línea con contenido ---
-            for line in lines:
-                if line.strip():
-                    leading = len(line) - len(line.lstrip(" "))
-                    trailing = len(line) - len(line.rstrip(" "))
-                    margin_x_detected = min(leading, trailing)
-                    debug_print(
-                        f"Margen X detectado en línea con contenido: {margin_x_detected}"
-                    )
-                    break
-
-            # --- Detección de Margin Y: líneas vacías al inicio y al final ---
-            start_empty = 0
-            for line in lines:
-                if line.strip() == "":
-                    start_empty += 1
-                else:
-                    break
-
-            end_empty = 0
-            for line in reversed(lines):
-                if line.strip() == "":
-                    end_empty += 1
-                else:
-                    break
-
-            margin_y_detected = min(start_empty, end_empty)
-            debug_print(
-                f"Lineas vacías inicio: {start_empty}, fin: {end_empty}, margin Y: {margin_y_detected}"
-            )
-
-            # --- Extraer solo las líneas de contenido sin margin Y ---
-            if margin_y_detected * 2 < len(lines):
-                content_lines = lines[
-                    margin_y_detected : len(lines) - margin_y_detected
-                ]
-            else:
-                content_lines = []
-
-            # --- Limpiar espacios laterales según margin X detectado ---
-            clean_lines = []
-            for line in content_lines:
-                if margin_x_detected > 0 and len(line) >= 2 * margin_x_detected:
-                    clean_line = line[margin_x_detected : len(line) - margin_x_detected]
-                else:
-                    # Si no hay margin X o la línea es muy corta, solo strip
-                    clean_line = line.strip()
-                clean_lines.append(clean_line)
-
-            final_clean_text = "\n".join(clean_lines)
+        # Extraer texto limpio y márgenes
+        final_clean_text, margin_x_detected, margin_y_detected = (
+            extract_clean_text_and_margins(current_text)
+        )
 
         # Actualizar QTextEdit sin disparar señales
         self.text_edit.blockSignals(True)
@@ -521,22 +515,11 @@ class StickyNoteEditor(QtWidgets.QDialog):
         """Callback cuando cambia el texto"""
         if self.sticky_node:
             current_text = self.text_edit.toPlainText()
-            margin_x_spaces = " " * self.margin_slider.value()
-            margin_y_lines = self.margin_y_slider.value()
+            margin_x = self.margin_slider.value()
+            margin_y = self.margin_y_slider.value()
 
-            # Agregar espacios a ambos lados de cada línea (Margin X)
-            lines = current_text.split("\n")
-            final_lines = []
-            for line in lines:
-                final_lines.append(margin_x_spaces + line + margin_x_spaces)
-
-            # Agregar líneas vacías arriba y abajo (Margin Y)
-            empty_line = margin_x_spaces + margin_x_spaces  # Línea vacía con margin X
-            for _ in range(margin_y_lines):
-                final_lines.insert(0, empty_line)  # Agregar arriba
-                final_lines.append(empty_line)  # Agregar abajo
-
-            final_text = "\n".join(final_lines)
+            # Formatear texto usando las funciones utilitarias
+            final_text = format_text_with_margins(current_text, margin_x, margin_y)
             self.sticky_node["label"].setValue(final_text)
 
     def on_font_size_changed(self, value):
@@ -619,10 +602,47 @@ class StickyNoteEditor(QtWidgets.QDialog):
         ):
             self.right_arrow_button.setIcon(QtGui.QIcon(self.right_arrow_icon_path))
 
+    def on_cancel_clicked(self):
+        """Callback cuando se hace click en Cancel"""
+        try:
+            # Usar el gestor de estado para manejar la cancelación
+            success = self.state_manager.handle_cancel_action()
+            if success:
+                print("Acción de cancelación completada exitosamente")
+            else:
+                print("No se pudo completar la acción de cancelación")
+        except Exception as e:
+            print(f"Error durante la cancelación: {e}")
+        finally:
+            # Cerrar el diálogo
+            self.close()
+
+    def on_ok_clicked(self):
+        """Callback cuando se hace click en OK"""
+        try:
+            # Usar el gestor de estado para confirmar los cambios
+            success = self.state_manager.handle_ok_action()
+            if success:
+                print("Cambios confirmados exitosamente")
+            else:
+                print("No se pudieron confirmar los cambios")
+        except Exception as e:
+            print(f"Error durante la confirmación: {e}")
+        finally:
+            # Cerrar el diálogo
+            self.close()
+
     def keyPressEvent(self, event):
         """Maneja los eventos de teclado"""
         if event.key() == QtCore.Qt.Key_Escape:
-            self.close()
+            # ESC funciona como Cancel
+            self.on_cancel_clicked()
+        elif event.key() == QtCore.Qt.Key_Return or event.key() == QtCore.Qt.Key_Enter:
+            # Ctrl+Enter funciona como OK
+            if event.modifiers() & QtCore.Qt.ControlModifier:
+                self.on_ok_clicked()
+            else:
+                super().keyPressEvent(event)
         else:
             super().keyPressEvent(event)
 
@@ -671,7 +691,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
             node_y = self.sticky_node.ypos() + self.sticky_node.screenHeight() // 2
 
             # Zoom y centro de la vista
-            zoom = nuke.zoom()
+            zoom = nuke.zoom()  # type: ignore
             center_x, center_y = nuke.center()
 
             # Delta desde el centro, ajustado por zoom
