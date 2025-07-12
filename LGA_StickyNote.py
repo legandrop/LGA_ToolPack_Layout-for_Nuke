@@ -16,9 +16,11 @@ from LGA_StickyNote_Utils import (
     format_text_with_margins,
 )
 
+# Namespace único para evitar conflictos con otros scripts
+LGA_STICKY_NOTE_NAMESPACE = "LGA_StickyNote_v190"
 
 # Variable global para activar o desactivar los prints
-DEBUG = False
+DEBUG = True
 
 # Margen vertical para la interfaz de usuario
 UI_MARGIN_Y = 20
@@ -517,11 +519,12 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.drag_position = None  # Para el arrastre de la ventana
         self.state_manager = StickyNoteStateManager()  # Gestor de estado
 
-        # Sistema de debouncing para evitar loops de escritura
-        self.update_timer = QtCore.QTimer()
-        self.update_timer.setSingleShot(True)
-        self.update_timer.timeout.connect(self._delayed_text_update)
-        self._pending_update = False
+        # DESHABILITAR COMPLETAMENTE EL SISTEMA DE DEBOUNCING
+        # Comentando todo el sistema de timer para evitar loops
+        # self.update_timer = QtCore.QTimer()
+        # self.update_timer.setSingleShot(True)
+        # self.update_timer.timeout.connect(self._delayed_text_update)
+        # self._pending_update = False
 
         self.setup_ui()
         self.setup_connections()
@@ -1113,31 +1116,25 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.ok_button.clicked.connect(self.on_ok_clicked)
 
     def _disconnect_all_signals(self):
-        """Desconecta todas las señales para evitar acumulación"""
-        try:
-            self.text_edit.textChanged.disconnect()
-        except:
-            pass
-        try:
-            self.font_size_slider.valueChanged.disconnect()
-        except:
-            pass
-        try:
-            self.margin_slider.valueChanged.disconnect()
-        except:
-            pass
-        try:
-            self.margin_y_slider.valueChanged.disconnect()
-        except:
-            pass
-        try:
-            self.cancel_button.clicked.disconnect()
-        except:
-            pass
-        try:
-            self.ok_button.clicked.disconnect()
-        except:
-            pass
+        """Desconecta todas las señales para evitar acumulación de forma segura"""
+        signals_to_disconnect = [
+            (self.text_edit, "textChanged"),
+            (self.font_size_slider, "valueChanged"),
+            (self.margin_slider, "valueChanged"),
+            (self.margin_y_slider, "valueChanged"),
+            (self.cancel_button, "clicked"),
+            (self.ok_button, "clicked"),
+        ]
+
+        for widget, signal_name in signals_to_disconnect:
+            try:
+                if hasattr(widget, signal_name):
+                    signal = getattr(widget, signal_name)
+                    if signal.receivers() > 0:
+                        signal.disconnect()
+            except (RuntimeError, TypeError, AttributeError):
+                # La señal ya fue desconectada, el objeto fue destruido, o no existe
+                pass
 
     def get_or_create_sticky_note(self):
         """Obtiene el sticky note seleccionado o crea uno nuevo"""
@@ -1216,14 +1213,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
             self.on_text_changed()  # Esto aplicará el margin X = 2 al texto
 
     def on_text_changed(self):
-        """Callback cuando cambia el texto - usa debouncing para evitar loops"""
-        if not self._pending_update:
-            self._pending_update = True
-            self.update_timer.start(DEBOUNCE_DELAY)
-
-    def _delayed_text_update(self):
-        """Actualización retrasada del texto para evitar loops"""
-        self._pending_update = False
+        """Callback cuando cambia el texto - ESCRITURA INMEDIATA SIN DEBOUNCING"""
         if self.sticky_node:
             current_text = self.text_edit.toPlainText()
             margin_x = self.margin_slider.value()
@@ -1240,22 +1230,18 @@ class StickyNoteEditor(QtWidgets.QDialog):
             self.font_size_value.setText(str(value))
 
     def on_margin_changed(self, value):
-        """Callback cuando cambia el margin X"""
+        """Callback cuando cambia el margin X - ESCRITURA INMEDIATA"""
         if self.sticky_node:
             self.margin_value.setText(str(value))
-            # Usar el sistema de debouncing en lugar de llamada directa
-            if not self._pending_update:
-                self._pending_update = True
-                self.update_timer.start(DEBOUNCE_DELAY)
+            # Escribir inmediatamente sin debouncing
+            self.on_text_changed()
 
     def on_margin_y_changed(self, value):
-        """Callback cuando cambia el margin Y"""
+        """Callback cuando cambia el margin Y - ESCRITURA INMEDIATA"""
         if self.sticky_node:
             self.margin_y_value.setText(str(value))
-            # Usar el sistema de debouncing en lugar de llamada directa
-            if not self._pending_update:
-                self._pending_update = True
-                self.update_timer.start(DEBOUNCE_DELAY)
+            # Escribir inmediatamente sin debouncing
+            self.on_text_changed()
 
     def on_left_arrow_clicked(self):
         """Callback cuando se hace click en el botón de flecha izquierda"""
@@ -1580,9 +1566,9 @@ class StickyNoteEditor(QtWidgets.QDialog):
     def on_ok_clicked(self):
         """Callback cuando se hace click en OK"""
         try:
-            # Detener cualquier actualización pendiente
-            self.update_timer.stop()
-            self._pending_update = False
+            # YA NO HAY TIMER QUE DETENER
+            # self.update_timer.stop()
+            # self._pending_update = False
 
             # Usar el gestor de estado para confirmar los cambios
             success = self.state_manager.handle_ok_action()
@@ -1600,22 +1586,20 @@ class StickyNoteEditor(QtWidgets.QDialog):
     def _cleanup_resources(self):
         """Limpieza completa de recursos para evitar memory leaks"""
         try:
-            # Detener el timer
-            if hasattr(self, "update_timer"):
-                self.update_timer.stop()
-                self.update_timer.timeout.disconnect()
-
-            # Desconectar todas las señales
+            # Desconectar todas las señales de forma segura
             self._disconnect_all_signals()
 
             # Limpiar referencias
             self.sticky_node = None
-            self._pending_update = False
+            # self._pending_update = False  # Ya no existe
 
             # Limpiar tooltip personalizado
             if hasattr(self, "tooltip_label") and self.tooltip_label:
-                self.tooltip_label.close()
-                self.tooltip_label = None
+                try:
+                    self.tooltip_label.close()
+                    self.tooltip_label = None
+                except:
+                    pass
 
         except Exception as e:
             print(f"Error durante la limpieza: {e}")
@@ -1822,44 +1806,76 @@ class StickyNoteEditor(QtWidgets.QDialog):
             self.tooltip_label = None
 
 
-# Variables globales
+# Variables globales con nombres únicos para evitar conflictos
 app = None
-sticky_editor = None
+lga_sticky_note_editor_instance = None  # Cambio de nombre para evitar conflictos
 
 
 def main():
     """Función principal para mostrar el editor de StickyNote."""
-    global app, sticky_editor
+    global app, lga_sticky_note_editor_instance
     app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
-    sticky_editor = StickyNoteEditor()
-    sticky_editor.run()
+    lga_sticky_note_editor_instance = StickyNoteEditor()
+    lga_sticky_note_editor_instance.run()
 
 
 # Para uso en Nuke
 def run_sticky_note_editor():
     """Mostrar el editor de StickyNote dentro de Nuke"""
-    global sticky_editor
+    global lga_sticky_note_editor_instance
+
+    # Verificar que no haya instancias de otros scripts conflictivos
+    app_instance = QtWidgets.QApplication.instance()
+    if app_instance:
+        # Buscar widgets existentes que puedan causar conflictos
+        conflicting_widgets = []
+        for widget in app_instance.allWidgets():
+            widget_name = widget.__class__.__name__
+            if widget_name in ["ScaleWidget", "NodeLabelEditor"] and widget.isVisible():
+                conflicting_widgets.append(widget_name)
+
+        if conflicting_widgets:
+            print(
+                f"Advertencia: Se detectaron widgets que pueden causar conflictos: {conflicting_widgets}"
+            )
+            print("Cerrando widgets conflictivos...")
+            for widget in app_instance.allWidgets():
+                if (
+                    widget.__class__.__name__ in conflicting_widgets
+                    and widget.isVisible()
+                ):
+                    try:
+                        widget.close()
+                    except:
+                        pass
 
     # Si ya existe una instancia del editor, cerrarla y eliminarla completamente
-    if sticky_editor is not None:
+    if lga_sticky_note_editor_instance is not None:
         try:
-            if isinstance(sticky_editor, QtWidgets.QDialog):
+            if isinstance(lga_sticky_note_editor_instance, QtWidgets.QDialog):
                 # Limpieza completa de la instancia anterior
-                if hasattr(sticky_editor, "_cleanup_resources"):
-                    sticky_editor._cleanup_resources()
-                sticky_editor.close()
-                sticky_editor.deleteLater()
+                if hasattr(lga_sticky_note_editor_instance, "_cleanup_resources"):
+                    lga_sticky_note_editor_instance._cleanup_resources()
+                lga_sticky_note_editor_instance.close()
+                lga_sticky_note_editor_instance.deleteLater()
             # Forzar procesamiento de eventos para asegurar limpieza
             if QtWidgets.QApplication.instance():
                 QtWidgets.QApplication.processEvents()
         except Exception as e:
             print(f"Error limpiando instancia anterior: {e}")
         finally:
-            sticky_editor = None  # Resetear la variable global
+            lga_sticky_note_editor_instance = None  # Resetear la variable global
 
-    # Crear nueva instancia
-    sticky_editor = StickyNoteEditor()
-    sticky_editor.run()
+    # Crear nueva instancia con verificación adicional
+    try:
+        lga_sticky_note_editor_instance = StickyNoteEditor()
+        lga_sticky_note_editor_instance.run()
+        print(
+            f"LGA_StickyNote iniciado correctamente - Namespace: {LGA_STICKY_NOTE_NAMESPACE}"
+        )
+    except Exception as e:
+        print(f"Error al iniciar LGA_StickyNote: {e}")
+        lga_sticky_note_editor_instance = None
 
 
 # Ejecutar cuando se carga en Nuke

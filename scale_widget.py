@@ -6,7 +6,7 @@ from collections import namedtuple
 DAG_TITLE = "Node Graph"
 DAG_OBJECT_NAME = "DAG"
 
-Direction = namedtuple('Direction', 'axis, descending, center')
+Direction = namedtuple("Direction", "axis, descending, center")
 AXIS_X = 0
 AXIS_Y = 1
 RIGHT = Direction(axis=AXIS_X, descending=False, center=False)
@@ -16,8 +16,9 @@ UP = Direction(axis=AXIS_Y, descending=True, center=False)
 CENTER_X = Direction(axis=AXIS_X, descending=False, center=True)
 CENTER_Y = Direction(axis=AXIS_Y, descending=False, center=True)
 
+
 class NodeWrapper(object):
-    """ Wraps a nuke node with its bounds, and exposes all the methods from QRectF to be used on the node """
+    """Wraps a nuke node with its bounds, and exposes all the methods from QRectF to be used on the node"""
 
     def __init__(self, node):
         """
@@ -46,6 +47,7 @@ class NodeWrapper(object):
             if self.bounds.size() != before_size:
                 self._commit_resize()
             return result
+
         return wrapper
 
     def _commit_move(self):
@@ -58,8 +60,8 @@ class NodeWrapper(object):
                 "Tried to resize a node other than a backdrop, which is not supported. You may get unexpected results."
             )
         self._commit_move()
-        self.node['bdwidth'].setValue(int(self.bounds.width()))
-        self.node['bdheight'].setValue(int(self.bounds.height()))
+        self.node["bdwidth"].setValue(int(self.bounds.width()))
+        self.node["bdheight"].setValue(int(self.bounds.height()))
 
     def normalize(self):
         self.bounds = self.bounds.normalized()
@@ -67,7 +69,7 @@ class NodeWrapper(object):
         self._commit_resize()
 
     def move_center(self, value, axis):
-        """ Extra method to allow moving a node center based on a single axis
+        """Extra method to allow moving a node center based on a single axis
 
         Args:
             value (int): New center position
@@ -80,19 +82,21 @@ class NodeWrapper(object):
 
     def store_margins(self):
         if not self.is_backdrop:
-            raise NotImplementedError("Tried to calculate margins on a non-backdrop node")
+            raise NotImplementedError(
+                "Tried to calculate margins on a non-backdrop node"
+            )
         nodes = self.node.getNodes()
         nodes_bounds = get_nodes_bounds(nodes)
         margins = calculate_bounds_adjustment(nodes_bounds, self)
-        self._nodes_and_margins = {'nodes': nodes, 'margins': margins}
+        self._nodes_and_margins = {"nodes": nodes, "margins": margins}
 
     def restore_margins(self):
         if not self.is_backdrop:
             raise NotImplementedError("Tried to set margins on a non-backdrop node")
         if not self._nodes_and_margins:
             raise RuntimeError("No margins were saved for this backdrop, can't restore")
-        nodes_bounds = get_nodes_bounds(self._nodes_and_margins['nodes'])
-        nodes_bounds.adjust(*self._nodes_and_margins['margins'])
+        nodes_bounds = get_nodes_bounds(self._nodes_and_margins["nodes"])
+        nodes_bounds.adjust(*self._nodes_and_margins["margins"])
         self.setCoords(*nodes_bounds.getCoords())
 
     def place_around_nodes(self, nodes, padding=50):
@@ -102,8 +106,9 @@ class NodeWrapper(object):
             return
         label_height = get_label_size(self.node).height()
         nodes_bounds = get_nodes_bounds(nodes)
-        nodes_bounds.adjust(-padding, -(padding+label_height), padding, padding)
+        nodes_bounds.adjust(-padding, -(padding + label_height), padding, padding)
         self.setCoords(*nodes_bounds.getCoords())
+
 
 # Group Dags
 def get_dag_widgets(visible=True):
@@ -124,6 +129,7 @@ def get_dag_widgets(visible=True):
                 dags.append(widget)
     return dags
 
+
 def get_current_dag():
     """
     Returns:
@@ -139,14 +145,16 @@ def get_current_dag():
         return visible_dags[0]
     return None
 
+
 def get_dag_node(dag_widget):
-    """ Get a DAG node for a given dag widget. """
+    """Get a DAG node for a given dag widget."""
     title = str(dag_widget.windowTitle())
     if DAG_TITLE not in title:
         return None
     if title == DAG_TITLE:
         return nuke.root()
     return nuke.toNode(title.replace(" " + DAG_TITLE, ""))
+
 
 # Bounds functions
 def get_node_bounds(node):
@@ -170,20 +178,23 @@ def get_node_bounds(node):
     if isinstance(node, NodeWrapper):
         return node.bounds
     if node.Class() == "BackdropNode":
-        width = node['bdwidth'].value()
-        height = node['bdheight'].value()
+        width = node["bdwidth"].value()
+        height = node["bdheight"].value()
     else:
         width = node.screenWidth()
         height = node.screenHeight()
 
     if width == 0:  # Handle a bug as mentioned in docstring
-        temp_node = getattr(nuke.nodes, node.Class())()  # Make temp node with same class as corrupted node
+        temp_node = getattr(
+            nuke.nodes, node.Class()
+        )()  # Make temp node with same class as corrupted node
         try:
             return get_node_bounds(temp_node)
         finally:
             nuke.delete(temp_node)
 
     return QtCore.QRectF(node.xpos(), node.ypos(), width, height)
+
 
 def get_nodes_bounds(nodes, center_only=False):
     """
@@ -202,13 +213,16 @@ def get_nodes_bounds(nodes, center_only=False):
     if center_only:
         poly = QtGui.QPolygon([n.center().toPoint() for n in all_bounds])
         return poly.boundingRect()
-    bounds = QtCore.QRectF(all_bounds[0])  # Make a new rect so we don't modify the initial one
+    bounds = QtCore.QRectF(
+        all_bounds[0]
+    )  # Make a new rect so we don't modify the initial one
     for bound in all_bounds[1:]:
         bounds |= bound
     return bounds
 
+
 def calculate_bounds_adjustment(bounds, target_bounds):
-    """ Calculate adjust values to apply to 'bounds' in order to match 'target_bounds'
+    """Calculate adjust values to apply to 'bounds' in order to match 'target_bounds'
 
     Args:
         bounds (QtCore.QRectF or NodeWrapper): Original Bounds
@@ -221,8 +235,9 @@ def calculate_bounds_adjustment(bounds, target_bounds):
     target_coords = target_bounds.getCoords()
     return tuple(target_coords[i] - bounds_coords[i] for i in range(4))
 
+
 def get_label_size(node):
-    """ Calculate the size of a label for a nuke Node
+    """Calculate the size of a label for a nuke Node
 
     Args:
         node (nuke.Node):
@@ -230,14 +245,15 @@ def get_label_size(node):
     Returns:
         QtCore.QSize: Size of the label
     """
-    regex = r'^(.+?)( Bold)?( Italic)?$'
-    match = re.match(regex, node['note_font'].value())
+    regex = r"^(.+?)( Bold)?( Italic)?$"
+    match = re.match(regex, node["note_font"].value())
     font = QtGui.QFont(match.group(1))
     font.setBold(bool(match.group(2)))
     font.setItalic(bool(match.group(3)))
-    font.setPixelSize(node['note_font_size'].value())
+    font.setPixelSize(node["note_font_size"].value())
     metrics = QtGui.QFontMetrics(font)
-    return metrics.size(0, node['label'].value())
+    return metrics.size(0, node["label"].value())
+
 
 class ScaleWidget(QtWidgets.QWidget):
     class _VectorWrapper(object):
@@ -249,21 +265,29 @@ class ScaleWidget(QtWidgets.QWidget):
             :param QtCore.QRectF bounds: bounds to calculating relative position to
             :param int corner: (Optional)
             """
+
             def _clamp(v):
-                """ Clamp vector between 0 and 1 """
-                return QtGui.QVector2D(0 if v.x() < 0 else 1 if v.x() > 1 else v.x(),
-                                       0 if v.y() < 0 else 1 if v.y() > 1 else v.y())
+                """Clamp vector between 0 and 1"""
+                return QtGui.QVector2D(
+                    0 if v.x() < 0 else 1 if v.x() > 1 else v.x(),
+                    0 if v.y() < 0 else 1 if v.y() > 1 else v.y(),
+                )
+
             self.node_wrapper = node
             self.corner = corner
             self.original_point = self.get_point()
             # Store the corner coordinates relative to the bounds, saves us from calculating it in event loop
-            bs = QtGui.QVector2D(bounds.size().width(), bounds.size().height())  # bounds size
-            vector = (QtGui.QVector2D(self.get_point()) - QtGui.QVector2D(bounds.topLeft())) / bs
+            bs = QtGui.QVector2D(
+                bounds.size().width(), bounds.size().height()
+            )  # bounds size
+            vector = (
+                QtGui.QVector2D(self.get_point()) - QtGui.QVector2D(bounds.topLeft())
+            ) / bs
             self.vector = _clamp(vector)
             self.offset = (vector - self.vector) * bs
 
         def get_point(self):
-            """ Return QPoint corresponding to one of the 4 corners or the center of the node """
+            """Return QPoint corresponding to one of the 4 corners or the center of the node"""
             if self.corner is None:
                 return self.node_wrapper.center()
             elif self.corner == 0:
@@ -275,7 +299,7 @@ class ScaleWidget(QtWidgets.QWidget):
             return self.node_wrapper.bottomLeft()
 
         def move(self, new_point, grid_size=None):
-            """ Apply the transformation to the node """
+            """Apply the transformation to the node"""
             if grid_size:
                 new_point = self._snap_to_grid(new_point, grid_size)
             if self.corner is None:
@@ -296,16 +320,20 @@ class ScaleWidget(QtWidgets.QWidget):
             offset = (new - old) / grid_size
             return (old + QtGui.QVector2D(offset.toPoint()) * grid_size).toPoint()
 
-    handles_cursors = (QtCore.Qt.SizeFDiagCursor,
-                       QtCore.Qt.SizeVerCursor,
-                       QtCore.Qt.SizeBDiagCursor,
-                       QtCore.Qt.SizeHorCursor)
+    handles_cursors = (
+        QtCore.Qt.SizeFDiagCursor,
+        QtCore.Qt.SizeVerCursor,
+        QtCore.Qt.SizeBDiagCursor,
+        QtCore.Qt.SizeHorCursor,
+    )
 
     def __init__(self, dag_widget):
         super(ScaleWidget, self).__init__(parent=dag_widget)
 
         # Group context
-        self.dag_node = get_dag_node(self.parent())  # 'dag_widget', but it's garbage collected..
+        self.dag_node = get_dag_node(
+            self.parent()
+        )  # 'dag_widget', but it's garbage collected..
 
         # Make Widget transparent
         self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.FramelessWindowHint)
@@ -324,58 +352,101 @@ class ScaleWidget(QtWidgets.QWidget):
         # Attributes
         self.transform = None
         self.grabbed_handle = None
-        with self.dag_node:
+
+        # Corregir el problema del context manager
+        if self.dag_node and hasattr(self.dag_node, "begin"):
+            self.dag_node.begin()
+            try:
+                self.nodes = nuke.selectedNodes()
+            finally:
+                self.dag_node.end()
+        else:
             self.nodes = nuke.selectedNodes()
+
         self.bounds = get_nodes_bounds(self.nodes, center_only=True)
         visual_bounds = get_nodes_bounds(self.nodes) + (QtCore.QMargins() + 10)
         adjustment = calculate_bounds_adjustment(self.bounds, visual_bounds)
-        self.margins = QtCore.QMargins(adjustment[0] * -1, adjustment[1] * -1, adjustment[2], adjustment[3])
+        self.margins = QtCore.QMargins(
+            adjustment[0] * -1, adjustment[1] * -1, adjustment[2], adjustment[3]
+        )
         self.coordinates = self.store_coordinates()
         self.undo = None
 
         self.translate_mode = False
         self.move_all = False
-        prefs = nuke.toNode('preferences')
+        prefs = nuke.toNode("preferences")
 
-        self.snap_to_grid = prefs['SnapToGrid'].value()
-        self.grid_size = QtGui.QVector2D(max(prefs['GridWidth'].value(), 1),
-                                         max(prefs['GridHeight'].value(), 1))
+        self.snap_to_grid = prefs["SnapToGrid"].value()
+        self.grid_size = QtGui.QVector2D(
+            max(prefs["GridWidth"].value(), 1), max(prefs["GridHeight"].value(), 1)
+        )
 
     def store_coordinates(self):
-        """ Get the coordinates of all nodes and store them in a VectorWrapper """
+        """Get the coordinates of all nodes and store them in a VectorWrapper"""
         all_coords = []
-        with self.dag_node:
+
+        # Corregir el problema del context manager
+        if self.dag_node and hasattr(self.dag_node, "begin"):
+            self.dag_node.begin()
+            try:
+                for node in nuke.allNodes():
+                    node_wrapper = NodeWrapper(node)
+                    if node_wrapper.is_backdrop:
+                        all_coords += [
+                            self._VectorWrapper(node_wrapper, self.bounds, corner)
+                            for corner in range(4)
+                        ]
+                    else:
+                        all_coords.append(
+                            self._VectorWrapper(node_wrapper, self.bounds)
+                        )
+            finally:
+                self.dag_node.end()
+        else:
             for node in nuke.allNodes():
                 node_wrapper = NodeWrapper(node)
                 if node_wrapper.is_backdrop:
-                    all_coords += [self._VectorWrapper(node_wrapper, self.bounds, corner) for corner in range(4)]
+                    all_coords += [
+                        self._VectorWrapper(node_wrapper, self.bounds, corner)
+                        for corner in range(4)
+                    ]
                 else:
                     all_coords.append(self._VectorWrapper(node_wrapper, self.bounds))
         return all_coords
 
     def reset_state(self):
-        """ Re-grab the coordinates of all the nodes """
+        """Re-grab the coordinates of all the nodes"""
         self.grabbed_handle = None
         self.coordinates = self.store_coordinates()
 
     def paintEvent(self, event):
-        """ Draw The widget """
+        """Draw The widget"""
         painter = QtGui.QPainter(self)
         painter.save()
 
         # Calculate the proper place to draw the stuff
         local_rect = self.geometry()
         local_rect.moveTopLeft(QtCore.QPoint(0, 0))
-        with self.dag_node:
+
+        # Corregir el problema del context manager
+        if self.dag_node and hasattr(self.dag_node, "begin"):
+            self.dag_node.begin()
+            try:
+                scale = nuke.zoom()
+                offset = local_rect.center() / scale - QtCore.QPoint(*nuke.center())
+            finally:
+                self.dag_node.end()
+        else:
             scale = nuke.zoom()
-            offset = local_rect.center()/scale - QtCore.QPoint(*nuke.center())
+            offset = local_rect.center() / scale - QtCore.QPoint(*nuke.center())
+
         painter.scale(scale, scale)
         painter.translate(offset)
         self.transform = painter.combinedTransform()
 
         # Draw the bounds rectangle
         black_pen = QtGui.QPen()
-        black_pen.setColor(QtGui.QColor('black'))
+        black_pen.setColor(QtGui.QColor("black"))
         black_pen.setWidth(3)
         black_pen.setCosmetic(True)
 
@@ -384,10 +455,10 @@ class ScaleWidget(QtWidgets.QWidget):
 
         # Draw the handles
         yellow_brush = QtGui.QBrush()
-        yellow_brush.setColor(QtGui.QColor('white'))
+        yellow_brush.setColor(QtGui.QColor("white"))
         yellow_brush.setStyle(QtCore.Qt.SolidPattern)
 
-        handle_size = int(16/scale)
+        handle_size = int(16 / scale)
         handle = QtCore.QRectF(0, 0, handle_size, handle_size)
         painter.setBrush(yellow_brush)
         for point in self.get_handles_points():
@@ -397,19 +468,19 @@ class ScaleWidget(QtWidgets.QWidget):
         # Add a text hint for usage
         painter.restore()
         local_rect.setTop(local_rect.bottom() - 70)
-        text = 'Resize Mode enabled'
+        text = "Resize Mode enabled"
         if self.snap_to_grid:
-            text += ' (Snap to Grid: ON)'
+            text += " (Snap to Grid: ON)"
         text += "\nDrag any handle to affect the spacing between your nodes."
         text += "\nCtrl+Drag: affect all nodes, Shift+Drag: Translate, 'S': Toggle Snap to grid, 'Esc': Cancel, "
         text += "Any other key: Confirm and close"
         painter.setPen(black_pen)
-        painter.drawText(local_rect,  QtCore.Qt.AlignCenter, text)
-        painter.setPen(QtGui.QPen(QtGui.QColor('white')))
+        painter.drawText(local_rect, QtCore.Qt.AlignCenter, text)
+        painter.setPen(QtGui.QPen(QtGui.QColor("white")))
         painter.drawText(local_rect.translated(1, -1), QtCore.Qt.AlignCenter, text)
 
     def get_handles_points(self):
-        """ Return a list of 8 QPoints representing the 8 handles we want to draw """
+        """Return a list of 8 QPoints representing the 8 handles we want to draw"""
         bounds = self.bounds.marginsAdded(self.margins)
         return [
             bounds.topLeft(),
@@ -419,11 +490,11 @@ class ScaleWidget(QtWidgets.QWidget):
             bounds.bottomRight(),
             QtCore.QPoint(bounds.center().x(), bounds.bottom()),
             bounds.bottomLeft(),
-            QtCore.QPoint(bounds.left(),bounds.center().y())
+            QtCore.QPoint(bounds.left(), bounds.center().y()),
         ]
 
     def get_handle_at_pos(self, pos):
-        """ Get the handle nearest the provided position """
+        """Get the handle nearest the provided position"""
         handles = self.get_handles_points()
         nearest = (0, None)  # index, distance
         for i, handle in enumerate(handles):
@@ -435,42 +506,44 @@ class ScaleWidget(QtWidgets.QWidget):
         return nearest[0]
 
     def resize_bounds(self, handle, pos):
-        """ Resize the QRectF representing the bounding box controller based on the clicked handle """
+        """Resize the QRectF representing the bounding box controller based on the clicked handle"""
         if handle is None:
             return
         # As the user interacts with the visual bounds rather than the computed ones, we need to take this into account
         bounds = self.bounds.marginsAdded(self.margins)
         invert_matrix, _invert_success = self.transform.inverted()
         pos = invert_matrix.map(pos)
-        attr_prefix = 'move' if self.translate_mode else 'set'
+        attr_prefix = "move" if self.translate_mode else "set"
         if handle == 0:
-            getattr(bounds, '{}TopLeft'.format(attr_prefix))(pos)
+            getattr(bounds, "{}TopLeft".format(attr_prefix))(pos)
         elif handle == 1:
-            getattr(bounds, '{}Top'.format(attr_prefix))(pos.y())
+            getattr(bounds, "{}Top".format(attr_prefix))(pos.y())
         elif handle == 2:
-            getattr(bounds, '{}TopRight'.format(attr_prefix))(pos)
+            getattr(bounds, "{}TopRight".format(attr_prefix))(pos)
         elif handle == 3:
-            getattr(bounds, '{}Right'.format(attr_prefix))(pos.x())
+            getattr(bounds, "{}Right".format(attr_prefix))(pos.x())
         elif handle == 4:
-            getattr(bounds, '{}BottomRight'.format(attr_prefix))(pos)
+            getattr(bounds, "{}BottomRight".format(attr_prefix))(pos)
         elif handle == 5:
-            getattr(bounds, '{}Bottom'.format(attr_prefix))(pos.y())
+            getattr(bounds, "{}Bottom".format(attr_prefix))(pos.y())
         elif handle == 6:
-            getattr(bounds, '{}BottomLeft'.format(attr_prefix))(pos)
+            getattr(bounds, "{}BottomLeft".format(attr_prefix))(pos)
         elif handle == 7:
-            getattr(bounds, '{}Left'.format(attr_prefix))(pos.x())
+            getattr(bounds, "{}Left".format(attr_prefix))(pos.x())
         self.bounds = bounds.marginsRemoved(self.margins)
         self.repaint()
 
     def scale_nodes(self, handle, pos, all_nodes=False):
-        """ Moves either the selected nodes or all the nodes to their relative space to the bounding box controller """
+        """Moves either the selected nodes or all the nodes to their relative space to the bounding box controller"""
         if not self.undo:
             # Start undo stack so that the operation can be reverted cleanly
             self.undo = nuke.Undo()
-            self.undo.begin('Scale Nodes')
+            self.undo.begin("Scale Nodes")
 
         self.resize_bounds(handle, pos)
-        new_size = QtGui.QVector2D(self.bounds.size().width(), self.bounds.size().height())
+        new_size = QtGui.QVector2D(
+            self.bounds.size().width(), self.bounds.size().height()
+        )
         new_top_left = QtGui.QVector2D(self.bounds.topLeft())
 
         for coord in self.coordinates:
@@ -481,7 +554,7 @@ class ScaleWidget(QtWidgets.QWidget):
             coord.move(new_pos.toPoint(), self.grid_size if self.snap_to_grid else None)
 
     def mouseMoveEvent(self, event):
-        """ Check which handle is nearest the mouse and set the appropriate cursor """
+        """Check which handle is nearest the mouse and set the appropriate cursor"""
         if QtWidgets.QApplication.keyboardModifiers() & QtCore.Qt.ShiftModifier:
             self.setCursor(QtCore.Qt.SizeAllCursor)
         else:
@@ -489,7 +562,7 @@ class ScaleWidget(QtWidgets.QWidget):
             self.setCursor(self.handles_cursors[handle_index % 4])
 
     def eventFilter(self, widget, event):
-        """ Filter all the events happening while the bounding box controller is shown """
+        """Filter all the events happening while the bounding box controller is shown"""
         if event.type() in [QtCore.QEvent.MouseButtonPress]:
             if not self.geometry().contains(event.globalPos()):
                 # Clicked outside the widget
@@ -500,12 +573,21 @@ class ScaleWidget(QtWidgets.QWidget):
                 if widget is self:
                     # Clicked on one of the opaque areas of the widget
                     self.grabbed_handle = self.get_handle_at_pos(event.pos())
-                    self.move_all = bool(QtWidgets.QApplication.keyboardModifiers() & QtCore.Qt.ControlModifier)
-                    self.translate_mode = bool(QtWidgets.QApplication.keyboardModifiers() & QtCore.Qt.ShiftModifier)
+                    self.move_all = bool(
+                        QtWidgets.QApplication.keyboardModifiers()
+                        & QtCore.Qt.ControlModifier
+                    )
+                    self.translate_mode = bool(
+                        QtWidgets.QApplication.keyboardModifiers()
+                        & QtCore.Qt.ShiftModifier
+                    )
                     return True
 
                 # Left mouse button was clicked, outside the widget.
-                if not QtWidgets.QApplication.keyboardModifiers() and event.buttons() == event.button():
+                if (
+                    not QtWidgets.QApplication.keyboardModifiers()
+                    and event.buttons() == event.button()
+                ):
                     # The mouse press event had no other button pressed at the same time
                     # However, events can happen on other widgets, so check click position
                     if isinstance(widget, QtOpenGL.QGLWidget):
@@ -520,7 +602,9 @@ class ScaleWidget(QtWidgets.QWidget):
         elif event.type() in [QtCore.QEvent.MouseMove]:
             # Mouse moved, if we had a handle grabbed, resize nodes.
             if self.grabbed_handle is not None:
-                self.scale_nodes(self.grabbed_handle, event.pos(), all_nodes=self.move_all)
+                self.scale_nodes(
+                    self.grabbed_handle, event.pos(), all_nodes=self.move_all
+                )
                 return True
 
             # Otherwise, if a button is pressed, we might be moving the dag, so repaint.
@@ -535,7 +619,11 @@ class ScaleWidget(QtWidgets.QWidget):
                 self.snap_to_grid = not self.snap_to_grid
                 self.repaint()
             # close and accept on any non modifier key
-            elif event.key() not in [QtCore.Qt.Key_Control, QtCore.Qt.Key_Alt, QtCore.Qt.Key_Shift]:
+            elif event.key() not in [
+                QtCore.Qt.Key_Control,
+                QtCore.Qt.Key_Alt,
+                QtCore.Qt.Key_Shift,
+            ]:
                 self.close()
 
             return True
@@ -573,11 +661,12 @@ class ScaleWidget(QtWidgets.QWidget):
         QtWidgets.QApplication.instance().removeEventFilter(self)
         super(ScaleWidget, self).close()
 
+
 def scale_tree():
-    """ Scale nodes with a bounding widget. """
+    """Scale nodes with a bounding widget."""
     this_dag = get_current_dag()
     scale_tree_widget = ScaleWidget(this_dag)
     scale_tree_widget.show()
 
 
-#scale_tree()
+# scale_tree()
