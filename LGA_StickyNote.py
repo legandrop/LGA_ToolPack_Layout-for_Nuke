@@ -943,6 +943,10 @@ class StickyNoteEditor(QtWidgets.QDialog):
             self.state_manager.set_as_new_node(self.sticky_node)
             print(f"Creado nuevo StickyNote: {self.sticky_node.name()}")
 
+        # Deseleccionar todos los nodos después de obtener o crear el StickyNote
+        for node in nuke.selectedNodes():
+            node.setSelected(False)
+
         return self.sticky_node
 
     def load_sticky_note_data(self):
