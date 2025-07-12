@@ -21,12 +21,25 @@ import LGA_BD_callbacks
 import LGA_BD_fit
 import LGA_BD_config
 
-# Variables configurables para el drop shadow
-SHADOW_BLUR_RADIUS = 25  # Radio de blur (más alto = más blureado)
-SHADOW_OPACITY = 60  # Opacidad (0-255, más alto = más opaco)
-SHADOW_OFFSET_X = 3  # Desplazamiento horizontal
-SHADOW_OFFSET_Y = 3  # Desplazamiento vertical
-SHADOW_MARGIN = 25  # Margen adicional para la sombra proyectada
+# Variables configurables para el drop shadow - UNIQUE NAMES FOR BACKDROP
+BACKDROP_SHADOW_BLUR_RADIUS = 25  # Radio de blur (más alto = más blureado)
+BACKDROP_SHADOW_OPACITY = 60  # Opacidad (0-255, más alto = más opaco)
+BACKDROP_SHADOW_OFFSET_X = 3  # Desplazamiento horizontal
+BACKDROP_SHADOW_OFFSET_Y = 3  # Desplazamiento vertical
+BACKDROP_SHADOW_MARGIN = 25  # Margen adicional para la sombra proyectada
+
+# ===== INSTANCIACIÓN TARDÍA (LAZY INITIALIZATION) =====
+# NO se crean widgets al importar el módulo para evitar crashes
+# Los widgets se crean solo cuando se ejecuta show_text_dialog()
+
+# Variable global para debug - UNIQUE NAME FOR BACKDROP
+BACKDROP_DEBUG = False
+
+
+def backdrop_debug_print(*message):
+    """Debug print function with unique name for backdrop"""
+    if BACKDROP_DEBUG:
+        print("[BACKDROP DEBUG]", *message)
 
 
 class BackdropNameDialog(QtWidgets.QDialog):
@@ -36,11 +49,11 @@ class BackdropNameDialog(QtWidgets.QDialog):
         self.esc_exit = False
         self.user_text = ""
         self.drag_position = None  # Para el arrastre de la ventana
-        self.setup_ui()
-        self.setup_connections()
+        self.backdrop_setup_ui()
+        self.backdrop_setup_connections()
 
-    def setup_ui(self):
-        """Configura la interfaz de usuario"""
+    def backdrop_setup_ui(self):
+        """Configura la interfaz de usuario - UNIQUE NAME FOR BACKDROP"""
         # Configurar ventana contenedora transparente
         self.setWindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.Window)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
@@ -49,7 +62,10 @@ class BackdropNameDialog(QtWidgets.QDialog):
         # Layout principal con margenes para la sombra
         main_layout = QtWidgets.QVBoxLayout()
         main_layout.setContentsMargins(
-            SHADOW_MARGIN, SHADOW_MARGIN, SHADOW_MARGIN, SHADOW_MARGIN
+            BACKDROP_SHADOW_MARGIN,
+            BACKDROP_SHADOW_MARGIN,
+            BACKDROP_SHADOW_MARGIN,
+            BACKDROP_SHADOW_MARGIN,
         )  # Margen para la sombra
         main_layout.setSpacing(0)
 
@@ -68,9 +84,9 @@ class BackdropNameDialog(QtWidgets.QDialog):
 
         # Aplicar sombra al frame principal
         self.shadow = QtWidgets.QGraphicsDropShadowEffect()
-        self.shadow.setBlurRadius(SHADOW_BLUR_RADIUS)
-        self.shadow.setColor(QtGui.QColor(0, 0, 0, SHADOW_OPACITY))
-        self.shadow.setOffset(SHADOW_OFFSET_X, SHADOW_OFFSET_Y)
+        self.shadow.setBlurRadius(BACKDROP_SHADOW_BLUR_RADIUS)
+        self.shadow.setColor(QtGui.QColor(0, 0, 0, BACKDROP_SHADOW_OPACITY))
+        self.shadow.setOffset(BACKDROP_SHADOW_OFFSET_X, BACKDROP_SHADOW_OFFSET_Y)
         self.main_frame.setGraphicsEffect(self.shadow)
 
         # Layout del frame principal
@@ -98,10 +114,10 @@ class BackdropNameDialog(QtWidgets.QDialog):
         )
         self.title_bar.setAlignment(QtCore.Qt.AlignCenter)
 
-        # Conectar eventos para arrastrar
-        self.title_bar.mousePressEvent = self.start_move
-        self.title_bar.mouseMoveEvent = self.move_window
-        self.title_bar.mouseReleaseEvent = self.stop_move
+        # Conectar eventos para arrastrar - UNIQUE NAMES FOR BACKDROP
+        self.title_bar.mousePressEvent = self.backdrop_start_move
+        self.title_bar.mouseMoveEvent = self.backdrop_move_window
+        self.title_bar.mouseReleaseEvent = self.backdrop_stop_move
 
         frame_layout.addWidget(self.title_bar)
 
@@ -170,16 +186,18 @@ class BackdropNameDialog(QtWidgets.QDialog):
         self.ok_button.setFixedHeight(30)
         self.ok_button.setStyleSheet(button_style)
 
-        # Crear tooltips personalizados
+        # Crear tooltips personalizados - UNIQUE NAMES FOR BACKDROP
         self.tooltip_label = None
-        self.cancel_button.enterEvent = lambda event: self.show_custom_tooltip(
+        self.cancel_button.enterEvent = lambda event: self.backdrop_show_custom_tooltip(
             "Esc", self.cancel_button
         )
-        self.cancel_button.leaveEvent = lambda event: self.hide_custom_tooltip()
-        self.ok_button.enterEvent = lambda event: self.show_custom_tooltip(
+        self.cancel_button.leaveEvent = (
+            lambda event: self.backdrop_hide_custom_tooltip()
+        )
+        self.ok_button.enterEvent = lambda event: self.backdrop_show_custom_tooltip(
             "Ctrl+Enter", self.ok_button
         )
-        self.ok_button.leaveEvent = lambda event: self.hide_custom_tooltip()
+        self.ok_button.leaveEvent = lambda event: self.backdrop_hide_custom_tooltip()
 
         # Agregar botones con igual ancho (mitad cada uno)
         buttons_layout.addWidget(self.cancel_button)
@@ -203,24 +221,24 @@ class BackdropNameDialog(QtWidgets.QDialog):
         current_size = self.size()
         self.setFixedSize(current_size.width() - 40, current_size.height())
 
-    def start_move(self, event):
-        """Inicia el movimiento de la ventana"""
+    def backdrop_start_move(self, event):
+        """Inicia el movimiento de la ventana - UNIQUE NAME FOR BACKDROP"""
         if event.button() == QtCore.Qt.LeftButton:
             self.drag_position = event.globalPos() - self.frameGeometry().topLeft()
             event.accept()
 
-    def move_window(self, event):
-        """Mueve la ventana durante el arrastre"""
+    def backdrop_move_window(self, event):
+        """Mueve la ventana durante el arrastre - UNIQUE NAME FOR BACKDROP"""
         if self.drag_position and event.buttons() & QtCore.Qt.LeftButton:
             self.move(event.globalPos() - self.drag_position)
             event.accept()
 
-    def stop_move(self, event):
-        """Detiene el movimiento de la ventana"""
+    def backdrop_stop_move(self, event):
+        """Detiene el movimiento de la ventana - UNIQUE NAME FOR BACKDROP"""
         self.drag_position = None
 
-    def show_custom_tooltip(self, text, widget):
-        """Muestra un tooltip personalizado"""
+    def backdrop_show_custom_tooltip(self, text, widget):
+        """Muestra un tooltip personalizado - UNIQUE NAME FOR BACKDROP"""
         if self.tooltip_label:
             self.tooltip_label.close()
 
@@ -252,14 +270,14 @@ class BackdropNameDialog(QtWidgets.QDialog):
 
         self.tooltip_label.show()
 
-    def hide_custom_tooltip(self):
-        """Oculta el tooltip personalizado"""
+    def backdrop_hide_custom_tooltip(self):
+        """Oculta el tooltip personalizado - UNIQUE NAME FOR BACKDROP"""
         if self.tooltip_label:
             self.tooltip_label.close()
             self.tooltip_label = None
 
-    def setup_connections(self):
-        """Configura las conexiones de señales"""
+    def backdrop_setup_connections(self):
+        """Configura las conexiones de señales - UNIQUE NAME FOR BACKDROP"""
         self.cancel_button.clicked.connect(self.on_cancel_clicked)
         self.ok_button.clicked.connect(self.on_ok_clicked)
 
@@ -321,8 +339,10 @@ class BackdropNameDialog(QtWidgets.QDialog):
 
         self.move(QtCore.QPoint(posx, posy))
 
-    def run(self):
-        """Ejecuta el diálogo"""
+    def show_backdrop_dialog(self):
+        """Ejecuta el diálogo - RENAMED from run() to avoid conflicts"""
+        backdrop_debug_print("BackdropNameDialog.show_backdrop_dialog() called")
+
         # Posicionar la ventana respecto al cursor
         self.position_window_relative_to_cursor()
 
@@ -337,10 +357,13 @@ class BackdropNameDialog(QtWidgets.QDialog):
 
 def show_text_dialog():
     """
-    Muestra el dialogo y retorna el resultado
+    Muestra el dialogo y retorna el resultado - USING LAZY INITIALIZATION
     """
+    backdrop_debug_print(
+        "show_text_dialog() called - creating BackdropNameDialog instance"
+    )
     dialog = BackdropNameDialog()
-    return dialog.run()
+    return dialog.show_backdrop_dialog()
 
 
 def nodeIsInside(node, backdropNode):
@@ -372,12 +395,17 @@ def autoBackdrop():
     """
     Crea automaticamente un backdrop detras de los nodos seleccionados
     """
+    backdrop_debug_print("autoBackdrop() called")
+
     # Obtener el texto del usuario usando el panel personalizado
     esc_exit, user_text = show_text_dialog()
     if esc_exit:
+        backdrop_debug_print("User cancelled backdrop creation with ESC")
         return  # Si el usuario cancela con ESC, salir de la funcion
     if user_text is None:
         user_text = ""  # Si el usuario cancela, usar una cadena vacia
+
+    backdrop_debug_print(f"User entered text: '{user_text}'")
 
     selNodes = nuke.selectedNodes()
     forced = False

@@ -345,6 +345,85 @@ def on_cancel_clicked(self):
 
 ---
 
+### **11. ✅ CORRECCIÓN DE CONFLICTOS DE NOMBRES EN LGA_BACKDROP.PY**
+**Fecha**: Enero 2025
+**Descripción**: Identificados y corregidos conflictos de nombres entre LGA_StickyNote.py y LGA_backdrop.py
+
+**Problema identificado**:
+El usuario reportó que cuando importaba LGA_backdrop.py, los otros scripts (LGA_StickyNote y LGA_NodeLabel) dejaban de funcionar correctamente. El problema eran funciones y variables con nombres idénticos entre los scripts.
+
+**Conflictos encontrados**:
+1. **Variables globales duplicadas**:
+   - `SHADOW_BLUR_RADIUS`, `SHADOW_OPACITY`, `SHADOW_OFFSET_X`, `SHADOW_OFFSET_Y`, `SHADOW_MARGIN`
+   - `DEBUG`
+
+2. **Funciones duplicadas**:
+   - `debug_print()`
+   - `setup_ui()`, `setup_connections()`
+   - `show_custom_tooltip()`, `hide_custom_tooltip()`
+   - `start_move()`, `move_window()`, `stop_move()`
+
+**Cambios implementados**:
+1. **Variables renombradas con prefijo único**:
+   ```python
+   # ANTES
+   SHADOW_BLUR_RADIUS = 25
+   SHADOW_OPACITY = 60
+   DEBUG = False
+   
+   # DESPUÉS
+   BACKDROP_SHADOW_BLUR_RADIUS = 25
+   BACKDROP_SHADOW_OPACITY = 60
+   BACKDROP_DEBUG = False
+   ```
+
+2. **Funciones renombradas con prefijo único**:
+   ```python
+   # ANTES
+   def debug_print(*message):
+   def setup_ui(self):
+   def setup_connections(self):
+   def show_custom_tooltip(self, text, widget):
+   def hide_custom_tooltip(self):
+   def start_move(self, event):
+   def move_window(self, event):
+   def stop_move(self, event):
+   
+   # DESPUÉS
+   def backdrop_debug_print(*message):
+   def backdrop_setup_ui(self):
+   def backdrop_setup_connections(self):
+   def backdrop_show_custom_tooltip(self, text, widget):
+   def backdrop_hide_custom_tooltip(self):
+   def backdrop_start_move(self, event):
+   def backdrop_move_window(self, event):
+   def backdrop_stop_move(self, event):
+   ```
+
+3. **Método run() renombrado**:
+   ```python
+   # ANTES
+   def run(self):
+   
+   # DESPUÉS
+   def show_backdrop_dialog(self):
+   ```
+
+4. **Instanciación tardía implementada**:
+   - Agregado comentario explicativo sobre lazy initialization
+   - Los widgets se crean solo cuando se ejecuta `show_text_dialog()`
+   - No hay instanciación global al importar el módulo
+
+**Resultado**: ✅ **SOLUCIONADO**
+- Eliminados todos los conflictos de nombres entre scripts
+- Cada script ahora tiene funciones y variables con nombres únicos
+- Los tres scripts (LGA_StickyNote, LGA_NodeLabel, LGA_backdrop) pueden coexistir sin interferencias
+
+**Archivos modificados**:
+- `LGA_ToolPack-Layout/LGA_backdrop/LGA_backdrop.py`: Renombradas todas las funciones y variables conflictivas
+
+---
+
 ## ESTADO ACTUAL
 
 **Problema**: Todas las modificaciones probadas hasta el momento NO han solucionado los cuelgues de Nuke.
