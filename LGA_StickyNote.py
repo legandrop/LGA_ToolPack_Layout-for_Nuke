@@ -18,7 +18,7 @@ from LGA_StickyNote_Utils import (
 
 
 # Variable global para activar o desactivar los prints
-DEBUG = True
+DEBUG = False
 
 # Margen vertical para la interfaz de usuario
 UI_MARGIN_Y = 20
