@@ -1260,13 +1260,13 @@ class StickyNoteEditor(QtWidgets.QDialog):
         start_index = 0
         end_index = len(lines)
 
-        # Verificar si hay flecha arriba (dos primeras líneas son "^" y "|")
-        if len(lines) >= 2 and lines[0] == "^" and lines[1] == "|":
-            start_index = 2
+        # Verificar si hay flecha arriba (primera línea es "↑")
+        if len(lines) >= 1 and lines[0] == "↑":
+            start_index = 1
 
-        # Verificar si hay flecha abajo (dos últimas líneas son "|" y "v")
-        if len(lines) >= 2 and lines[-2] == "|" and lines[-1] == "v":
-            end_index = len(lines) - 2
+        # Verificar si hay flecha abajo (última línea es "↓")
+        if len(lines) >= 1 and lines[-1] == "↓":
+            end_index = len(lines) - 1
 
         # Obtener solo las líneas de texto (sin flechas arriba/abajo)
         text_lines = lines[start_index:end_index]
@@ -1279,16 +1279,16 @@ class StickyNoteEditor(QtWidgets.QDialog):
         center_line_index_in_full = start_index + center_line_index_in_text
         center_line = lines[center_line_index_in_full]
 
-        # Verificar si ya existe "<--" en la línea central
-        if "<--" in center_line:
+        # Verificar si ya existe "←" en la línea central
+        if "←" in center_line:
             # Remover la flecha
-            new_center_line = center_line.replace("<--", "").strip()
+            new_center_line = center_line.replace("←", "").strip()
         else:
             # Agregar la flecha
             if center_line.strip():
-                new_center_line = "<-- " + center_line
+                new_center_line = "← " + center_line
             else:
-                new_center_line = "<--"
+                new_center_line = "←"
 
         # Actualizar la línea en el array
         lines[center_line_index_in_full] = new_center_line
@@ -1305,7 +1305,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.on_text_changed()
 
         print(
-            f"Flecha izquierda {'removida' if '<--' not in new_center_line else 'agregada'} en línea central del texto"
+            f"Flecha izquierda {'removida' if '←' not in new_center_line else 'agregada'} en línea central del texto"
         )
 
     def on_right_arrow_clicked(self):
@@ -1324,13 +1324,13 @@ class StickyNoteEditor(QtWidgets.QDialog):
         start_index = 0
         end_index = len(lines)
 
-        # Verificar si hay flecha arriba (dos primeras líneas son "^" y "|")
-        if len(lines) >= 2 and lines[0] == "^" and lines[1] == "|":
-            start_index = 2
+        # Verificar si hay flecha arriba (primera línea es "↑")
+        if len(lines) >= 1 and lines[0] == "↑":
+            start_index = 1
 
-        # Verificar si hay flecha abajo (dos últimas líneas son "|" y "v")
-        if len(lines) >= 2 and lines[-2] == "|" and lines[-1] == "v":
-            end_index = len(lines) - 2
+        # Verificar si hay flecha abajo (última línea es "↓")
+        if len(lines) >= 1 and lines[-1] == "↓":
+            end_index = len(lines) - 1
 
         # Obtener solo las líneas de texto (sin flechas arriba/abajo)
         text_lines = lines[start_index:end_index]
@@ -1343,16 +1343,16 @@ class StickyNoteEditor(QtWidgets.QDialog):
         center_line_index_in_full = start_index + center_line_index_in_text
         center_line = lines[center_line_index_in_full]
 
-        # Verificar si ya existe "-->" en la línea central
-        if "-->" in center_line:
+        # Verificar si ya existe "→" en la línea central
+        if "→" in center_line:
             # Remover la flecha
-            new_center_line = center_line.replace("-->", "").strip()
+            new_center_line = center_line.replace("→", "").strip()
         else:
             # Agregar la flecha
             if center_line.strip():
-                new_center_line = center_line + " -->"
+                new_center_line = center_line + " →"
             else:
-                new_center_line = "-->"
+                new_center_line = "→"
 
         # Actualizar la línea en el array
         lines[center_line_index_in_full] = new_center_line
@@ -1369,7 +1369,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.on_text_changed()
 
         print(
-            f"Flecha derecha {'removida' if '-->' not in new_center_line else 'agregada'} en línea central del texto"
+            f"Flecha derecha {'removida' if '→' not in new_center_line else 'agregada'} en línea central del texto"
         )
 
     def on_up_arrow_clicked(self):
@@ -1380,15 +1380,14 @@ class StickyNoteEditor(QtWidgets.QDialog):
         current_text = self.text_edit.toPlainText()
         lines = current_text.split("\n")
 
-        # Verificar si ya existe la flecha arriba (dos primeras líneas son "^" y "|")
-        if len(lines) >= 2 and lines[0] == "^" and lines[1] == "|":
-            # Remover la flecha arriba (eliminar las dos primeras líneas)
-            lines = lines[2:]
+        # Verificar si ya existe la flecha arriba (primera línea es "↑")
+        if len(lines) >= 1 and lines[0] == "↑":
+            # Remover la flecha arriba (eliminar la primera línea)
+            lines = lines[1:]
             print("Flecha arriba removida del comienzo del texto")
         else:
             # Agregar la flecha arriba al comienzo
-            lines.insert(0, "|")
-            lines.insert(0, "^")
+            lines.insert(0, "↑")
             print("Flecha arriba agregada al comienzo del texto")
 
         # Reconstruir el texto
@@ -1410,15 +1409,14 @@ class StickyNoteEditor(QtWidgets.QDialog):
         current_text = self.text_edit.toPlainText()
         lines = current_text.split("\n")
 
-        # Verificar si ya existe la flecha abajo (dos últimas líneas son "|" y "v")
-        if len(lines) >= 2 and lines[-2] == "|" and lines[-1] == "v":
-            # Remover la flecha abajo (eliminar las dos últimas líneas)
-            lines = lines[:-2]
+        # Verificar si ya existe la flecha abajo (última línea es "↓")
+        if len(lines) >= 1 and lines[-1] == "↓":
+            # Remover la flecha abajo (eliminar la última línea)
+            lines = lines[:-1]
             print("Flecha abajo removida del final del texto")
         else:
             # Agregar la flecha abajo al final
-            lines.append("|")
-            lines.append("v")
+            lines.append("↓")
             print("Flecha abajo agregada al final del texto")
 
         # Reconstruir el texto

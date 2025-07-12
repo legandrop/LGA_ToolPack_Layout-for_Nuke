@@ -119,6 +119,15 @@ def extract_clean_text_and_margins(text):
     margin_x_detected = 0
     margin_y_detected = 0
 
+    # --- Filtrar flechas verticales (nueva lógica para símbolos Unicode) ---
+    # Remover flecha arriba si existe (primera línea es "↑")
+    if len(lines) >= 1 and lines[0].strip() == "↑":
+        lines = lines[1:]
+
+    # Remover flecha abajo si existe (última línea es "↓")
+    if len(lines) >= 1 and lines[-1].strip() == "↓":
+        lines = lines[:-1]
+
     # --- Detección de Margin X: buscar primera línea con contenido ---
     for line in lines:
         if line.strip():
