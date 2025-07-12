@@ -1151,10 +1151,15 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.font_size_value.setText(str(current_font_size))
         self.font_size_slider.blockSignals(False)
 
-        # Cargar margin X
+        # Cargar margin X - Si es un nodo nuevo, usar margin X = 2 por defecto
+        if self.state_manager.is_new_node:
+            margin_x_to_use = 2
+        else:
+            margin_x_to_use = margin_x_detected
+
         self.margin_slider.blockSignals(True)
-        self.margin_slider.setValue(margin_x_detected)
-        self.margin_value.setText(str(margin_x_detected))
+        self.margin_slider.setValue(margin_x_to_use)
+        self.margin_value.setText(str(margin_x_to_use))
         self.margin_slider.blockSignals(False)
 
         # Cargar margin Y
@@ -1165,6 +1170,10 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
         # Establecer el nodo en el widget de colores
         self.color_swatch_widget.set_node(self.sticky_node)
+
+        # Si es un nodo nuevo, aplicar el margin X por defecto
+        if self.state_manager.is_new_node:
+            self.on_text_changed()  # Esto aplicará el margin X = 2 al texto
 
     def on_text_changed(self):
         """Callback cuando cambia el texto"""
