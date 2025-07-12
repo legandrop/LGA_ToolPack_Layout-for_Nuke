@@ -1,7 +1,7 @@
 """
 _______________________________________________
 
-  LGA_StickyNote v1.90 | Lega
+  LGA_StickyNote v1.91 | Lega
   Editor en tiempo real para StickyNotes en el Node Graph
 _______________________________________________
 
@@ -518,6 +518,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.sticky_node = None
         self.drag_position = None  # Para el arrastre de la ventana
         self.state_manager = StickyNoteStateManager()  # Gestor de estado
+        self.undo_started = False  # Flag para controlar si se inicio el undo
 
         # DESHABILITAR COMPLETAMENTE EL SISTEMA DE DEBOUNCING
         # Comentando todo el sistema de timer para evitar loops
@@ -1550,12 +1551,11 @@ class StickyNoteEditor(QtWidgets.QDialog):
     def on_cancel_clicked(self):
         """Callback cuando se hace click en Cancel"""
         try:
-            # Usar el gestor de estado para manejar la cancelación
-            success = self.state_manager.handle_cancel_action()
-            if success:
-                print("Acción de cancelación completada exitosamente")
-            else:
-                print("No se pudo completar la acción de cancelación")
+            # Cancelar el undo (no crear punto de undo)
+            self._cancel_undo_group()
+            print(
+                "Acción de cancelación completada exitosamente - No se creó punto de undo"
+            )
         except Exception as e:
             print(f"Error durante la cancelación: {e}")
         finally:
@@ -1570,12 +1570,9 @@ class StickyNoteEditor(QtWidgets.QDialog):
             # self.update_timer.stop()
             # self._pending_update = False
 
-            # Usar el gestor de estado para confirmar los cambios
-            success = self.state_manager.handle_ok_action()
-            if success:
-                print("Cambios confirmados exitosamente")
-            else:
-                print("No se pudieron confirmar los cambios")
+            # Finalizar el grupo de undo (crear punto de undo)
+            self._end_undo_group()
+            print("Cambios confirmados exitosamente - Punto de undo creado")
         except Exception as e:
             print(f"Error durante la confirmación: {e}")
         finally:
@@ -1583,9 +1580,49 @@ class StickyNoteEditor(QtWidgets.QDialog):
             self._cleanup_resources()
             self.close()
 
+    def _start_undo_group(self):
+        """Inicia un grupo de undo para todas las operaciones del StickyNote"""
+        try:
+            if not self.undo_started:
+                nuke.Undo().begin("Edit StickyNote")
+                self.undo_started = True
+                debug_print("Grupo de undo iniciado")
+        except Exception as e:
+            print(f"Error al iniciar grupo de undo: {e}")
+
+    def _end_undo_group(self):
+        """Finaliza el grupo de undo creando un punto de undo"""
+        try:
+            if self.undo_started:
+                nuke.Undo().end()
+                self.undo_started = False
+                debug_print("Grupo de undo finalizado - Punto de undo creado")
+        except Exception as e:
+            print(f"Error al finalizar grupo de undo: {e}")
+
+    def _cancel_undo_group(self):
+        """Cancela el grupo de undo sin crear punto de undo"""
+        try:
+            if self.undo_started:
+                # Cancelar el undo deshaciendo todos los cambios
+                nuke.Undo().cancel()
+                self.undo_started = False
+                debug_print("Grupo de undo cancelado - Cambios revertidos")
+        except Exception as e:
+            print(f"Error al cancelar grupo de undo: {e}")
+
     def _cleanup_resources(self):
         """Limpieza completa de recursos para evitar memory leaks"""
         try:
+            # Asegurarse de que el undo esté cerrado si aún está abierto
+            if self.undo_started:
+                try:
+                    nuke.Undo().cancel()
+                    self.undo_started = False
+                    debug_print("Grupo de undo cancelado durante limpieza")
+                except:
+                    pass
+
             # Desconectar todas las señales de forma segura
             self._disconnect_all_signals()
 
@@ -1648,11 +1685,18 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
     def closeEvent(self, event):
         """Se ejecuta cuando se cierra el diálogo - limpieza automática"""
+        # Si el diálogo se cierra sin OK ni Cancel, cancelar el undo
+        if self.undo_started:
+            self._cancel_undo_group()
+            debug_print("Diálogo cerrado sin OK/Cancel - Undo cancelado")
         self._cleanup_resources()
         super().closeEvent(event)
 
     def show_sticky_note_editor(self):
         """Ejecuta el editor de sticky note con nombre único"""
+        # Iniciar el grupo de undo ANTES de crear o modificar cualquier nodo
+        self._start_undo_group()
+
         # Obtener o crear el sticky note
         self.get_or_create_sticky_note()
 
