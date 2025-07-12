@@ -1139,6 +1139,10 @@ class StickyNoteEditor(QtWidgets.QDialog):
         # Posicionar la ventana respecto al sticky note
         self.position_window_relative_to_sticky()
 
+        # Ajustar el ancho de la ventana después de que se haya ajustado el tamaño inicial
+        current_width = self.width()
+        self.setFixedWidth(current_width - 140)
+
         # Mostrar el diálogo
         self.show()
 
@@ -1296,8 +1300,14 @@ def main():
 def run_sticky_note_editor():
     """Mostrar el editor de StickyNote dentro de Nuke"""
     global sticky_editor
-    if sticky_editor is None:
-        sticky_editor = StickyNoteEditor()
+
+    # Si ya existe una instancia del editor, cerrarla y eliminarla
+    if sticky_editor is not None and isinstance(sticky_editor, QtWidgets.QDialog):
+        sticky_editor.close()
+        sticky_editor.deleteLater()  # Borrar el objeto de la memoria de forma segura
+        sticky_editor = None  # Resetear la variable global
+
+    sticky_editor = StickyNoteEditor()
     sticky_editor.run()
 
 
