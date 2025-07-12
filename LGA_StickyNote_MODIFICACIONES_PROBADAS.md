@@ -305,6 +305,46 @@ def _cleanup_resources(self):
 
 ---
 
+### 9. **NOVENA CORRECCIÓN: PATRÓN SINGLETON COMO KULABELER.PY (NO FUNCIONÓ)**
+**Fecha**: Implementación más reciente
+**Descripción**: Cambiar el patrón de instanciación múltiple por un patrón singleton como kulabeler.py
+
+**Cambios realizados**:
+- Crear instancia global única al importar: `STICKY_EDITOR_INSTANCE = StickyNoteEditor()`
+- Modificar `run_sticky_note_editor()` para usar la instancia global
+- Cambiar `close()` por `hide()` en botones Cancel y OK
+- Agregar verificación `if self.isVisible()` en método `run()`
+- Aplicar mismos cambios a `LGA_NodeLabel.py`
+
+**Código implementado**:
+```python
+# Crear instancia global única al importar el módulo (como kulabeler.py)
+STICKY_EDITOR_INSTANCE = StickyNoteEditor()
+
+def run_sticky_note_editor():
+    """Mostrar el editor de StickyNote dentro de Nuke usando patrón singleton"""
+    global STICKY_EDITOR_INSTANCE
+    # Usar la instancia global única, igual que kulabeler.py
+    STICKY_EDITOR_INSTANCE.run()
+
+def run(self):
+    """Ejecuta el editor usando patrón similar a kulabeler.py"""
+    # Si ya está visible, solo traer al frente
+    if self.isVisible():
+        self.raise_()
+        self.activateWindow()
+        return
+    # ... resto del código
+
+def on_cancel_clicked(self):
+    # Solo ocultar la ventana, no cerrarla (como kulabeler.py)
+    self.hide()
+```
+
+**Resultado**: NO FUNCIONÓ - Crasheó inmediatamente
+
+---
+
 ## ESTADO ACTUAL
 
 **Problema**: Todas las modificaciones probadas hasta el momento NO han solucionado los cuelgues de Nuke.
@@ -324,5 +364,60 @@ def _cleanup_resources(self):
 
 ---
 
+## NUEVO CULPABLE IDENTIFICADO
+
+### **10. POSIBLE CULPABLE: INSTANCIACIÓN DE WIDGETS AL IMPORTAR**
+**Fecha**: Análisis actual
+**Descripción**: El problema puede estar en crear instancias de widgets Qt al momento de importar el módulo
+
+**Problema identificado**:
+```python
+# Crear instancia global única al importar el módulo (como kulabeler.py)
+STICKY_EDITOR_INSTANCE = StickyNoteEditor()
+```
+
+**Diferencias con kulabeler.py**:
+- **kulabeler.py**: Crea instancia simple sin UI compleja al importar
+- **LGA_StickyNote.py**: Crea instancia compleja con UI, sombras, efectos, widgets anidados al importar
+
+**Posibles causas del crash**:
+1. **Inicialización prematura**: UI se crea antes de que Nuke esté completamente cargado
+2. **Widgets Qt complejos**: Efectos de sombra, transparencias, widgets anidados en momento de importación
+3. **Múltiples importaciones**: Si el módulo se importa varias veces, se crean múltiples instancias
+4. **Conflictos de nombres**: Múltiples scripts con método `run()` pueden interferir
+
+**Próxima acción**: Cambiar patrón de instanciación tardía (lazy initialization)
+
+---
+
 **Archivo creado**: `LGA_StickyNote_MODIFICACIONES_PROBADAS.md`  
 **Fecha de última actualización**: Enero 2025 
+
+---
+
+## RESUMEN DE CAMBIOS IMPLEMENTADOS
+
+He completado las dos correcciones que solicitaste:
+
+### **1. ✅ CAMBIO DE NOMBRES DE MÉTODOS**
+- **LGA_StickyNote.py**: `def run()` → `def show_sticky_note_editor()`
+- **LGA_NodeLabel.py**: `def run()` → `def show_node_label_editor()`
+- Actualizado todas las llamadas a estos métodos en las funciones `main()` y `run_*_editor()`
+
+### **2. ✅ INSTANCIACIÓN TARDÍA (LAZY INITIALIZATION)**
+- **Eliminado**: Creación de widgets al importar el módulo
+- **Implementado**: Los widgets se crean solo cuando se ejecuta la función `run_*_editor()`
+- **Agregado**: Mensajes de debug para confirmar cuándo se crean las instancias
+
+### **POSIBLES CULPABLES IDENTIFICADOS Y CORREGIDOS:**
+
+1. **Conflictos de nombres**: Método `run()` usado en múltiples scripts ✅ **CORREGIDO**
+2. **Instanciación prematura**: Widgets creados al importar antes de que Nuke esté listo ✅ **CORREGIDO**
+3. **Inicialización de UI compleja**: Ahora se posterga hasta que realmente se necesite ✅ **CORREGIDO**
+
+### **PRÓXIMOS PASOS:**
+El archivo Feedback.txt parece estar vacío o inaccesible. Los cambios están listos para probar:
+
+1. **Probar los scripts** en Nuke para ver si los cuelgues desaparecen
+2. **Verificar** que los nombres únicos de métodos eviten conflictos
+3. **Confirmar** que la instanciación tardía elimine los crashes al importar 

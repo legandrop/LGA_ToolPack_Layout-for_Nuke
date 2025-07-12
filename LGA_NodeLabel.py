@@ -339,8 +339,8 @@ class NodeLabelEditor(QtWidgets.QDialog):
         self.text_edit.setFocus()
         self.text_edit.selectAll()
 
-    def run(self):
-        """Ejecuta el editor"""
+    def show_node_label_editor(self):
+        """Ejecuta el editor de node label con nombre único"""
         # Obtener el nodo seleccionado
         if not self.get_selected_node():
             nuke.message("Por favor selecciona un nodo para editar su label.")
@@ -463,16 +463,19 @@ def main():
     global app, node_label_editor
     app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
     node_label_editor = NodeLabelEditor()
-    node_label_editor.run()
+    node_label_editor.show_node_label_editor()
 
 
-# Para uso en Nuke
+# Para uso en Nuke - INSTANCIACIÓN TARDÍA
 def run_node_label_editor():
-    """Mostrar el editor de Node Label dentro de Nuke"""
+    """Mostrar el editor de Node Label dentro de Nuke usando instanciación tardía"""
     global node_label_editor
+
+    # INSTANCIACIÓN TARDÍA: Solo crear cuando se necesite
     if node_label_editor is None:
+        print("Creando instancia de NodeLabelEditor con instanciación tardía...")
         node_label_editor = NodeLabelEditor()
-    node_label_editor.run()
+    node_label_editor.show_node_label_editor()
 
 
 # Ejecutar cuando se carga en Nuke

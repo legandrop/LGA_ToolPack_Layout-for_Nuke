@@ -105,7 +105,7 @@ n.addCommand(
 
 
 # Flag para elegir entre LGA_backdrop o oz_backdrop
-USE_LGA_BACKDROP = True  # Cambiar a False para usar oz_backdrop
+USE_LGA_BACKDROP = False  # Cambiar a False para usar oz_backdrop
 
 if USE_LGA_BACKDROP:
     # Importar el LGA_backdrop

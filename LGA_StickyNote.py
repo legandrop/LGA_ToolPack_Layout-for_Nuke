@@ -1651,8 +1651,8 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self._cleanup_resources()
         super().closeEvent(event)
 
-    def run(self):
-        """Ejecuta el editor"""
+    def show_sticky_note_editor(self):
+        """Ejecuta el editor de sticky note con nombre único"""
         # Obtener o crear el sticky note
         self.get_or_create_sticky_note()
 
@@ -1816,14 +1816,15 @@ def main():
     global app, lga_sticky_note_editor_instance
     app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
     lga_sticky_note_editor_instance = StickyNoteEditor()
-    lga_sticky_note_editor_instance.run()
+    lga_sticky_note_editor_instance.show_sticky_note_editor()
 
 
-# Para uso en Nuke
+# Para uso en Nuke - INSTANCIACIÓN TARDÍA
 def run_sticky_note_editor():
-    """Mostrar el editor de StickyNote dentro de Nuke"""
+    """Mostrar el editor de StickyNote dentro de Nuke usando instanciación tardía"""
     global lga_sticky_note_editor_instance
 
+    # INSTANCIACIÓN TARDÍA: Solo crear cuando se necesite
     # Verificar que no haya instancias de otros scripts conflictivos
     app_instance = QtWidgets.QApplication.instance()
     if app_instance:
@@ -1866,10 +1867,11 @@ def run_sticky_note_editor():
         finally:
             lga_sticky_note_editor_instance = None  # Resetear la variable global
 
-    # Crear nueva instancia con verificación adicional
+    # INSTANCIACIÓN TARDÍA: Crear solo cuando se ejecuta la función
     try:
+        print("Creando instancia de StickyNoteEditor con instanciación tardía...")
         lga_sticky_note_editor_instance = StickyNoteEditor()
-        lga_sticky_note_editor_instance.run()
+        lga_sticky_note_editor_instance.show_sticky_note_editor()
         print(
             f"LGA_StickyNote iniciado correctamente - Namespace: {LGA_STICKY_NOTE_NAMESPACE}"
         )
