@@ -890,9 +890,119 @@ class StickyNoteEditor(QtWidgets.QDialog):
         # Instalar filtro de eventos para manejar Ctrl+Enter
         self.right_arrow_button.installEventFilter(self)
 
+        # Botón de flecha arriba
+        self.up_arrow_button = QtWidgets.QPushButton()
+        self.up_arrow_button.setToolTip("Add up arrow")
+        self.up_arrow_button.setFixedSize(
+            QtCore.QSize(LINE_HEIGHT, LINE_HEIGHT)
+        )  # Ajustar tamaño del botón
+
+        # Rutas de los iconos para flecha arriba (mismo icono rotado -90°)
+        self.up_arrow_icon_path = os.path.join(icons_path, "lga_right_arrow.png")
+        self.up_arrow_hover_icon_path = os.path.join(
+            icons_path, "lga_right_arrow_hover.png"
+        )
+
+        # Cargar el icono normal rotado -90°
+        if os.path.exists(self.up_arrow_icon_path):
+            # Cargar el pixmap original
+            pixmap = QtGui.QPixmap(self.up_arrow_icon_path)
+            # Crear una transformación de rotación de -90°
+            transform = QtGui.QTransform().rotate(-90)
+            # Aplicar la transformación al pixmap
+            rotated_pixmap = pixmap.transformed(
+                transform, QtCore.Qt.SmoothTransformation
+            )
+            # Crear el icono con el pixmap rotado
+            icon = QtGui.QIcon(rotated_pixmap)
+            self.up_arrow_button.setIcon(icon)
+            self.up_arrow_button.setIconSize(QtCore.QSize(20, 20))
+
+        # Aplicar estilo CSS al botón
+        self.up_arrow_button.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #1f1f1f;
+                border: none;
+                padding: 0px;
+                border-radius: 8px;
+            }
+            QPushButton:hover {
+                background-color: #1f1f1f;
+            }
+            QPushButton:pressed {
+                background-color: #1f1f1f;
+            }
+        """
+        )
+
+        # Conectar eventos del botón
+        self.up_arrow_button.clicked.connect(self.on_up_arrow_clicked)
+        self.up_arrow_button.enterEvent = self.on_up_arrow_enter
+        self.up_arrow_button.leaveEvent = self.on_up_arrow_leave
+
+        # Instalar filtro de eventos para manejar Ctrl+Enter
+        self.up_arrow_button.installEventFilter(self)
+
+        # Botón de flecha abajo
+        self.down_arrow_button = QtWidgets.QPushButton()
+        self.down_arrow_button.setToolTip("Add down arrow")
+        self.down_arrow_button.setFixedSize(
+            QtCore.QSize(LINE_HEIGHT, LINE_HEIGHT)
+        )  # Ajustar tamaño del botón
+
+        # Rutas de los iconos para flecha abajo (mismo icono rotado 90°)
+        self.down_arrow_icon_path = os.path.join(icons_path, "lga_right_arrow.png")
+        self.down_arrow_hover_icon_path = os.path.join(
+            icons_path, "lga_right_arrow_hover.png"
+        )
+
+        # Cargar el icono normal rotado 90°
+        if os.path.exists(self.down_arrow_icon_path):
+            # Cargar el pixmap original
+            pixmap = QtGui.QPixmap(self.down_arrow_icon_path)
+            # Crear una transformación de rotación de 90°
+            transform = QtGui.QTransform().rotate(90)
+            # Aplicar la transformación al pixmap
+            rotated_pixmap = pixmap.transformed(
+                transform, QtCore.Qt.SmoothTransformation
+            )
+            # Crear el icono con el pixmap rotado
+            icon = QtGui.QIcon(rotated_pixmap)
+            self.down_arrow_button.setIcon(icon)
+            self.down_arrow_button.setIconSize(QtCore.QSize(20, 20))
+
+        # Aplicar estilo CSS al botón
+        self.down_arrow_button.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #1f1f1f;
+                border: none;
+                padding: 0px;
+                border-radius: 8px;
+            }
+            QPushButton:hover {
+                background-color: #1f1f1f;
+            }
+            QPushButton:pressed {
+                background-color: #1f1f1f;
+            }
+        """
+        )
+
+        # Conectar eventos del botón
+        self.down_arrow_button.clicked.connect(self.on_down_arrow_clicked)
+        self.down_arrow_button.enterEvent = self.on_down_arrow_enter
+        self.down_arrow_button.leaveEvent = self.on_down_arrow_leave
+
+        # Instalar filtro de eventos para manejar Ctrl+Enter
+        self.down_arrow_button.installEventFilter(self)
+
         arrows_layout.addWidget(arrows_label)
         arrows_layout.addWidget(self.left_arrow_button)
         arrows_layout.addWidget(self.right_arrow_button)
+        arrows_layout.addWidget(self.up_arrow_button)
+        arrows_layout.addWidget(self.down_arrow_button)
         arrows_layout.addStretch()  # Spacer para empujar todo a la izquierda
 
         # Widget de colores
@@ -1179,6 +1289,66 @@ class StickyNoteEditor(QtWidgets.QDialog):
             f"Flecha derecha {'removida' if '-->' not in new_center_line else 'agregada'} en línea central"
         )
 
+    def on_up_arrow_clicked(self):
+        """Callback cuando se hace click en el botón de flecha arriba"""
+        if not self.sticky_node:
+            return
+
+        current_text = self.text_edit.toPlainText()
+        lines = current_text.split("\n")
+
+        # Verificar si ya existe la flecha arriba (dos primeras líneas son "^" y "|")
+        if len(lines) >= 2 and lines[0] == "^" and lines[1] == "|":
+            # Remover la flecha arriba (eliminar las dos primeras líneas)
+            lines = lines[2:]
+            print("Flecha arriba removida del comienzo del texto")
+        else:
+            # Agregar la flecha arriba al comienzo
+            lines.insert(0, "|")
+            lines.insert(0, "^")
+            print("Flecha arriba agregada al comienzo del texto")
+
+        # Reconstruir el texto
+        new_text = "\n".join(lines)
+
+        # Actualizar el editor
+        self.text_edit.blockSignals(True)
+        self.text_edit.setPlainText(new_text)
+        self.text_edit.blockSignals(False)
+
+        # Actualizar el sticky note
+        self.on_text_changed()
+
+    def on_down_arrow_clicked(self):
+        """Callback cuando se hace click en el botón de flecha abajo"""
+        if not self.sticky_node:
+            return
+
+        current_text = self.text_edit.toPlainText()
+        lines = current_text.split("\n")
+
+        # Verificar si ya existe la flecha abajo (dos últimas líneas son "|" y "v")
+        if len(lines) >= 2 and lines[-2] == "|" and lines[-1] == "v":
+            # Remover la flecha abajo (eliminar las dos últimas líneas)
+            lines = lines[:-2]
+            print("Flecha abajo removida del final del texto")
+        else:
+            # Agregar la flecha abajo al final
+            lines.append("|")
+            lines.append("v")
+            print("Flecha abajo agregada al final del texto")
+
+        # Reconstruir el texto
+        new_text = "\n".join(lines)
+
+        # Actualizar el editor
+        self.text_edit.blockSignals(True)
+        self.text_edit.setPlainText(new_text)
+        self.text_edit.blockSignals(False)
+
+        # Actualizar el sticky note
+        self.on_text_changed()
+
     def on_left_arrow_enter(self, event):
         """Cambia el icono a la version hover cuando el ratón entra"""
         if hasattr(self, "left_arrow_button") and os.path.exists(
@@ -1228,6 +1398,72 @@ class StickyNoteEditor(QtWidgets.QDialog):
             self.right_arrow_icon_path
         ):
             self.right_arrow_button.setIcon(QtGui.QIcon(self.right_arrow_icon_path))
+
+    def on_up_arrow_enter(self, event):
+        """Cambia el icono a la version hover cuando el ratón entra"""
+        if hasattr(self, "up_arrow_button") and os.path.exists(
+            self.up_arrow_hover_icon_path
+        ):
+            # Cargar el pixmap hover original
+            pixmap = QtGui.QPixmap(self.up_arrow_hover_icon_path)
+            # Crear una transformación de rotación de -90°
+            transform = QtGui.QTransform().rotate(-90)
+            # Aplicar la transformación al pixmap
+            rotated_pixmap = pixmap.transformed(
+                transform, QtCore.Qt.SmoothTransformation
+            )
+            # Crear el icono con el pixmap rotado
+            icon = QtGui.QIcon(rotated_pixmap)
+            self.up_arrow_button.setIcon(icon)
+
+    def on_up_arrow_leave(self, event):
+        """Cambia el icono a la version normal cuando el ratón sale"""
+        if hasattr(self, "up_arrow_button") and os.path.exists(self.up_arrow_icon_path):
+            # Cargar el pixmap normal original
+            pixmap = QtGui.QPixmap(self.up_arrow_icon_path)
+            # Crear una transformación de rotación de -90°
+            transform = QtGui.QTransform().rotate(-90)
+            # Aplicar la transformación al pixmap
+            rotated_pixmap = pixmap.transformed(
+                transform, QtCore.Qt.SmoothTransformation
+            )
+            # Crear el icono con el pixmap rotado
+            icon = QtGui.QIcon(rotated_pixmap)
+            self.up_arrow_button.setIcon(icon)
+
+    def on_down_arrow_enter(self, event):
+        """Cambia el icono a la version hover cuando el ratón entra"""
+        if hasattr(self, "down_arrow_button") and os.path.exists(
+            self.down_arrow_hover_icon_path
+        ):
+            # Cargar el pixmap hover original
+            pixmap = QtGui.QPixmap(self.down_arrow_hover_icon_path)
+            # Crear una transformación de rotación de 90°
+            transform = QtGui.QTransform().rotate(90)
+            # Aplicar la transformación al pixmap
+            rotated_pixmap = pixmap.transformed(
+                transform, QtCore.Qt.SmoothTransformation
+            )
+            # Crear el icono con el pixmap rotado
+            icon = QtGui.QIcon(rotated_pixmap)
+            self.down_arrow_button.setIcon(icon)
+
+    def on_down_arrow_leave(self, event):
+        """Cambia el icono a la version normal cuando el ratón sale"""
+        if hasattr(self, "down_arrow_button") and os.path.exists(
+            self.down_arrow_icon_path
+        ):
+            # Cargar el pixmap normal original
+            pixmap = QtGui.QPixmap(self.down_arrow_icon_path)
+            # Crear una transformación de rotación de 90°
+            transform = QtGui.QTransform().rotate(90)
+            # Aplicar la transformación al pixmap
+            rotated_pixmap = pixmap.transformed(
+                transform, QtCore.Qt.SmoothTransformation
+            )
+            # Crear el icono con el pixmap rotado
+            icon = QtGui.QIcon(rotated_pixmap)
+            self.down_arrow_button.setIcon(icon)
 
     def on_cancel_clicked(self):
         """Callback cuando se hace click en Cancel"""
