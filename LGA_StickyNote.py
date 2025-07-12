@@ -790,6 +790,61 @@ class StickyNoteEditor(QtWidgets.QDialog):
             QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
         )  # Asegurar que la altura sea fija
 
+        # Botón de flecha izquierda
+        self.left_arrow_button = QtWidgets.QPushButton()
+        self.left_arrow_button.setToolTip("Add left arrow")
+        self.left_arrow_button.setFixedSize(
+            QtCore.QSize(LINE_HEIGHT, LINE_HEIGHT)
+        )  # Ajustar tamaño del botón
+
+        # Rutas de los iconos para flecha izquierda (mismo icono rotado 180°)
+        icons_path = os.path.join(os.path.dirname(__file__), "icons")
+        self.left_arrow_icon_path = os.path.join(icons_path, "lga_right_arrow.png")
+        self.left_arrow_hover_icon_path = os.path.join(
+            icons_path, "lga_right_arrow_hover.png"
+        )
+
+        # Cargar el icono normal rotado 180°
+        if os.path.exists(self.left_arrow_icon_path):
+            # Cargar el pixmap original
+            pixmap = QtGui.QPixmap(self.left_arrow_icon_path)
+            # Crear una transformación de rotación de 180°
+            transform = QtGui.QTransform().rotate(180)
+            # Aplicar la transformación al pixmap
+            rotated_pixmap = pixmap.transformed(
+                transform, QtCore.Qt.SmoothTransformation
+            )
+            # Crear el icono con el pixmap rotado
+            icon = QtGui.QIcon(rotated_pixmap)
+            self.left_arrow_button.setIcon(icon)
+            self.left_arrow_button.setIconSize(QtCore.QSize(20, 20))
+
+        # Aplicar estilo CSS al botón
+        self.left_arrow_button.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #1f1f1f;
+                border: none;
+                padding: 0px;
+                border-radius: 8px;
+            }
+            QPushButton:hover {
+                background-color: #1f1f1f;
+            }
+            QPushButton:pressed {
+                background-color: #1f1f1f;
+            }
+        """
+        )
+
+        # Conectar eventos del botón
+        self.left_arrow_button.clicked.connect(self.on_left_arrow_clicked)
+        self.left_arrow_button.enterEvent = self.on_left_arrow_enter
+        self.left_arrow_button.leaveEvent = self.on_left_arrow_leave
+
+        # Instalar filtro de eventos para manejar Ctrl+Enter
+        self.left_arrow_button.installEventFilter(self)
+
         # Botón de flecha derecha
         self.right_arrow_button = QtWidgets.QPushButton()
         self.right_arrow_button.setToolTip("Add right arrow")
@@ -798,7 +853,6 @@ class StickyNoteEditor(QtWidgets.QDialog):
         )  # Ajustar tamaño del botón
 
         # Rutas de los iconos
-        icons_path = os.path.join(os.path.dirname(__file__), "icons")
         self.right_arrow_icon_path = os.path.join(icons_path, "lga_right_arrow.png")
         self.right_arrow_hover_icon_path = os.path.join(
             icons_path, "lga_right_arrow_hover.png"
@@ -833,7 +887,11 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.right_arrow_button.enterEvent = self.on_right_arrow_enter
         self.right_arrow_button.leaveEvent = self.on_right_arrow_leave
 
+        # Instalar filtro de eventos para manejar Ctrl+Enter
+        self.right_arrow_button.installEventFilter(self)
+
         arrows_layout.addWidget(arrows_label)
+        arrows_layout.addWidget(self.left_arrow_button)
         arrows_layout.addWidget(self.right_arrow_button)
         arrows_layout.addStretch()  # Spacer para empujar todo a la izquierda
 
@@ -1033,6 +1091,50 @@ class StickyNoteEditor(QtWidgets.QDialog):
             # Actualizar el texto con el nuevo margin
             self.on_text_changed()
 
+    def on_left_arrow_clicked(self):
+        """Callback cuando se hace click en el botón de flecha izquierda"""
+        if not self.sticky_node:
+            return
+
+        current_text = self.text_edit.toPlainText()
+        lines = current_text.split("\n")
+
+        if not lines:
+            return
+
+        # Encontrar la línea central
+        center_line_index = len(lines) // 2
+        center_line = lines[center_line_index]
+
+        # Verificar si ya existe "<--" en la línea central
+        if "<--" in center_line:
+            # Remover la flecha
+            new_center_line = center_line.replace("<--", "").strip()
+        else:
+            # Agregar la flecha
+            if center_line.strip():
+                new_center_line = "<-- " + center_line
+            else:
+                new_center_line = "<--"
+
+        # Actualizar la línea en el array
+        lines[center_line_index] = new_center_line
+
+        # Reconstruir el texto
+        new_text = "\n".join(lines)
+
+        # Actualizar el editor
+        self.text_edit.blockSignals(True)
+        self.text_edit.setPlainText(new_text)
+        self.text_edit.blockSignals(False)
+
+        # Actualizar el sticky note
+        self.on_text_changed()
+
+        print(
+            f"Flecha izquierda {'removida' if '<--' not in new_center_line else 'agregada'} en línea central"
+        )
+
     def on_right_arrow_clicked(self):
         """Callback cuando se hace click en el botón de flecha derecha"""
         if not self.sticky_node:
@@ -1076,6 +1178,40 @@ class StickyNoteEditor(QtWidgets.QDialog):
         print(
             f"Flecha derecha {'removida' if '-->' not in new_center_line else 'agregada'} en línea central"
         )
+
+    def on_left_arrow_enter(self, event):
+        """Cambia el icono a la version hover cuando el ratón entra"""
+        if hasattr(self, "left_arrow_button") and os.path.exists(
+            self.left_arrow_hover_icon_path
+        ):
+            # Cargar el pixmap hover original
+            pixmap = QtGui.QPixmap(self.left_arrow_hover_icon_path)
+            # Crear una transformación de rotación de 180°
+            transform = QtGui.QTransform().rotate(180)
+            # Aplicar la transformación al pixmap
+            rotated_pixmap = pixmap.transformed(
+                transform, QtCore.Qt.SmoothTransformation
+            )
+            # Crear el icono con el pixmap rotado
+            icon = QtGui.QIcon(rotated_pixmap)
+            self.left_arrow_button.setIcon(icon)
+
+    def on_left_arrow_leave(self, event):
+        """Cambia el icono a la version normal cuando el ratón sale"""
+        if hasattr(self, "left_arrow_button") and os.path.exists(
+            self.left_arrow_icon_path
+        ):
+            # Cargar el pixmap normal original
+            pixmap = QtGui.QPixmap(self.left_arrow_icon_path)
+            # Crear una transformación de rotación de 180°
+            transform = QtGui.QTransform().rotate(180)
+            # Aplicar la transformación al pixmap
+            rotated_pixmap = pixmap.transformed(
+                transform, QtCore.Qt.SmoothTransformation
+            )
+            # Crear el icono con el pixmap rotado
+            icon = QtGui.QIcon(rotated_pixmap)
+            self.left_arrow_button.setIcon(icon)
 
     def on_right_arrow_enter(self, event):
         """Cambia el icono a la version hover cuando el ratón entra"""
