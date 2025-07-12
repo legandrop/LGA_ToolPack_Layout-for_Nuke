@@ -792,7 +792,6 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
         # Botón de flecha izquierda
         self.left_arrow_button = QtWidgets.QPushButton()
-        self.left_arrow_button.setToolTip("Add left arrow")
         self.left_arrow_button.setFixedSize(
             QtCore.QSize(LINE_HEIGHT, LINE_HEIGHT)
         )  # Ajustar tamaño del botón
@@ -847,7 +846,6 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
         # Botón de flecha derecha
         self.right_arrow_button = QtWidgets.QPushButton()
-        self.right_arrow_button.setToolTip("Add right arrow")
         self.right_arrow_button.setFixedSize(
             QtCore.QSize(LINE_HEIGHT, LINE_HEIGHT)
         )  # Ajustar tamaño del botón
@@ -892,7 +890,6 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
         # Botón de flecha arriba
         self.up_arrow_button = QtWidgets.QPushButton()
-        self.up_arrow_button.setToolTip("Add up arrow")
         self.up_arrow_button.setFixedSize(
             QtCore.QSize(LINE_HEIGHT, LINE_HEIGHT)
         )  # Ajustar tamaño del botón
@@ -946,7 +943,6 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
         # Botón de flecha abajo
         self.down_arrow_button = QtWidgets.QPushButton()
-        self.down_arrow_button.setToolTip("Add down arrow")
         self.down_arrow_button.setFixedSize(
             QtCore.QSize(LINE_HEIGHT, LINE_HEIGHT)
         )  # Ajustar tamaño del botón
@@ -1212,9 +1208,29 @@ class StickyNoteEditor(QtWidgets.QDialog):
         if not lines:
             return
 
-        # Encontrar la línea central
-        center_line_index = len(lines) // 2
-        center_line = lines[center_line_index]
+        # Filtrar líneas que no son flechas arriba/abajo para calcular la línea central
+        text_lines = []
+        start_index = 0
+        end_index = len(lines)
+
+        # Verificar si hay flecha arriba (dos primeras líneas son "^" y "|")
+        if len(lines) >= 2 and lines[0] == "^" and lines[1] == "|":
+            start_index = 2
+
+        # Verificar si hay flecha abajo (dos últimas líneas son "|" y "v")
+        if len(lines) >= 2 and lines[-2] == "|" and lines[-1] == "v":
+            end_index = len(lines) - 2
+
+        # Obtener solo las líneas de texto (sin flechas arriba/abajo)
+        text_lines = lines[start_index:end_index]
+
+        if not text_lines:
+            return
+
+        # Encontrar la línea central del texto real
+        center_line_index_in_text = len(text_lines) // 2
+        center_line_index_in_full = start_index + center_line_index_in_text
+        center_line = lines[center_line_index_in_full]
 
         # Verificar si ya existe "<--" en la línea central
         if "<--" in center_line:
@@ -1228,7 +1244,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
                 new_center_line = "<--"
 
         # Actualizar la línea en el array
-        lines[center_line_index] = new_center_line
+        lines[center_line_index_in_full] = new_center_line
 
         # Reconstruir el texto
         new_text = "\n".join(lines)
@@ -1242,7 +1258,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.on_text_changed()
 
         print(
-            f"Flecha izquierda {'removida' if '<--' not in new_center_line else 'agregada'} en línea central"
+            f"Flecha izquierda {'removida' if '<--' not in new_center_line else 'agregada'} en línea central del texto"
         )
 
     def on_right_arrow_clicked(self):
@@ -1256,9 +1272,29 @@ class StickyNoteEditor(QtWidgets.QDialog):
         if not lines:
             return
 
-        # Encontrar la línea central
-        center_line_index = len(lines) // 2
-        center_line = lines[center_line_index]
+        # Filtrar líneas que no son flechas arriba/abajo para calcular la línea central
+        text_lines = []
+        start_index = 0
+        end_index = len(lines)
+
+        # Verificar si hay flecha arriba (dos primeras líneas son "^" y "|")
+        if len(lines) >= 2 and lines[0] == "^" and lines[1] == "|":
+            start_index = 2
+
+        # Verificar si hay flecha abajo (dos últimas líneas son "|" y "v")
+        if len(lines) >= 2 and lines[-2] == "|" and lines[-1] == "v":
+            end_index = len(lines) - 2
+
+        # Obtener solo las líneas de texto (sin flechas arriba/abajo)
+        text_lines = lines[start_index:end_index]
+
+        if not text_lines:
+            return
+
+        # Encontrar la línea central del texto real
+        center_line_index_in_text = len(text_lines) // 2
+        center_line_index_in_full = start_index + center_line_index_in_text
+        center_line = lines[center_line_index_in_full]
 
         # Verificar si ya existe "-->" en la línea central
         if "-->" in center_line:
@@ -1272,7 +1308,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
                 new_center_line = "-->"
 
         # Actualizar la línea en el array
-        lines[center_line_index] = new_center_line
+        lines[center_line_index_in_full] = new_center_line
 
         # Reconstruir el texto
         new_text = "\n".join(lines)
@@ -1286,7 +1322,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.on_text_changed()
 
         print(
-            f"Flecha derecha {'removida' if '-->' not in new_center_line else 'agregada'} en línea central"
+            f"Flecha derecha {'removida' if '-->' not in new_center_line else 'agregada'} en línea central del texto"
         )
 
     def on_up_arrow_clicked(self):
