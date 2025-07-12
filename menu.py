@@ -154,13 +154,16 @@ else:
     )
 
 
-# Importar el ku_labeler (con shortcut shift+n)
-import ku_labeler
-from ku_labeler import Core_SetLabel
+# Importar LGA_NodeLabel (con shortcut shift+n)
+import LGA_NodeLabel
+from LGA_NodeLabel import run_node_label_editor
 
-LABELPOPUP = Core_SetLabel()
 n.addCommand(
-    "  Label Nodes", LABELPOPUP.run, "shift+l", shortcutContext=2, icon=icon_LTPB
+    "  Label Nodes",
+    LGA_NodeLabel.run_node_label_editor,
+    "shift+l",
+    shortcutContext=2,
+    icon=icon_LTPB,
 )
 
 

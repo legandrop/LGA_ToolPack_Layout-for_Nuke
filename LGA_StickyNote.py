@@ -1,7 +1,7 @@
 """
 _______________________________________________
 
-  LGA_StickyNote v2.00 | 2024 | Lega
+  LGA_StickyNote v2.00 | Lega
   Editor en tiempo real para StickyNotes en el Node Graph
 _______________________________________________
 
@@ -735,7 +735,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
             y_above = int(sticky_top_screen - UI_MARGIN_Y - window_height)
 
             if y_above >= avail.top():
-                window_y = y_above - 50
+                window_y = y_above + 20
                 debug_print(f"Arriba: ({window_x}, {window_y})")
             else:
                 # Si no cabe, debajo
