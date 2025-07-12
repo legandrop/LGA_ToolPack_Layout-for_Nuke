@@ -30,6 +30,12 @@ SHADOW_OFFSET_X = 3  # Desplazamiento horizontal
 SHADOW_OFFSET_Y = 3  # Desplazamiento vertical
 SHADOW_MARGIN = 25  # Margen adicional para la sombra proyectada
 
+# Variables configurables para los botones de color
+COLOR_BUTTON_HEIGHT = 16  # Altura de los botones de color (en pixels)
+COLOR_BUTTON_BORDER_RADIUS = (
+    2  # Radio de los bordes redondeados de los botones (en pixels)
+)
+
 
 def debug_print(*message):
     if DEBUG:
@@ -56,7 +62,7 @@ class StickyNoteColorSwatchWidget(QtWidgets.QWidget):
     SecondRow_SatuMult = 0.43  # Multiplicador de saturación para la segunda fila
 
     SWATCH_TOTAL = 10  # Ahora incluye gris
-    SWATCH_CSS = "background-color: rgb(%03d,%03d,%03d); border: none; height: 20px;"  # Mitad del tamaño (40px -> 20px)
+    SWATCH_CSS = f"background-color: rgb(%03d,%03d,%03d); border: none; height: {COLOR_BUTTON_HEIGHT}px; border-radius: {COLOR_BUTTON_BORDER_RADIUS}px;"
     SWATCH_COLOR = (58, 58, 58)
 
     # Variable para controlar la saturacion del gradiente en el boton random (0.0 a 1.0)
@@ -270,7 +276,8 @@ class StickyNoteColorSwatchWidget(QtWidgets.QWidget):
                     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
                         {', '.join(stop_values)});
                     border: none;
-                    height: 20px;
+                    height: {COLOR_BUTTON_HEIGHT}px;
+                    border-radius: {COLOR_BUTTON_BORDER_RADIUS}px;
                 """
                 color_knob.setStyleSheet(gradient_css)
                 color_knob.setProperty("is_random", True)
@@ -339,7 +346,8 @@ class StickyNoteColorSwatchWidget(QtWidgets.QWidget):
                     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
                         {', '.join(stop_values)});
                     border: none;
-                    height: 20px;
+                    height: {COLOR_BUTTON_HEIGHT}px;
+                    border-radius: {COLOR_BUTTON_BORDER_RADIUS}px;
                 """
                 color_knob.setStyleSheet(gradient_css)
                 color_knob.setProperty("is_random", True)
