@@ -68,9 +68,10 @@ class StickyNoteColorSwatchWidget(QtWidgets.QWidget):
     # Variable para controlar la saturacion del gradiente en el boton random (0.0 a 1.0)
     RANDOM_GRADIENT_SATURATION = 0.7
 
-    def __init__(self, node=None):
+    def __init__(self, node=None, parent_dialog=None):
         super(StickyNoteColorSwatchWidget, self).__init__()
         self.node = node
+        self.parent_dialog = parent_dialog  # Referencia al diálogo padre
         self._swatch_widgets = []
 
         # Sistema de tracking interno para colores
@@ -294,6 +295,10 @@ class StickyNoteColorSwatchWidget(QtWidgets.QWidget):
             row1_layout.addWidget(color_knob)
             self._swatch_widgets.append(color_knob)
 
+            # Instalar filtro de eventos si hay referencia al diálogo padre
+            if self.parent_dialog:
+                color_knob.installEventFilter(self.parent_dialog)
+
         # Segunda fila de botones (saturación reducida)
         row2_layout = QtWidgets.QHBoxLayout()
         row2_layout.setAlignment(QtCore.Qt.AlignTop)
@@ -373,6 +378,10 @@ class StickyNoteColorSwatchWidget(QtWidgets.QWidget):
 
             row2_layout.addWidget(color_knob)
             self._swatch_widgets.append(color_knob)
+
+            # Instalar filtro de eventos si hay referencia al diálogo padre
+            if self.parent_dialog:
+                color_knob.installEventFilter(self.parent_dialog)
 
         # Agregar las dos filas al layout principal
         main_layout.addLayout(row1_layout)
@@ -829,10 +838,13 @@ class StickyNoteEditor(QtWidgets.QDialog):
         arrows_layout.addStretch()  # Spacer para empujar todo a la izquierda
 
         # Widget de colores
-        self.color_swatch_widget = StickyNoteColorSwatchWidget()
+        self.color_swatch_widget = StickyNoteColorSwatchWidget(parent_dialog=self)
         self.color_swatch_widget.setSizePolicy(
             QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed
         )
+
+        # Instalar filtro de eventos para manejar Ctrl+Enter en botones de color
+        self.color_swatch_widget.installEventFilter(self)
 
         # Botones Cancel y OK
         buttons_layout = QtWidgets.QHBoxLayout()
@@ -1111,15 +1123,36 @@ class StickyNoteEditor(QtWidgets.QDialog):
             # Cerrar el diálogo
             self.close()
 
+    def eventFilter(self, obj, event):
+        """Filtro de eventos para interceptar Ctrl+Enter en botones de color"""
+        if event.type() == QtCore.QEvent.KeyPress:
+            if (
+                event.key() == QtCore.Qt.Key_Return
+                or event.key() == QtCore.Qt.Key_Enter
+            ):
+                if event.modifiers() & QtCore.Qt.ControlModifier:
+                    # Interceptar Ctrl+Enter y ejecutar OK
+                    self.on_ok_clicked()
+                    return True  # Evento manejado
+            elif event.key() == QtCore.Qt.Key_Escape:
+                # Interceptar ESC y ejecutar Cancel
+                self.on_cancel_clicked()
+                return True  # Evento manejado
+
+        # Permitir que el evento continue normalmente
+        return super().eventFilter(obj, event)
+
     def keyPressEvent(self, event):
         """Maneja los eventos de teclado"""
         if event.key() == QtCore.Qt.Key_Escape:
             # ESC funciona como Cancel
             self.on_cancel_clicked()
         elif event.key() == QtCore.Qt.Key_Return or event.key() == QtCore.Qt.Key_Enter:
-            # Ctrl+Enter funciona como OK
+            # Ctrl+Enter funciona como OK, sin importar qué widget tenga el foco
             if event.modifiers() & QtCore.Qt.ControlModifier:
                 self.on_ok_clicked()
+                event.accept()  # Marcar el evento como manejado
+                return
             else:
                 super().keyPressEvent(event)
         else:
