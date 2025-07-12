@@ -185,6 +185,10 @@ class NodeLabelEditor(QtWidgets.QDialog):
         self.setLayout(main_layout)
         self.adjustSize()  # Ajustar tamaño después de configurar todo
 
+        # Hacer la ventana 40px más chica de ancho
+        current_size = self.size()
+        self.setFixedSize(current_size.width() - 40, current_size.height())
+
     def start_move(self, event):
         """Inicia el movimiento de la ventana"""
         if event.button() == QtCore.Qt.LeftButton:

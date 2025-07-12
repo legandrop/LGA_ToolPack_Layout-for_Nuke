@@ -21,87 +21,274 @@ import LGA_BD_callbacks
 import LGA_BD_fit
 import LGA_BD_config
 
+# Variables configurables para el drop shadow
+SHADOW_BLUR_RADIUS = 25  # Radio de blur (más alto = más blureado)
+SHADOW_OPACITY = 60  # Opacidad (0-255, más alto = más opaco)
+SHADOW_OFFSET_X = 3  # Desplazamiento horizontal
+SHADOW_OFFSET_Y = 3  # Desplazamiento vertical
+SHADOW_MARGIN = 25  # Margen adicional para la sombra proyectada
 
-def create_text_dialog():
-    """
-    Crea el dialogo para pedir el nombre del backdrop
-    """
-    dialog = QtWidgets.QDialog()
-    dialog.setWindowFlags(
-        QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowStaysOnTopHint | QtCore.Qt.Popup
-    )
-    dialog.esc_exit = False  # Variable de instancia para esc_exit
 
-    # Establecer el estilo del dialogo
-    dialog.setStyleSheet("QDialog { background-color: #242527; }")
+class BackdropNameDialog(QtWidgets.QDialog):
+    def __init__(self):
+        super(BackdropNameDialog, self).__init__()
 
-    layout = QtWidgets.QVBoxLayout(dialog)
+        self.esc_exit = False
+        self.user_text = ""
+        self.drag_position = None  # Para el arrastre de la ventana
+        self.setup_ui()
+        self.setup_connections()
 
-    title = QtWidgets.QLabel("Backdrop Name")
-    title.setAlignment(QtCore.Qt.AlignCenter)
-    title.setStyleSheet(
-        "color: #AAAAAA; font-family: Verdana; font-weight: bold; font-size: 10pt;"
-    )
-    layout.addWidget(title)
+    def setup_ui(self):
+        """Configura la interfaz de usuario"""
+        # Configurar ventana contenedora transparente
+        self.setWindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.Window)
+        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+        self.setStyleSheet("background-color: transparent;")
 
-    text_edit = QtWidgets.QTextEdit(dialog)
-    text_edit.setFixedHeight(70)  # Altura para 4 renglones
-    text_edit.setFrameStyle(QFrame.NoFrame)  # Sin marco
-    text_edit.setStyleSheet(
+        # Layout principal con margenes para la sombra
+        main_layout = QtWidgets.QVBoxLayout()
+        main_layout.setContentsMargins(
+            SHADOW_MARGIN, SHADOW_MARGIN, SHADOW_MARGIN, SHADOW_MARGIN
+        )  # Margen para la sombra
+        main_layout.setSpacing(0)
+
+        # Frame principal que contendra todo el contenido
+        self.main_frame = QtWidgets.QFrame()
+        self.main_frame.setStyleSheet(
+            """
+            QFrame {
+                background-color: #1f1f1f;
+                border: 1px solid #555555;
+                border-radius: 10px;
+                color: #CCCCCC;
+            }
         """
-        background-color: #262626;
-        color: #FFFFFF;
-    """
-    )
-    layout.addWidget(text_edit)
+        )
 
-    help_label = QtWidgets.QLabel(
-        '<span style="font-size:7pt; color:#AAAAAA;">Ctrl+Enter to confirm</span>',
-        dialog,
-    )
-    help_label.setAlignment(QtCore.Qt.AlignCenter)
-    layout.addWidget(help_label)
+        # Aplicar sombra al frame principal
+        self.shadow = QtWidgets.QGraphicsDropShadowEffect()
+        self.shadow.setBlurRadius(SHADOW_BLUR_RADIUS)
+        self.shadow.setColor(QtGui.QColor(0, 0, 0, SHADOW_OPACITY))
+        self.shadow.setOffset(SHADOW_OFFSET_X, SHADOW_OFFSET_Y)
+        self.main_frame.setGraphicsEffect(self.shadow)
 
-    dialog.setLayout(layout)
-    dialog.resize(200, 150)
+        # Layout del frame principal
+        frame_layout = QtWidgets.QVBoxLayout(self.main_frame)
+        frame_layout.setContentsMargins(0, 0, 0, 0)
+        frame_layout.setSpacing(0)
 
-    def event_filter(widget, event):
-        if isinstance(event, QtGui.QKeyEvent):
-            if (
-                event.key() == QtCore.Qt.Key_Return
-                and event.modifiers() == QtCore.Qt.ControlModifier
-            ):
-                dialog.accept()
-                return True
-            elif event.key() == QtCore.Qt.Key_Escape:
-                dialog.esc_exit = True
-                dialog.reject()
-                return True
-        return False
+        # Barra de título personalizada
+        self.title_bar = QtWidgets.QLabel("Backdrop Name")
+        self.title_bar.setFixedHeight(30)
+        self.title_bar.setStyleSheet(
+            """
+            QLabel {
+                background-color: #1f1f1f; 
+                color: #cccccc; 
+                padding-left: 10px;
+                border-top-left-radius: 10px;
+                border-top-right-radius: 10px;
+                border-bottom-left-radius: 0px;
+                border-bottom-right-radius: 0px;
+                border: none;
+                font-weight: bold;
+            }
+        """
+        )
+        self.title_bar.setAlignment(QtCore.Qt.AlignCenter)
 
-    text_edit.installEventFilter(dialog)
-    dialog.eventFilter = event_filter
+        # Conectar eventos para arrastrar
+        self.title_bar.mousePressEvent = self.start_move
+        self.title_bar.mouseMoveEvent = self.move_window
+        self.title_bar.mouseReleaseEvent = self.stop_move
 
-    text_edit.setFocus()  # Poner el cursor en la caja de texto
+        frame_layout.addWidget(self.title_bar)
 
-    return dialog, text_edit
+        # Contenedor para el contenido con padding
+        content_widget = QtWidgets.QWidget()
+        content_widget.setStyleSheet(
+            """
+            QWidget {
+                background-color: #1f1f1f;
+                border: none;
+                border-bottom-left-radius: 10px;
+                border-bottom-right-radius: 10px;
+            }
+        """
+        )
+        content_layout = QtWidgets.QVBoxLayout(content_widget)
+        content_layout.setContentsMargins(10, 10, 10, 10)
+
+        # Campo de texto
+        self.text_edit = QtWidgets.QTextEdit()
+        self.text_edit.setStyleSheet(
+            """
+            QTextEdit {
+                background-color: #1e1e1e;
+                border: 1px solid #3D3D3D;
+                border-radius: 5px;
+                padding: 5px;
+                font-size: 12px;
+            }
+        """
+        )
+        # Configurar para 4 líneas de texto
+        font_metrics = QtGui.QFontMetrics(self.text_edit.font())
+        line_height = font_metrics.lineSpacing()
+        self.text_edit.setFixedHeight(line_height * 4 + 20)  # 4 líneas + padding
+
+        # Botones Cancel y OK
+        buttons_layout = QtWidgets.QHBoxLayout()
+        buttons_layout.setSpacing(10)  # Espacio entre botones
+
+        # Estilo común para ambos botones (grises)
+        button_style = """
+            QPushButton {
+                background-color: #404040;
+                border: 1px solid #555555;
+                border-radius: 5px;
+                color: #CCCCCC;
+                font-size: 12px;
+                padding: 5px;
+            }
+            QPushButton:hover {
+                background-color: #505050;
+            }
+            QPushButton:pressed {
+                background-color: #303030;
+            }
+        """
+
+        self.cancel_button = QtWidgets.QPushButton("Cancel")
+        self.cancel_button.setFixedHeight(30)
+        self.cancel_button.setStyleSheet(button_style)
+
+        self.ok_button = QtWidgets.QPushButton("OK")
+        self.ok_button.setFixedHeight(30)
+        self.ok_button.setStyleSheet(button_style)
+
+        # Agregar botones con igual ancho (mitad cada uno)
+        buttons_layout.addWidget(self.cancel_button)
+        buttons_layout.addWidget(self.ok_button)
+
+        # Agregar widgets al layout de contenido
+        content_layout.addWidget(self.text_edit)
+        content_layout.addSpacing(10)  # Espacio antes de los botones
+        content_layout.addLayout(buttons_layout)
+
+        # Agregar el contenedor al layout del frame
+        frame_layout.addWidget(content_widget)
+
+        # Agregar el frame principal al layout principal
+        main_layout.addWidget(self.main_frame)
+
+        self.setLayout(main_layout)
+        self.adjustSize()  # Ajustar tamaño después de configurar todo
+
+        # Hacer la ventana 40px más chica de ancho
+        current_size = self.size()
+        self.setFixedSize(current_size.width() - 40, current_size.height())
+
+    def start_move(self, event):
+        """Inicia el movimiento de la ventana"""
+        if event.button() == QtCore.Qt.LeftButton:
+            self.drag_position = event.globalPos() - self.frameGeometry().topLeft()
+            event.accept()
+
+    def move_window(self, event):
+        """Mueve la ventana durante el arrastre"""
+        if self.drag_position and event.buttons() & QtCore.Qt.LeftButton:
+            self.move(event.globalPos() - self.drag_position)
+            event.accept()
+
+    def stop_move(self, event):
+        """Detiene el movimiento de la ventana"""
+        self.drag_position = None
+
+    def setup_connections(self):
+        """Configura las conexiones de señales"""
+        self.cancel_button.clicked.connect(self.on_cancel_clicked)
+        self.ok_button.clicked.connect(self.on_ok_clicked)
+
+    def on_cancel_clicked(self):
+        """Callback cuando se hace click en Cancel"""
+        self.esc_exit = True
+        self.reject()
+
+    def on_ok_clicked(self):
+        """Callback cuando se hace click en OK"""
+        self.user_text = self.text_edit.toPlainText()
+        self.accept()
+
+    def keyPressEvent(self, event):
+        """Maneja los eventos de teclado"""
+        if event.key() == QtCore.Qt.Key_Escape:
+            # ESC funciona como Cancel
+            self.on_cancel_clicked()
+        elif event.key() == QtCore.Qt.Key_Return or event.key() == QtCore.Qt.Key_Enter:
+            # Ctrl+Enter funciona como OK
+            if event.modifiers() & QtCore.Qt.ControlModifier:
+                self.on_ok_clicked()
+            else:
+                # Enter normal solo inserta nueva línea
+                super().keyPressEvent(event)
+        else:
+            super().keyPressEvent(event)
+
+    def showEvent(self, event):
+        """Se ejecuta cuando se muestra el diálogo"""
+        super().showEvent(event)
+        self.activateWindow()
+        self.raise_()
+        self.text_edit.setFocus()
+        self.text_edit.selectAll()
+
+    def position_window_relative_to_cursor(self):
+        """Posiciona la ventana respecto al cursor del mouse"""
+        # Asegurarnos de que la ventana tenga el tamaño correcto
+        self.adjustSize()
+        window_width = self.width()
+        window_height = self.height()
+
+        # Obtener posición del cursor
+        cursor_pos = QtGui.QCursor.pos()
+
+        # Obtener geometría de la pantalla disponible
+        avail_space = QtWidgets.QDesktopWidget().availableGeometry(cursor_pos)
+
+        # Calcular posición centrada respecto al cursor
+        posx = min(
+            max(cursor_pos.x() - window_width // 2, avail_space.left()),
+            avail_space.right() - window_width,
+        )
+        posy = min(
+            max(cursor_pos.y() - window_height // 2, avail_space.top()),
+            avail_space.bottom() - window_height,
+        )
+
+        self.move(QtCore.QPoint(posx, posy))
+
+    def run(self):
+        """Ejecuta el diálogo"""
+        # Posicionar la ventana respecto al cursor
+        self.position_window_relative_to_cursor()
+
+        # Mostrar el diálogo
+        result = self.exec_()
+
+        if result == QtWidgets.QDialog.Accepted:
+            return self.esc_exit, self.user_text
+        else:
+            return self.esc_exit, None
 
 
 def show_text_dialog():
     """
     Muestra el dialogo y retorna el resultado
     """
-    dialog, text_edit = create_text_dialog()
-    cursor_pos = QtGui.QCursor.pos()
-    avail_space = QtWidgets.QDesktopWidget().availableGeometry(cursor_pos)
-    posx = min(max(cursor_pos.x() - 100, avail_space.left()), avail_space.right() - 200)
-    posy = min(max(cursor_pos.y() - 80, avail_space.top()), avail_space.bottom() - 150)
-    dialog.move(QtCore.QPoint(posx, posy))
-
-    if dialog.exec_() == QtWidgets.QDialog.Accepted:
-        return dialog.esc_exit, text_edit.toPlainText()
-    else:
-        return dialog.esc_exit, None
+    dialog = BackdropNameDialog()
+    return dialog.run()
 
 
 def nodeIsInside(node, backdropNode):
