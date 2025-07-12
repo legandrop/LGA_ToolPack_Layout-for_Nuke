@@ -1,7 +1,7 @@
 """
 _______________________________________________
 
-  LGA_StickyNote v2.00 | Lega
+  LGA_StickyNote v1.90 | Lega
   Editor en tiempo real para StickyNotes en el Node Graph
 _______________________________________________
 
@@ -35,6 +35,9 @@ COLOR_BUTTON_HEIGHT = 16  # Altura de los botones de color (en pixels)
 COLOR_BUTTON_BORDER_RADIUS = (
     2  # Radio de los bordes redondeados de los botones (en pixels)
 )
+
+# Variables para el sistema de debouncing
+DEBOUNCE_DELAY = 150  # Milisegundos de delay para evitar escritura excesiva
 
 
 def debug_print(*message):
@@ -513,6 +516,13 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.sticky_node = None
         self.drag_position = None  # Para el arrastre de la ventana
         self.state_manager = StickyNoteStateManager()  # Gestor de estado
+
+        # Sistema de debouncing para evitar loops de escritura
+        self.update_timer = QtCore.QTimer()
+        self.update_timer.setSingleShot(True)
+        self.update_timer.timeout.connect(self._delayed_text_update)
+        self._pending_update = False
+
         self.setup_ui()
         self.setup_connections()
 
@@ -1092,12 +1102,42 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
     def setup_connections(self):
         """Configura las conexiones de señales"""
+        # Desconectar conexiones previas para evitar acumulación
+        self._disconnect_all_signals()
+
         self.text_edit.textChanged.connect(self.on_text_changed)
         self.font_size_slider.valueChanged.connect(self.on_font_size_changed)
         self.margin_slider.valueChanged.connect(self.on_margin_changed)
         self.margin_y_slider.valueChanged.connect(self.on_margin_y_changed)
         self.cancel_button.clicked.connect(self.on_cancel_clicked)
         self.ok_button.clicked.connect(self.on_ok_clicked)
+
+    def _disconnect_all_signals(self):
+        """Desconecta todas las señales para evitar acumulación"""
+        try:
+            self.text_edit.textChanged.disconnect()
+        except:
+            pass
+        try:
+            self.font_size_slider.valueChanged.disconnect()
+        except:
+            pass
+        try:
+            self.margin_slider.valueChanged.disconnect()
+        except:
+            pass
+        try:
+            self.margin_y_slider.valueChanged.disconnect()
+        except:
+            pass
+        try:
+            self.cancel_button.clicked.disconnect()
+        except:
+            pass
+        try:
+            self.ok_button.clicked.disconnect()
+        except:
+            pass
 
     def get_or_create_sticky_note(self):
         """Obtiene el sticky note seleccionado o crea uno nuevo"""
@@ -1176,7 +1216,14 @@ class StickyNoteEditor(QtWidgets.QDialog):
             self.on_text_changed()  # Esto aplicará el margin X = 2 al texto
 
     def on_text_changed(self):
-        """Callback cuando cambia el texto"""
+        """Callback cuando cambia el texto - usa debouncing para evitar loops"""
+        if not self._pending_update:
+            self._pending_update = True
+            self.update_timer.start(DEBOUNCE_DELAY)
+
+    def _delayed_text_update(self):
+        """Actualización retrasada del texto para evitar loops"""
+        self._pending_update = False
         if self.sticky_node:
             current_text = self.text_edit.toPlainText()
             margin_x = self.margin_slider.value()
@@ -1196,15 +1243,19 @@ class StickyNoteEditor(QtWidgets.QDialog):
         """Callback cuando cambia el margin X"""
         if self.sticky_node:
             self.margin_value.setText(str(value))
-            # Actualizar el texto con el nuevo margin
-            self.on_text_changed()
+            # Usar el sistema de debouncing en lugar de llamada directa
+            if not self._pending_update:
+                self._pending_update = True
+                self.update_timer.start(DEBOUNCE_DELAY)
 
     def on_margin_y_changed(self, value):
         """Callback cuando cambia el margin Y"""
         if self.sticky_node:
             self.margin_y_value.setText(str(value))
-            # Actualizar el texto con el nuevo margin
-            self.on_text_changed()
+            # Usar el sistema de debouncing en lugar de llamada directa
+            if not self._pending_update:
+                self._pending_update = True
+                self.update_timer.start(DEBOUNCE_DELAY)
 
     def on_left_arrow_clicked(self):
         """Callback cuando se hace click en el botón de flecha izquierda"""
@@ -1522,12 +1573,17 @@ class StickyNoteEditor(QtWidgets.QDialog):
         except Exception as e:
             print(f"Error durante la cancelación: {e}")
         finally:
-            # Cerrar el diálogo
+            # Limpieza completa antes de cerrar
+            self._cleanup_resources()
             self.close()
 
     def on_ok_clicked(self):
         """Callback cuando se hace click en OK"""
         try:
+            # Detener cualquier actualización pendiente
+            self.update_timer.stop()
+            self._pending_update = False
+
             # Usar el gestor de estado para confirmar los cambios
             success = self.state_manager.handle_ok_action()
             if success:
@@ -1537,8 +1593,32 @@ class StickyNoteEditor(QtWidgets.QDialog):
         except Exception as e:
             print(f"Error durante la confirmación: {e}")
         finally:
-            # Cerrar el diálogo
+            # Limpieza completa antes de cerrar
+            self._cleanup_resources()
             self.close()
+
+    def _cleanup_resources(self):
+        """Limpieza completa de recursos para evitar memory leaks"""
+        try:
+            # Detener el timer
+            if hasattr(self, "update_timer"):
+                self.update_timer.stop()
+                self.update_timer.timeout.disconnect()
+
+            # Desconectar todas las señales
+            self._disconnect_all_signals()
+
+            # Limpiar referencias
+            self.sticky_node = None
+            self._pending_update = False
+
+            # Limpiar tooltip personalizado
+            if hasattr(self, "tooltip_label") and self.tooltip_label:
+                self.tooltip_label.close()
+                self.tooltip_label = None
+
+        except Exception as e:
+            print(f"Error durante la limpieza: {e}")
 
     def eventFilter(self, obj, event):
         """Filtro de eventos para interceptar Ctrl+Enter en botones de color"""
@@ -1581,6 +1661,11 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.activateWindow()
         self.raise_()
         self.text_edit.setFocus()
+
+    def closeEvent(self, event):
+        """Se ejecuta cuando se cierra el diálogo - limpieza automática"""
+        self._cleanup_resources()
+        super().closeEvent(event)
 
     def run(self):
         """Ejecuta el editor"""
@@ -1755,12 +1840,24 @@ def run_sticky_note_editor():
     """Mostrar el editor de StickyNote dentro de Nuke"""
     global sticky_editor
 
-    # Si ya existe una instancia del editor, cerrarla y eliminarla
-    if sticky_editor is not None and isinstance(sticky_editor, QtWidgets.QDialog):
-        sticky_editor.close()
-        sticky_editor.deleteLater()  # Borrar el objeto de la memoria de forma segura
-        sticky_editor = None  # Resetear la variable global
+    # Si ya existe una instancia del editor, cerrarla y eliminarla completamente
+    if sticky_editor is not None:
+        try:
+            if isinstance(sticky_editor, QtWidgets.QDialog):
+                # Limpieza completa de la instancia anterior
+                if hasattr(sticky_editor, "_cleanup_resources"):
+                    sticky_editor._cleanup_resources()
+                sticky_editor.close()
+                sticky_editor.deleteLater()
+            # Forzar procesamiento de eventos para asegurar limpieza
+            if QtWidgets.QApplication.instance():
+                QtWidgets.QApplication.processEvents()
+        except Exception as e:
+            print(f"Error limpiando instancia anterior: {e}")
+        finally:
+            sticky_editor = None  # Resetear la variable global
 
+    # Crear nueva instancia
     sticky_editor = StickyNoteEditor()
     sticky_editor.run()
 
