@@ -130,6 +130,8 @@ class BackdropNameDialog(QtWidgets.QDialog):
                 border-radius: 5px;
                 padding: 5px;
                 font-size: 12px;
+                selection-background-color: #555555;
+                selection-color: #FFFFFF;
             }
         """
         )
@@ -168,6 +170,17 @@ class BackdropNameDialog(QtWidgets.QDialog):
         self.ok_button.setFixedHeight(30)
         self.ok_button.setStyleSheet(button_style)
 
+        # Crear tooltips personalizados
+        self.tooltip_label = None
+        self.cancel_button.enterEvent = lambda event: self.show_custom_tooltip(
+            "Esc", self.cancel_button
+        )
+        self.cancel_button.leaveEvent = lambda event: self.hide_custom_tooltip()
+        self.ok_button.enterEvent = lambda event: self.show_custom_tooltip(
+            "Ctrl+Enter", self.ok_button
+        )
+        self.ok_button.leaveEvent = lambda event: self.hide_custom_tooltip()
+
         # Agregar botones con igual ancho (mitad cada uno)
         buttons_layout.addWidget(self.cancel_button)
         buttons_layout.addWidget(self.ok_button)
@@ -205,6 +218,45 @@ class BackdropNameDialog(QtWidgets.QDialog):
     def stop_move(self, event):
         """Detiene el movimiento de la ventana"""
         self.drag_position = None
+
+    def show_custom_tooltip(self, text, widget):
+        """Muestra un tooltip personalizado"""
+        if self.tooltip_label:
+            self.tooltip_label.close()
+
+        self.tooltip_label = QtWidgets.QLabel(text)
+        self.tooltip_label.setWindowFlags(QtCore.Qt.ToolTip)
+        self.tooltip_label.setStyleSheet(
+            """
+            QLabel {
+                background-color: #2a2a2a;
+                color: #cccccc;
+                border: 1px solid #555555;
+                border-radius: 3px;
+                padding: 4px 8px;
+                font-size: 11px;
+            }
+        """
+        )
+
+        # Posicionar el tooltip centrado encima del botón
+        if widget:
+            # Obtener la posición global del botón
+            global_pos = widget.mapToGlobal(QtCore.QPoint(0, 0))
+            # Centrar el tooltip horizontalmente respecto al botón
+            button_width = widget.width()
+            tooltip_width = self.tooltip_label.sizeHint().width()
+            x_offset = (button_width - tooltip_width) // 2
+            # Posicionar encima del botón
+            self.tooltip_label.move(global_pos.x() + x_offset, global_pos.y() - 35)
+
+        self.tooltip_label.show()
+
+    def hide_custom_tooltip(self):
+        """Oculta el tooltip personalizado"""
+        if self.tooltip_label:
+            self.tooltip_label.close()
+            self.tooltip_label = None
 
     def setup_connections(self):
         """Configura las conexiones de señales"""
