@@ -345,12 +345,12 @@ def on_cancel_clicked(self):
 
 ---
 
-### **11. ✅ CORRECCIÓN DE CONFLICTOS DE NOMBRES EN LGA_BACKDROP.PY**
+### **11. ❌ INTENTO FALLIDO: RENOMBRAR FUNCIONES EN LGA_BACKDROP.PY**
 **Fecha**: Enero 2025
-**Descripción**: Identificados y corregidos conflictos de nombres entre LGA_StickyNote.py y LGA_backdrop.py
+**Descripción**: Intento de renombrar funciones conflictivas en LGA_backdrop.py para evitar conflictos con LGA_StickyNote y LGA_NodeLabel
 
 **Problema identificado**:
-El usuario reportó que cuando importaba LGA_backdrop.py, los otros scripts (LGA_StickyNote y LGA_NodeLabel) dejaban de funcionar correctamente. El problema eran funciones y variables con nombres idénticos entre los scripts.
+El usuario reportó que cuando importaba LGA_backdrop.py, los otros scripts (LGA_StickyNote y LGA_NodeLabel) dejaban de funcionar correctamente. Se identificaron funciones y variables con nombres idénticos entre los scripts.
 
 **Conflictos encontrados**:
 1. **Variables globales duplicadas**:
@@ -363,7 +363,7 @@ El usuario reportó que cuando importaba LGA_backdrop.py, los otros scripts (LGA
    - `show_custom_tooltip()`, `hide_custom_tooltip()`
    - `start_move()`, `move_window()`, `stop_move()`
 
-**Cambios implementados**:
+**Cambios intentados**:
 1. **Variables renombradas con prefijo único**:
    ```python
    # ANTES
@@ -383,94 +383,457 @@ El usuario reportó que cuando importaba LGA_backdrop.py, los otros scripts (LGA
    def debug_print(*message):
    def setup_ui(self):
    def setup_connections(self):
-   def show_custom_tooltip(self, text, widget):
-   def hide_custom_tooltip(self):
-   def start_move(self, event):
-   def move_window(self, event):
-   def stop_move(self, event):
    
    # DESPUÉS
    def backdrop_debug_print(*message):
    def backdrop_setup_ui(self):
    def backdrop_setup_connections(self):
-   def backdrop_show_custom_tooltip(self, text, widget):
-   def backdrop_hide_custom_tooltip(self):
-   def backdrop_start_move(self, event):
-   def backdrop_move_window(self, event):
-   def backdrop_stop_move(self, event):
    ```
 
-3. **Método run() renombrado**:
+**Resultado**: ❌ **NO FUNCIONÓ**
+- El renombrado de funciones no solucionó el problema fundamental
+- Los conflictos persisten porque Python carga todos los módulos en el mismo espacio de nombres global
+- Cuando `LGA_backdrop` importa sus dependencias, estas sobrescriben las funciones de otros módulos
+- El problema es más profundo que solo nombres de funciones duplicadas
+
+**Lección aprendida**: 
+Renombrar funciones individuales no resuelve el problema de conflictos entre módulos. Se necesita una solución de aislamiento completo de namespaces.
+
+---
+
+### **12. ⚠️ IMPLEMENTACIÓN: IMPORTACIONES PEREZOSAS (LAZY IMPORTS)**
+**Fecha**: Enero 2025
+**Descripción**: Implementación de importaciones perezosas en menu.py para evitar conflictos al momento de cargar el menú
+
+**Problema identificado**:
+Las importaciones directas en menu.py causan que todos los módulos se carguen inmediatamente, creando conflictos de nombres globales entre LGA_StickyNote, LGA_NodeLabel y LGA_backdrop.
+
+**Solución implementada**:
+1. **Funciones de importación perezosa**:
+   ```python
+   def _lazy_import_lga_sticky_note():
+       """Importación perezosa para LGA_StickyNote"""
+       import LGA_StickyNote
+       return LGA_StickyNote
+   
+   def _lazy_import_lga_node_label():
+       """Importación perezosa para LGA_NodeLabel"""
+       import LGA_NodeLabel
+       return LGA_NodeLabel
+   
+   def _lazy_import_lga_backdrop():
+       """Importación perezosa para LGA_backdrop"""
+       nuke.pluginAddPath("./LGA_backdrop")
+       import LGA_backdrop
+       return LGA_backdrop
+   ```
+
+2. **Funciones wrapper para comandos**:
+   ```python
+   def _run_sticky_note():
+       """Ejecuta StickyNote con importación perezosa"""
+       sticky_note_module = _lazy_import_lga_sticky_note()
+       return sticky_note_module.run_sticky_note_editor()
+   
+   def _run_node_label():
+       """Ejecuta NodeLabel con importación perezosa"""
+       node_label_module = _lazy_import_lga_node_label()
+       return node_label_module.run_node_label_editor()
+   ```
+
+3. **Menú actualizado**:
    ```python
    # ANTES
-   def run(self):
+   import LGA_StickyNote
+   n.addCommand("Create StickyNote", "LGA_StickyNote.run_sticky_note_editor()")
    
    # DESPUÉS
-   def show_backdrop_dialog(self):
+   n.addCommand("Create StickyNote", _run_sticky_note)
    ```
 
-4. **Instanciación tardía implementada**:
-   - Agregado comentario explicativo sobre lazy initialization
-   - Los widgets se crean solo cuando se ejecuta `show_text_dialog()`
-   - No hay instanciación global al importar el módulo
+**Resultado**: ❌ **NO FUNCIONÓ**
+- Las importaciones perezosas no solucionaron el conflicto
+- El problema persiste porque cuando se ejecuta la función, el módulo se importa y sobrescribe las funciones globales
+- Los conflictos siguen ocurriendo, solo se postergan hasta el momento de ejecución
 
-**Resultado**: ✅ **SOLUCIONADO**
-- Eliminados todos los conflictos de nombres entre scripts
-- Cada script ahora tiene funciones y variables con nombres únicos
-- Los tres scripts (LGA_StickyNote, LGA_NodeLabel, LGA_backdrop) pueden coexistir sin interferencias
+**Feedback del usuario**: 
+"esto de los lazy no arregló nada de nada. si elimporto el backdrop en mi menu.py entra en conflicto con el nodelabel y con el stickynotes"
+
+---
+
+### **13. ⚠️ IMPLEMENTACIÓN: NAMESPACES ENCAPSULADOS CON IMPORTLIB**
+**Fecha**: Enero 2025
+**Descripción**: Implementación de namespaces completamente separados usando importlib para aislar cada módulo
+
+**Problema identificado**:
+Python carga todos los módulos en el mismo espacio de nombres global, causando que las funciones con nombres idénticos se sobrescriban entre módulos.
+
+**Solución implementada**:
+1. **Clase ModuleNamespace**:
+   ```python
+   class ModuleNamespace:
+       """Clase para encapsular módulos en namespaces separados"""
+       
+       def __init__(self, module_name, plugin_path=None):
+           self.module_name = module_name
+           self.plugin_path = plugin_path
+           self._module = None
+           self._loaded = False
+       
+       def _load_module(self):
+           """Carga el módulo en un namespace aislado"""
+           if self.plugin_path:
+               nuke.pluginAddPath(self.plugin_path)
+           
+           if self.module_name in sys.modules:
+               self._module = importlib.reload(sys.modules[self.module_name])
+           else:
+               self._module = importlib.import_module(self.module_name)
+           
+           return self._module
+       
+       def call_function(self, function_name, *args, **kwargs):
+           """Llama a una función del módulo encapsulado"""
+           module = self._load_module()
+           if module and hasattr(module, function_name):
+               func = getattr(module, function_name)
+               return func(*args, **kwargs)
+   ```
+
+2. **Instancias de namespaces separados**:
+   ```python
+   # Módulos problemáticos que causan conflictos
+   sticky_note_ns = ModuleNamespace("LGA_StickyNote")
+   node_label_ns = ModuleNamespace("LGA_NodeLabel")
+   lga_backdrop_ns = ModuleNamespace("LGA_backdrop", "./LGA_backdrop")
+   ```
+
+3. **Funciones wrapper encapsuladas**:
+   ```python
+   def _run_sticky_note():
+       """Ejecuta StickyNote con namespace encapsulado"""
+       return sticky_note_ns.call_function("run_sticky_note_editor")
+   
+   def _run_node_label():
+       """Ejecuta NodeLabel con namespace encapsulado"""
+       return node_label_ns.call_function("run_node_label_editor")
+   ```
+
+**Resultado**: ⚠️ **MEJORA PARCIAL**
+- Funcionó mejor y duró más tiempo
+- Los conflictos de nombres se redujeron significativamente
+- **NUEVO PROBLEMA**: Error de "bad allocation" que causa crashes de Nuke
+- El sistema funciona pero consume demasiada memoria
+
+**Feedback del usuario**: 
+"funcionó mejor. más tiempo. pero en un momento ejecuté el nodelabel y me dio un error de 'bad allocation' y crasheó nuke"
+
+---
+
+### **14. 🔄 IMPLEMENTACIÓN ACTUAL: GESTIÓN DE MEMORIA MEJORADA**
+**Fecha**: Enero 2025
+**Descripción**: Implementación de gestión de memoria avanzada para evitar errores de "bad allocation" manteniendo el aislamiento de namespaces
+
+**Problema identificado**:
+El sistema de namespaces encapsulados funciona pero causa errores de memoria ("bad allocation") que crashean Nuke. Esto se debe a que múltiples instancias de módulos se mantienen en memoria simultáneamente.
+
+**Solución implementada**:
+1. **Gestor de memoria con cache limitado**:
+   ```python
+   MAX_CACHED_MODULES = 5  # Máximo número de módulos en cache
+   ENABLE_AUTO_CLEANUP = True  # Activar limpieza automática
+   ENABLE_MEMORY_MONITORING = True  # Activar monitoreo de memoria
+   
+   class MemoryManager:
+       def __init__(self):
+           self.module_cache = OrderedDict()
+           self.weak_refs = {}
+       
+       def cleanup_old_modules(self):
+           """Limpia módulos antiguos del cache"""
+           while len(self.module_cache) > MAX_CACHED_MODULES:
+               oldest_key = next(iter(self.module_cache))
+               removed_module = self.module_cache.pop(oldest_key)
+               del removed_module
+           gc.collect()
+   ```
+
+2. **ModuleNamespace con gestión de memoria**:
+   ```python
+   class ModuleNamespace:
+       def __init__(self, module_name, plugin_path=None):
+           self.module_name = module_name
+           self.plugin_path = plugin_path
+           self._module = None
+           self._loaded = False
+           self._loading = False  # Flag para evitar cargas concurrentes
+       
+       def _load_module(self):
+           """Carga el módulo con gestión de memoria mejorada"""
+           if self._loading:
+               return None
+           
+           # Verificar si está en cache
+           cached_module = memory_manager.get_module(self.module_name)
+           if cached_module is not None:
+               return cached_module
+           
+           # Limpiar memoria antes de cargar
+           if ENABLE_AUTO_CLEANUP:
+               gc.collect()
+           
+           # Cargar módulo y registrar en cache
+           self._module = importlib.import_module(self.module_name)
+           memory_manager.register_module(self.module_name, self._module)
+           
+           return self._module
+   ```
+
+3. **Limpieza automática para funciones pesadas**:
+   ```python
+   def _run_sticky_note():
+       """Ejecuta StickyNote con gestión de memoria especial"""
+       print("[MEMORY] Ejecutando StickyNote con gestión de memoria especial...")
+       # Limpiar memoria antes de ejecutar
+       cleanup_all_modules()
+       return sticky_note_ns.call_function("run_sticky_note_editor")
+   
+   def _run_node_label():
+       """Ejecuta NodeLabel con gestión de memoria especial"""
+       print("[MEMORY] Ejecutando NodeLabel con gestión de memoria especial...")
+       # Limpiar memoria antes de ejecutar
+       cleanup_all_modules()
+       return node_label_ns.call_function("run_node_label_editor")
+   ```
+
+4. **Función de limpieza global**:
+   ```python
+   def cleanup_all_modules():
+       """Limpia todos los módulos y libera memoria"""
+       print("[MEMORY] Iniciando limpieza global de memoria...")
+       
+       # Limpiar todos los namespaces
+       for namespace in [sticky_note_ns, node_label_ns, lga_backdrop_ns, ...]:
+           namespace.cleanup()
+       
+       # Limpiar el gestor de memoria
+       memory_manager.clear_all()
+       
+       # Forzar garbage collection múltiple
+       for _ in range(3):
+           gc.collect()
+   ```
+
+5. **Comando de debug agregado al menú**:
+   ```python
+   n.addCommand(
+       "  [DEBUG] Clean Memory",
+       cleanup_all_modules,
+       "",
+       shortcutContext=2,
+       icon=icon_LTPB,
+   )
+   ```
+
+**Características implementadas**:
+- ✅ **Cache limitado**: Máximo 5 módulos en memoria simultáneamente
+- ✅ **Limpieza automática**: Garbage collection forzado antes/después de funciones pesadas
+- ✅ **Monitoreo de memoria**: Logs detallados de uso de memoria
+- ✅ **Prevención de cargas concurrentes**: Evita múltiples importaciones simultáneas
+- ✅ **Weak references**: Para monitoreo de objetos en memoria
+- ✅ **Limpieza global**: Función manual para liberar toda la memoria
+- ✅ **Manejo de errores**: Try-catch en todas las operaciones de memoria
+
+**Estado actual**: 🔄 **EN PRUEBAS**
+- Implementación completa lista para testing
+- Combina aislamiento de namespaces con gestión inteligente de memoria
+- Debería resolver tanto los conflictos de nombres como los errores de "bad allocation"
 
 **Archivos modificados**:
-- `LGA_ToolPack-Layout/LGA_backdrop/LGA_backdrop.py`: Renombradas todas las funciones y variables conflictivas
+- `LGA_ToolPack-Layout/menu.py`: Sistema completo de gestión de memoria y namespaces
 
 ---
 
 ## ESTADO ACTUAL
 
-**Problema**: Todas las modificaciones probadas hasta el momento NO han solucionado los cuelgues de Nuke.
+**Problema principal**: Conflictos de nombres entre módulos que causan malfuncionamiento y crashes de Nuke.
 
-**Hipótesis restantes**:
-1. El problema podría estar en `LGA_StickyNote_Utils.py`
-2. Podría ser un problema de threading o eventos de Qt
-3. Podría haber un loop infinito en alguna otra parte del código
-4. Interferencia con otros scripts del sistema
-5. Problema con la gestión de nodos de Nuke en tiempo real
+**Evolución del problema**:
+1. **Problema original**: Cuelgues de Nuke al usar LGA_StickyNote
+2. **Problema identificado**: Conflictos de nombres entre LGA_StickyNote, LGA_NodeLabel y LGA_backdrop
+3. **Problema actual**: Error de "bad allocation" al usar el sistema de namespaces
 
-**Próximos pasos sugeridos**:
-- Revisar `LGA_StickyNote_Utils.py` en detalle
-- Implementar logging detallado para identificar dónde ocurre el cuelgue
-- Probar una versión mínima del script sin funcionalidades complejas
-- Investigar si el problema está en la escritura al nodo o en la interfaz Qt
+**Soluciones probadas**:
+- ❌ **Debouncing y limpieza de señales**: No funcionó
+- ❌ **Renombrado de funciones**: No resolvió el problema fundamental
+- ❌ **Importaciones perezosas**: Solo postergó el conflicto
+- ⚠️ **Namespaces encapsulados**: Funcionó mejor pero causó errores de memoria
+- 🔄 **Gestión de memoria mejorada**: Implementación actual en pruebas
+
+**Implementación actual**:
+- Sistema de namespaces encapsulados con gestión inteligente de memoria
+- Cache limitado de módulos (máximo 5 simultáneos)
+- Limpieza automática y garbage collection forzado
+- Monitoreo de memoria y prevención de cargas concurrentes
+- Comando de debug para limpieza manual
+
+**Estado**: 🔄 **EN PRUEBAS**
+- Implementación completa lista para testing
+- Combina aislamiento de namespaces con gestión inteligente de memoria
+- Debería resolver tanto los conflictos de nombres como los errores de "bad allocation"
+
+**Próximos pasos**:
+- Probar el sistema de gestión de memoria mejorada
+- Monitorear los logs de memoria para identificar patrones
+- Ajustar los parámetros de cache si es necesario
+- Considerar implementaciones alternativas si persisten los problemas
 
 ---
 
-## NUEVO CULPABLE IDENTIFICADO
-
-### **10. POSIBLE CULPABLE: INSTANCIACIÓN DE WIDGETS AL IMPORTAR**
-**Fecha**: Análisis actual
-**Descripción**: El problema puede estar en crear instancias de widgets Qt al momento de importar el módulo
+### **15. ✅ CORRECCIÓN: ELIMINACIÓN DE RELOAD() Y LIMPIEZA ESPECÍFICA**
+**Fecha**: Enero 2025
+**Descripción**: Corrección del error "reload() argument must be a module" y implementación de limpieza específica por módulo
 
 **Problema identificado**:
-```python
-# Crear instancia global única al importar el módulo (como kulabeler.py)
-STICKY_EDITOR_INSTANCE = StickyNoteEditor()
-```
+El error `reload() argument must be a module` ocurría porque el sistema de limpieza agresiva estaba eliminando módulos de memoria pero luego intentaba hacer `reload()` sobre módulos que ya no existían. Esto causaba que después de ejecutar los scripts 1-2 veces, ya no se pudieran volver a ejecutar.
 
-**Diferencias con kulabeler.py**:
-- **kulabeler.py**: Crea instancia simple sin UI compleja al importar
-- **LGA_StickyNote.py**: Crea instancia compleja con UI, sombras, efectos, widgets anidados al importar
+**Cambios implementados**:
+1. **Eliminación de reload()**:
+   ```python
+   # ANTES - Causaba error "reload() argument must be a module"
+   if self.module_name in sys.modules:
+       old_module = sys.modules[self.module_name]
+       if hasattr(old_module, "__dict__"):
+           old_module.__dict__.clear()
+       self._module = importlib.reload(sys.modules[self.module_name])
+   
+   # DESPUÉS - Importación fresh sin reload()
+   if self.module_name in sys.modules:
+       if ENABLE_MEMORY_MONITORING:
+           print(f"[MEMORY] Eliminando módulo de sys.modules: {self.module_name}")
+       del sys.modules[self.module_name]
+   
+   # Importar el módulo fresh
+   self._module = importlib.import_module(self.module_name)
+   ```
 
-**Posibles causas del crash**:
-1. **Inicialización prematura**: UI se crea antes de que Nuke esté completamente cargado
-2. **Widgets Qt complejos**: Efectos de sombra, transparencias, widgets anidados en momento de importación
-3. **Múltiples importaciones**: Si el módulo se importa varias veces, se crean múltiples instancias
-4. **Conflictos de nombres**: Múltiples scripts con método `run()` pueden interferir
+2. **Limpieza específica por módulo**:
+   ```python
+   def cleanup_specific_module(module_name):
+       """Limpia un módulo específico"""
+       print(f"[MEMORY] Limpiando módulo específico: {module_name}")
+       
+       # Limpiar del cache
+       if module_name in memory_manager.module_cache:
+           removed_module = memory_manager.module_cache.pop(module_name)
+           del removed_module
+       
+       # Limpiar weak reference
+       if module_name in memory_manager.weak_refs:
+           del memory_manager.weak_refs[module_name]
+       
+       gc.collect()
+   ```
 
-**Próxima acción**: Cambiar patrón de instanciación tardía (lazy initialization)
+3. **Funciones wrapper mejoradas**:
+   ```python
+   def _run_sticky_note():
+       """Ejecuta StickyNote con gestión de memoria especial"""
+       print("[MEMORY] Ejecutando StickyNote con gestión de memoria especial...")
+       # Limpiar solo el módulo específico si es necesario
+       cleanup_specific_module("LGA_StickyNote")
+       return sticky_note_ns.call_function("run_sticky_note_editor")
+   
+   def _run_node_label():
+       """Ejecuta NodeLabel con gestión de memoria especial"""
+       print("[MEMORY] Ejecutando NodeLabel con gestión de memoria especial...")
+       # Limpiar solo el módulo específico si es necesario
+       cleanup_specific_module("LGA_NodeLabel")
+       return node_label_ns.call_function("run_node_label_editor")
+   ```
+
+4. **Configuración optimizada**:
+   ```python
+   MAX_CACHED_MODULES = 3  # Reducir cache para evitar problemas de memoria
+   ENABLE_AGGRESSIVE_CLEANUP = False  # Desactivar limpieza agresiva
+   
+   # Identificar módulos problemáticos
+   self.problematic_modules = {
+       "LGA_StickyNote", 
+       "LGA_NodeLabel", 
+       "LGA_backdrop"
+   }
+   ```
+
+5. **Cleanup suave vs agresivo**:
+   ```python
+   def cleanup(self):
+       """Limpia el módulo de memoria de forma segura"""
+       if ENABLE_AGGRESSIVE_CLEANUP:
+           # Solo hacer cleanup agresivo si está habilitado
+           if self._module is not None:
+               if hasattr(self._module, "__dict__"):
+                   self._module.__dict__.clear()
+               self._module = None
+           self._loaded = False
+       else:
+           # Cleanup suave - solo marcar como no cargado
+           self._loaded = False
+   ```
+
+**Resultado**: ✅ **FUNCIONANDO**
+- Eliminado el error "reload() argument must be a module"
+- Los scripts se pueden ejecutar múltiples veces sin problemas
+- Limpieza específica por módulo evita conflictos innecesarios
+- Configuración optimizada reduce el consumo de memoria
+- Sistema más estable y robusto
+
+**Feedback del usuario**: 
+"por el momento viene funcionando bien!"
+
+**Estado**: 🔄 **TODAVÍA EN TESTING**
+- La implementación está funcionando correctamente
+- Se continúa monitoreando el comportamiento a largo plazo
+- Pendiente confirmación de estabilidad completa
 
 ---
 
-**Archivo creado**: `LGA_StickyNote_MODIFICACIONES_PROBADAS.md`  
-**Fecha de última actualización**: Enero 2025 
+## ANÁLISIS TÉCNICO DEL PROBLEMA
+
+### **CAUSA RAÍZ IDENTIFICADA**
+El problema fundamental es que Python carga todos los módulos en el mismo espacio de nombres global (`sys.modules`). Cuando múltiples módulos tienen funciones con nombres idénticos (como `debug_print()`, `setup_ui()`, `setup_connections()`, etc.), las importaciones posteriores sobrescriben las funciones de los módulos anteriores.
+
+### **CONFLICTOS ESPECÍFICOS ENCONTRADOS**
+```python
+# Funciones duplicadas entre módulos:
+- debug_print()          # En LGA_StickyNote, LGA_NodeLabel, LGA_backdrop
+- setup_ui()             # En LGA_StickyNote, LGA_NodeLabel, LGA_backdrop  
+- setup_connections()    # En LGA_StickyNote, LGA_NodeLabel, LGA_backdrop
+- show_custom_tooltip()  # En LGA_StickyNote, LGA_NodeLabel
+- hide_custom_tooltip()  # En LGA_StickyNote, LGA_NodeLabel
+- start_move()           # En LGA_StickyNote, LGA_NodeLabel
+- move_window()          # En LGA_StickyNote, LGA_NodeLabel
+- stop_move()            # En LGA_StickyNote, LGA_NodeLabel
+
+# Variables globales duplicadas:
+- DEBUG                  # En múltiples módulos
+- SHADOW_BLUR_RADIUS     # En LGA_StickyNote, LGA_backdrop
+- SHADOW_OPACITY         # En LGA_StickyNote, LGA_backdrop
+- SHADOW_OFFSET_X        # En LGA_StickyNote, LGA_backdrop
+- SHADOW_OFFSET_Y        # En LGA_StickyNote, LGA_backdrop
+```
+
+### **SOLUCIÓN IMPLEMENTADA**
+1. **Aislamiento de namespaces**: Cada módulo se carga en su propio namespace usando `importlib`
+2. **Gestión de memoria**: Cache limitado y limpieza automática para evitar "bad allocation"
+3. **Monitoreo**: Logs detallados para tracking de memoria y módulos
+4. **Prevención**: Flags para evitar cargas concurrentes y múltiples instancias
+
+---
+
+**Archivo actualizado**: `LGA_StickyNote_MODIFICACIONES_PROBADAS.md`  
+**Fecha de última actualización**: Enero 2025  
+**Implementación actual**: Gestión de memoria mejorada con namespaces encapsulados 
 
 ---
 
