@@ -18,6 +18,13 @@ DEBUG = True
 # Margen vertical para la interfaz de usuario
 UI_MARGIN_Y = 20
 
+# Variables configurables para el drop shadow
+SHADOW_BLUR_RADIUS = 25  # Radio de blur (más alto = más blureado)
+SHADOW_OPACITY = 60  # Opacidad (0-255, más alto = más opaco)
+SHADOW_OFFSET_X = 3  # Desplazamiento horizontal
+SHADOW_OFFSET_Y = 3  # Desplazamiento vertical
+SHADOW_MARGIN = 25  # Margen adicional para la sombra proyectada
+
 
 def debug_print(*message):
     if DEBUG:
@@ -47,12 +54,14 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
         self.setStyleSheet("background-color: transparent;")
 
-        # Layout principal con márgenes para la sombra
+        # Layout principal con margenes para la sombra
         main_layout = QtWidgets.QVBoxLayout()
-        main_layout.setContentsMargins(15, 15, 15, 15)  # Margen para la sombra
+        main_layout.setContentsMargins(
+            SHADOW_MARGIN, SHADOW_MARGIN, SHADOW_MARGIN, SHADOW_MARGIN
+        )  # Margen para la sombra
         main_layout.setSpacing(0)
 
-        # Frame principal que contendrá todo el contenido
+        # Frame principal que contendra todo el contenido
         self.main_frame = QtWidgets.QFrame()
         self.main_frame.setStyleSheet(
             """
@@ -67,9 +76,9 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
         # Aplicar sombra al frame principal
         self.shadow = QtWidgets.QGraphicsDropShadowEffect()
-        self.shadow.setBlurRadius(15)
-        self.shadow.setColor(QtGui.QColor(0, 0, 0, 180))
-        self.shadow.setOffset(3, 3)
+        self.shadow.setBlurRadius(SHADOW_BLUR_RADIUS)
+        self.shadow.setColor(QtGui.QColor(0, 0, 0, SHADOW_OPACITY))
+        self.shadow.setOffset(SHADOW_OFFSET_X, SHADOW_OFFSET_Y)
         self.main_frame.setGraphicsEffect(self.shadow)
 
         # Layout del frame principal
@@ -83,8 +92,8 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.title_bar.setStyleSheet(
             """
             QLabel {
-                background-color: #444; 
-                color: white; 
+                background-color: #1f1f1f; 
+                color: #cccccc; 
                 padding-left: 10px;
                 border-top-left-radius: 10px;
                 border-top-right-radius: 10px;
@@ -95,7 +104,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
             }
         """
         )
-        self.title_bar.setAlignment(QtCore.Qt.AlignVCenter)
+        self.title_bar.setAlignment(QtCore.Qt.AlignCenter)
 
         # Conectar eventos para arrastrar
         self.title_bar.mousePressEvent = self.start_move
