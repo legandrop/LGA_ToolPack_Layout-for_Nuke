@@ -43,8 +43,12 @@ class NodeLabelEditor(QtWidgets.QDialog):
 
     def setup_ui(self):
         """Configura la interfaz de usuario"""
-        # Configurar ventana contenedora transparente
-        self.setWindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.Window)
+        # Configurar ventana contenedora transparente y siempre on top
+        self.setWindowFlags(
+            QtCore.Qt.FramelessWindowHint
+            | QtCore.Qt.Window
+            | QtCore.Qt.WindowStaysOnTopHint
+        )
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
         self.setStyleSheet("background-color: transparent;")
 
@@ -337,6 +341,19 @@ class NodeLabelEditor(QtWidgets.QDialog):
         self.activateWindow()
         self.raise_()
         self.text_edit.setFocus()
+
+    def focusOutEvent(self, event):
+        """Se ejecuta cuando la ventana pierde el foco - mantener siempre activa"""
+        # Ignorar la pérdida de foco para mantener la ventana siempre visible
+        super().focusOutEvent(event)
+        # Reactivar la ventana después de un breve delay
+        QtCore.QTimer.singleShot(50, self.reactivate_window)
+
+    def reactivate_window(self):
+        """Reactiva la ventana para mantenerla siempre on top"""
+        if self.isVisible():
+            self.activateWindow()
+            self.raise_()
         self.text_edit.selectAll()
 
     def show_node_label_editor(self):
