@@ -1198,7 +1198,10 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
     def load_sticky_note_data(self):
         """Carga los datos del sticky note en la interfaz"""
+        sticky_debug_print("=== INICIO load_sticky_note_data ===")
+        
         if not self.sticky_node:
+            sticky_debug_print("ERROR: No hay sticky_node")
             return
 
         # Cargar texto usando las funciones utilitarias
@@ -1209,11 +1212,16 @@ class StickyNoteEditor(QtWidgets.QDialog):
         final_clean_text, margin_x_detected, margin_y_detected = (
             extract_clean_text_and_margins(current_text)
         )
+        
+        sticky_debug_print(f"Texto limpio extraído: '{final_clean_text}'")
+        sticky_debug_print(f"Margin X detectado: {margin_x_detected}")
+        sticky_debug_print(f"Margin Y detectado: {margin_y_detected}")
 
         # Actualizar QTextEdit sin disparar señales
         self.text_edit.blockSignals(True)
         self.text_edit.setPlainText(final_clean_text)
         self.text_edit.blockSignals(False)
+        sticky_debug_print(f"Texto establecido en editor: '{final_clean_text}'")
 
         # Cargar font size
         current_font_size = int(self.sticky_node["note_font_size"].value())
@@ -1244,18 +1252,31 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
         # Si es un nodo nuevo, aplicar el margin X por defecto
         if self.state_manager.is_new_node:
+            sticky_debug_print("Es nodo nuevo, aplicando margin X por defecto")
             self.on_text_changed()  # Esto aplicará el margin X = 2 al texto
+            
+        sticky_debug_print("=== FIN load_sticky_note_data ===")
 
     def on_text_changed(self):
         """Callback cuando cambia el texto - ESCRITURA INMEDIATA SIN DEBOUNCING"""
+        sticky_debug_print("=== INICIO on_text_changed ===")
+        
         if self.sticky_node:
             current_text = self.text_edit.toPlainText()
             margin_x = self.margin_slider.value()
             margin_y = self.margin_y_slider.value()
+            
+            sticky_debug_print(f"Texto del editor: '{current_text}'")
+            sticky_debug_print(f"Margin X: {margin_x}, Margin Y: {margin_y}")
 
             # Formatear texto usando las funciones utilitarias
             final_text = format_text_with_margins(current_text, margin_x, margin_y)
+            sticky_debug_print(f"Texto después de aplicar márgenes: '{final_text}'")
+            
             self.sticky_node["label"].setValue(final_text)
+            sticky_debug_print(f"Texto establecido en sticky note: '{final_text}'")
+            
+        sticky_debug_print("=== FIN on_text_changed ===")
 
     def on_font_size_changed(self, value):
         """Callback cuando cambia el font size"""
@@ -1279,13 +1300,24 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
     def on_left_arrow_clicked(self):
         """Callback cuando se hace click en el botón de flecha izquierda"""
+        sticky_debug_print("=== INICIO on_left_arrow_clicked ===")
+        
         if not self.sticky_node:
+            sticky_debug_print("ERROR: No hay sticky_node")
             return
 
+        # Debug: estado inicial
+        initial_sticky_text = self.sticky_node["label"].value()
+        sticky_debug_print(f"Texto inicial del sticky note: '{initial_sticky_text}'")
+        
         current_text = self.text_edit.toPlainText()
+        sticky_debug_print(f"Texto actual del editor: '{current_text}'")
+        
         lines = current_text.split("\n")
+        sticky_debug_print(f"Líneas del editor: {lines}")
 
         if not lines:
+            sticky_debug_print("ERROR: No hay líneas")
             return
 
         # Filtrar líneas que no son flechas arriba/abajo para calcular la línea central
@@ -1296,38 +1328,50 @@ class StickyNoteEditor(QtWidgets.QDialog):
         # Verificar si hay flecha arriba (primera línea es "↑")
         if len(lines) >= 1 and lines[0] == "↑":
             start_index = 1
+            sticky_debug_print(f"Detectada flecha arriba, start_index = {start_index}")
 
         # Verificar si hay flecha abajo (última línea es "↓")
         if len(lines) >= 1 and lines[-1] == "↓":
             end_index = len(lines) - 1
+            sticky_debug_print(f"Detectada flecha abajo, end_index = {end_index}")
 
         # Obtener solo las líneas de texto (sin flechas arriba/abajo)
         text_lines = lines[start_index:end_index]
+        sticky_debug_print(f"Líneas de texto (sin flechas verticales): {text_lines}")
 
         if not text_lines:
+            sticky_debug_print("ERROR: No hay líneas de texto")
             return
 
         # Encontrar la línea central del texto real
         center_line_index_in_text = len(text_lines) // 2
         center_line_index_in_full = start_index + center_line_index_in_text
         center_line = lines[center_line_index_in_full]
+        
+        sticky_debug_print(f"Índice línea central en texto: {center_line_index_in_text}")
+        sticky_debug_print(f"Índice línea central completo: {center_line_index_in_full}")
+        sticky_debug_print(f"Línea central: '{center_line}'")
 
         # Verificar si ya existe "←" en la línea central
         if "←" in center_line:
             # Remover la flecha
             new_center_line = center_line.replace("←", "").strip()
+            sticky_debug_print(f"Removiendo flecha izquierda, nueva línea: '{new_center_line}'")
         else:
             # Agregar la flecha
             if center_line.strip():
                 new_center_line = "← " + center_line
             else:
                 new_center_line = "←"
+            sticky_debug_print(f"Agregando flecha izquierda, nueva línea: '{new_center_line}'")
 
         # Actualizar la línea en el array
         lines[center_line_index_in_full] = new_center_line
+        sticky_debug_print(f"Líneas después de modificar: {lines}")
 
         # Reconstruir el texto
         new_text = "\n".join(lines)
+        sticky_debug_print(f"Nuevo texto del editor: '{new_text}'")
 
         # Actualizar el editor
         self.text_edit.blockSignals(True)
@@ -1335,11 +1379,16 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.text_edit.blockSignals(False)
 
         # Actualizar el sticky note
+        sticky_debug_print("Llamando a on_text_changed()...")
         self.on_text_changed()
+        
+        final_sticky_text = self.sticky_node["label"].value()
+        sticky_debug_print(f"Texto final del sticky note: '{final_sticky_text}'")
 
         sticky_debug_print(
             f"Flecha izquierda {'removida' if '←' not in new_center_line else 'agregada'} en línea central del texto"
         )
+        sticky_debug_print("=== FIN on_left_arrow_clicked ===")
 
     def on_right_arrow_clicked(self):
         """Callback cuando se hace click en el botón de flecha derecha"""
@@ -1407,24 +1456,39 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
     def on_up_arrow_clicked(self):
         """Callback cuando se hace click en el botón de flecha arriba"""
+        sticky_debug_print("=== INICIO on_up_arrow_clicked ===")
+        
         if not self.sticky_node:
+            sticky_debug_print("ERROR: No hay sticky_node")
             return
 
+        # Debug: estado inicial
+        initial_sticky_text = self.sticky_node["label"].value()
+        sticky_debug_print(f"Texto inicial del sticky note: '{initial_sticky_text}'")
+
         current_text = self.text_edit.toPlainText()
+        sticky_debug_print(f"Texto actual del editor: '{current_text}'")
+        
         lines = current_text.split("\n")
+        sticky_debug_print(f"Líneas del editor: {lines}")
 
         # Verificar si ya existe la flecha arriba (primera línea es "↑")
         if len(lines) >= 1 and lines[0] == "↑":
             # Remover la flecha arriba (eliminar la primera línea)
             lines = lines[1:]
+            sticky_debug_print("Removiendo flecha arriba (primera línea)")
             sticky_debug_print("Flecha arriba removida del comienzo del texto")
         else:
             # Agregar la flecha arriba al comienzo
             lines.insert(0, "↑")
+            sticky_debug_print("Agregando flecha arriba al comienzo")
             sticky_debug_print("Flecha arriba agregada al comienzo del texto")
+
+        sticky_debug_print(f"Líneas después de modificar: {lines}")
 
         # Reconstruir el texto
         new_text = "\n".join(lines)
+        sticky_debug_print(f"Nuevo texto del editor: '{new_text}'")
 
         # Actualizar el editor
         self.text_edit.blockSignals(True)
@@ -1432,28 +1496,48 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.text_edit.blockSignals(False)
 
         # Actualizar el sticky note
+        sticky_debug_print("Llamando a on_text_changed()...")
         self.on_text_changed()
+        
+        final_sticky_text = self.sticky_node["label"].value()
+        sticky_debug_print(f"Texto final del sticky note: '{final_sticky_text}'")
+        sticky_debug_print("=== FIN on_up_arrow_clicked ===")
 
     def on_down_arrow_clicked(self):
         """Callback cuando se hace click en el botón de flecha abajo"""
+        sticky_debug_print("=== INICIO on_down_arrow_clicked ===")
+        
         if not self.sticky_node:
+            sticky_debug_print("ERROR: No hay sticky_node")
             return
 
+        # Debug: estado inicial
+        initial_sticky_text = self.sticky_node["label"].value()
+        sticky_debug_print(f"Texto inicial del sticky note: '{initial_sticky_text}'")
+
         current_text = self.text_edit.toPlainText()
+        sticky_debug_print(f"Texto actual del editor: '{current_text}'")
+        
         lines = current_text.split("\n")
+        sticky_debug_print(f"Líneas del editor: {lines}")
 
         # Verificar si ya existe la flecha abajo (última línea es "↓")
         if len(lines) >= 1 and lines[-1] == "↓":
             # Remover la flecha abajo (eliminar la última línea)
             lines = lines[:-1]
+            sticky_debug_print("Removiendo flecha abajo (última línea)")
             sticky_debug_print("Flecha abajo removida del final del texto")
         else:
             # Agregar la flecha abajo al final
             lines.append("↓")
+            sticky_debug_print("Agregando flecha abajo al final")
             sticky_debug_print("Flecha abajo agregada al final del texto")
+
+        sticky_debug_print(f"Líneas después de modificar: {lines}")
 
         # Reconstruir el texto
         new_text = "\n".join(lines)
+        sticky_debug_print(f"Nuevo texto del editor: '{new_text}'")
 
         # Actualizar el editor
         self.text_edit.blockSignals(True)
@@ -1461,7 +1545,12 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.text_edit.blockSignals(False)
 
         # Actualizar el sticky note
+        sticky_debug_print("Llamando a on_text_changed()...")
         self.on_text_changed()
+        
+        final_sticky_text = self.sticky_node["label"].value()
+        sticky_debug_print(f"Texto final del sticky note: '{final_sticky_text}'")
+        sticky_debug_print("=== FIN on_down_arrow_clicked ===")
 
     def on_left_arrow_enter(self, event):
         """Cambia el icono a la version hover cuando el ratón entra"""
