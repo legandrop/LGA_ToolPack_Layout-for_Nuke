@@ -11,6 +11,8 @@ import nuke
 import nukescripts
 import random
 import colorsys
+import gc
+import weakref
 from PySide2 import QtWidgets, QtGui, QtCore
 from PySide2.QtWidgets import QFrame
 from PySide2.QtGui import QFontMetrics, QFont
@@ -20,6 +22,32 @@ import LGA_BD_knobs
 import LGA_BD_callbacks
 import LGA_BD_fit
 import LGA_BD_config
+
+# ===== CONTROL DE RECURSOS Y GESTIÓN DE MEMORIA =====
+# Namespace único para evitar conflictos con otros scripts
+LGA_BACKDROP_NAMESPACE = "LGA_Backdrop_v080"
+
+# Control de instancias para evitar múltiples widgets
+_BACKDROP_INSTANCES = weakref.WeakSet()
+_BACKDROP_CLEANUP_ENABLED = True
+
+def backdrop_cleanup_instances():
+    """Limpia instancias anteriores de Backdrop"""
+    if not _BACKDROP_CLEANUP_ENABLED:
+        return
+    
+    instances_to_clean = list(_BACKDROP_INSTANCES)
+    for instance in instances_to_clean:
+        try:
+            if hasattr(instance, '_cleanup_resources'):
+                instance._cleanup_resources()
+            if hasattr(instance, 'close'):
+                instance.close()
+        except (RuntimeError, ReferenceError):
+            pass  # Instancia ya fue eliminada
+    
+    _BACKDROP_INSTANCES.clear()
+    gc.collect()
 
 # Variables configurables para el drop shadow - UNIQUE NAMES FOR BACKDROP
 BACKDROP_SHADOW_BLUR_RADIUS_Backdrop = 25  # Radio de blur (más alto = más blureado)
@@ -49,6 +77,10 @@ class BackdropNameDialog(QtWidgets.QDialog):
         self.esc_exit = False
         self.user_text = ""
         self.drag_position = None  # Para el arrastre de la ventana
+        
+        # CONTROL DE RECURSOS: Registrar esta instancia
+        _BACKDROP_INSTANCES.add(self)
+        
         self.backdrop_setup_ui_BackDrop()
         self.backdrop_setup_connections_backdrop()
 
@@ -374,11 +406,15 @@ class BackdropNameDialog(QtWidgets.QDialog):
 
 def show_text_dialog():
     """
-    Muestra el dialogo y retorna el resultado - USING LAZY INITIALIZATION
+    Muestra el dialogo y retorna el resultado - USING RESOURCE CONTROL
     """
     backdrop_debug_print(
-        "show_text_dialog() called - creating BackdropNameDialog instance"
+        "show_text_dialog() called - using resource control"
     )
+    
+    # CONTROL DE RECURSOS: Limpiar instancias anteriores
+    backdrop_cleanup_instances()
+    
     dialog = BackdropNameDialog()
     return dialog.show_backdrop_dialog()
 

@@ -9,26 +9,54 @@ _______________________________________________
 
 import nuke
 import os
+import gc
+import weakref
 from PySide2 import QtWidgets, QtGui, QtCore
 
+# ===== CONTROL DE RECURSOS Y GESTIÓN DE MEMORIA =====
+# Namespace único para evitar conflictos con otros scripts
+LGA_NODE_LABEL_NAMESPACE = "LGA_NodeLabel_v081"
 
-# Variable global para activar o desactivar los prints
-DEBUG = True
+# Control de instancias para evitar múltiples widgets
+_NODE_LABEL_INSTANCES = weakref.WeakSet()
+_NODE_LABEL_CLEANUP_ENABLED = True
 
-# Margen vertical para la interfaz de usuario
-UI_MARGIN_Y = 20
+def label_cleanup_instances():
+    """Limpia instancias anteriores de NodeLabel"""
+    if not _NODE_LABEL_CLEANUP_ENABLED:
+        return
+    
+    instances_to_clean = list(_NODE_LABEL_INSTANCES)
+    for instance in instances_to_clean:
+        try:
+            if hasattr(instance, '_cleanup_resources'):
+                instance._cleanup_resources()
+            if hasattr(instance, 'close'):
+                instance.close()
+        except (RuntimeError, ReferenceError):
+            pass  # Instancia ya fue eliminada
+    
+    _NODE_LABEL_INSTANCES.clear()
+    gc.collect()
 
-# Variables configurables para el drop shadow
-SHADOW_BLUR_RADIUS_NodeLabel = 25  # Radio de blur (más alto = más blureado)
-SHADOW_OPACITY_NodeLabel = 60  # Opacidad (0-255, más alto = más opaco)
-SHADOW_OFFSET_X = 3  # Desplazamiento horizontal
-SHADOW_OFFSET_Y = 3  # Desplazamiento vertical
-SHADOW_MARGIN = 25  # Margen adicional para la sombra proyectada
+# Variable global para activar o desactivar los prints - NOMBRE ÚNICO
+LABEL_DEBUG = True
+
+# Margen vertical para la interfaz de usuario - NOMBRE ÚNICO
+LABEL_UI_MARGIN_Y = 20
+
+# Variables configurables para el drop shadow - NOMBRES ÚNICOS PARA LABEL
+LABEL_SHADOW_BLUR_RADIUS = 25  # Radio de blur (más alto = más blureado)
+LABEL_SHADOW_OPACITY = 60  # Opacidad (0-255, más alto = más opaco)
+LABEL_SHADOW_OFFSET_X = 3  # Desplazamiento horizontal
+LABEL_SHADOW_OFFSET_Y = 3  # Desplazamiento vertical
+LABEL_SHADOW_MARGIN = 25  # Margen adicional para la sombra proyectada
 
 
-def debug_print(*message):
-    if DEBUG:
-        print(*message)
+def label_debug_print(*message):
+    """Debug print con nombre único para NodeLabel"""
+    if LABEL_DEBUG:
+        print("[LABEL DEBUG]", *message)
 
 
 class NodeLabelEditor(QtWidgets.QDialog):
@@ -38,6 +66,10 @@ class NodeLabelEditor(QtWidgets.QDialog):
         self.selected_node = None
         self.original_label = ""
         self.drag_position = None  # Para el arrastre de la ventana
+        
+        # CONTROL DE RECURSOS: Registrar esta instancia
+        _NODE_LABEL_INSTANCES.add(self)
+        
         self.setup_ui_NodeLabel()
         self.setup_connections_NodeLabel()
 
@@ -55,7 +87,7 @@ class NodeLabelEditor(QtWidgets.QDialog):
         # Layout principal con margenes para la sombra
         main_layout = QtWidgets.QVBoxLayout()
         main_layout.setContentsMargins(
-            SHADOW_MARGIN, SHADOW_MARGIN, SHADOW_MARGIN, SHADOW_MARGIN
+            LABEL_SHADOW_MARGIN, LABEL_SHADOW_MARGIN, LABEL_SHADOW_MARGIN, LABEL_SHADOW_MARGIN
         )  # Margen para la sombra
         main_layout.setSpacing(0)
 
@@ -74,9 +106,9 @@ class NodeLabelEditor(QtWidgets.QDialog):
 
         # Aplicar sombra al frame principal
         self.shadow = QtWidgets.QGraphicsDropShadowEffect()
-        self.shadow.setBlurRadius(SHADOW_BLUR_RADIUS_NodeLabel)
-        self.shadow.setColor(QtGui.QColor(0, 0, 0, SHADOW_OPACITY_NodeLabel))
-        self.shadow.setOffset(SHADOW_OFFSET_X, SHADOW_OFFSET_Y)
+        self.shadow.setBlurRadius(LABEL_SHADOW_BLUR_RADIUS)
+        self.shadow.setColor(QtGui.QColor(0, 0, 0, LABEL_SHADOW_OPACITY))
+        self.shadow.setOffset(LABEL_SHADOW_OFFSET_X, LABEL_SHADOW_OFFSET_Y)
         self.main_frame.setGraphicsEffect(self.shadow)
 
         # Layout del frame principal
@@ -271,15 +303,15 @@ class NodeLabelEditor(QtWidgets.QDialog):
         selected_nodes = nuke.selectedNodes()
 
         if not selected_nodes:
-            debug_print("No hay nodos seleccionados")
+            label_debug_print("No hay nodos seleccionados")
             return None
 
         # Usar el primer nodo seleccionado
         self.selected_node = selected_nodes[0]
         # Guardar el label original
         self.original_label = self.selected_node["label"].value()
-        debug_print(f"Nodo seleccionado: {self.selected_node.name()}")
-        debug_print(f"Label original: '{self.original_label}'")
+        label_debug_print(f"Nodo seleccionado: {self.selected_node.name()}")
+        label_debug_print(f"Label original: '{self.original_label}'")
 
         return self.selected_node
 
@@ -299,13 +331,13 @@ class NodeLabelEditor(QtWidgets.QDialog):
 
     def on_cancel_clicked(self):
         """Callback cuando se hace click en Cancel"""
-        debug_print("Cancelando edición de label")
+        label_debug_print("Cancelando edición de label")
         self.close()
 
     def on_ok_clicked(self):
         """Callback cuando se hace click en OK"""
         if not self.selected_node:
-            debug_print("No hay nodo seleccionado para aplicar el label")
+            label_debug_print("No hay nodo seleccionado para aplicar el label")
             self.close()
             return
 
@@ -315,7 +347,7 @@ class NodeLabelEditor(QtWidgets.QDialog):
         # Aplicar el nuevo label al nodo
         self.selected_node["label"].setValue(new_label)
 
-        debug_print(
+        label_debug_print(
             f"Label aplicado al nodo {self.selected_node.name()}: '{new_label}'"
         )
         self.close()
@@ -437,11 +469,11 @@ class NodeLabelEditor(QtWidgets.QDialog):
             node_top = self.selected_node.ypos()
             delta_top = (node_top - center_y) * zoom
             node_top_screen = dag_top_left.y() + dag_widget.height() // 2 + delta_top
-            y_above = int(node_top_screen - UI_MARGIN_Y - window_height)
+            y_above = int(node_top_screen - LABEL_UI_MARGIN_Y - window_height)
 
             if y_above >= avail.top():
                 window_y = y_above + 20
-                debug_print(f"Posicionando arriba: ({window_x}, {window_y})")
+                label_debug_print(f"Posicionando arriba: ({window_x}, {window_y})")
             else:
                 # Si no cabe, debajo
                 node_bot = self.selected_node.ypos() + self.selected_node.screenHeight()
@@ -449,8 +481,8 @@ class NodeLabelEditor(QtWidgets.QDialog):
                 node_bot_screen = (
                     dag_top_left.y() + dag_widget.height() // 2 + delta_bot
                 )
-                window_y = int(node_bot_screen + UI_MARGIN_Y)
-                debug_print(f"Posicionando debajo: ({window_x}, {window_y})")
+                window_y = int(node_bot_screen + LABEL_UI_MARGIN_Y)
+                label_debug_print(f"Posicionando debajo: ({window_x}, {window_y})")
 
             # Ajustar para que no salga de pantalla
             window_x = min(max(window_x, avail.left()), avail.right() - window_width)
@@ -459,7 +491,7 @@ class NodeLabelEditor(QtWidgets.QDialog):
             self.move(QtCore.QPoint(window_x, window_y))
 
         except Exception as e:
-            debug_print(f"Error al posicionar ventana: {e}")
+            label_debug_print(f"Error al posicionar ventana: {e}")
             # Fallback al cursor
             cursor_pos = QtGui.QCursor.pos()
             self.move(
@@ -485,14 +517,21 @@ def main():
 
 # Para uso en Nuke - INSTANCIACIÓN TARDÍA
 def run_node_label_editor():
-    """Mostrar el editor de Node Label dentro de Nuke usando instanciación tardía"""
+    """Mostrar el editor de Node Label dentro de Nuke usando control de recursos mejorado"""
     global node_label_editor
 
+    # CONTROL DE RECURSOS: Limpiar instancias anteriores
+    label_cleanup_instances()
+
     # INSTANCIACIÓN TARDÍA: Solo crear cuando se necesite
-    if node_label_editor is None:
-        print("Creando instancia de NodeLabelEditor con instanciación tardía...")
+    try:
+        label_debug_print("Creando instancia de NodeLabelEditor con control de recursos...")
         node_label_editor = NodeLabelEditor()
-    node_label_editor.show_node_label_editor()
+        node_label_editor.show_node_label_editor()
+        label_debug_print(f"LGA_NodeLabel iniciado correctamente - Namespace: {LGA_NODE_LABEL_NAMESPACE}")
+    except Exception as e:
+        label_debug_print(f"Error al iniciar LGA_NodeLabel: {e}")
+        node_label_editor = None
 
 
 # Ejecutar cuando se carga en Nuke

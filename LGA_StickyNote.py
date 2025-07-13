@@ -9,6 +9,8 @@ _______________________________________________
 
 import nuke
 import os
+import gc
+import weakref
 from PySide2 import QtWidgets, QtGui, QtCore
 from LGA_StickyNote_Utils import (
     StickyNoteStateManager,
@@ -16,35 +18,59 @@ from LGA_StickyNote_Utils import (
     format_text_with_margins,
 )
 
+# ===== CONTROL DE RECURSOS Y GESTIÓN DE MEMORIA =====
 # Namespace único para evitar conflictos con otros scripts
-LGA_STICKY_NOTE_NAMESPACE = "LGA_StickyNote_v190"
+LGA_STICKY_NOTE_NAMESPACE = "LGA_StickyNote_v191"
+
+# Control de instancias para evitar múltiples widgets
+_STICKY_NOTE_INSTANCES = weakref.WeakSet()
+_STICKY_NOTE_CLEANUP_ENABLED = True
+
+def sticky_cleanup_instances():
+    """Limpia instancias anteriores de StickyNote"""
+    if not _STICKY_NOTE_CLEANUP_ENABLED:
+        return
+    
+    instances_to_clean = list(_STICKY_NOTE_INSTANCES)
+    for instance in instances_to_clean:
+        try:
+            if hasattr(instance, '_cleanup_resources'):
+                instance._cleanup_resources()
+            if hasattr(instance, 'close'):
+                instance.close()
+        except (RuntimeError, ReferenceError):
+            pass  # Instancia ya fue eliminada
+    
+    _STICKY_NOTE_INSTANCES.clear()
+    gc.collect()
 
 # Variable global para activar o desactivar los prints
-DEBUG = True
+STICKY_DEBUG = True
 
 # Margen vertical para la interfaz de usuario
-UI_MARGIN_Y = 20
+STICKY_UI_MARGIN_Y = 20
 
-# Variables configurables para el drop shadow
-SHADOW_BLUR_RADIUS_Sticky = 25  # Radio de blur (más alto = más blureado)
-SHADOW_OPACITY_Sticky = 60  # Opacidad (0-255, más alto = más opaco)
-SHADOW_OFFSET_X = 3  # Desplazamiento horizontal
-SHADOW_OFFSET_Y = 3  # Desplazamiento vertical
-SHADOW_MARGIN = 25  # Margen adicional para la sombra proyectada
+# Variables configurables para el drop shadow - NOMBRES ÚNICOS PARA STICKY
+STICKY_SHADOW_BLUR_RADIUS = 25  # Radio de blur (más alto = más blureado)
+STICKY_SHADOW_OPACITY = 60  # Opacidad (0-255, más alto = más opaco)
+STICKY_SHADOW_OFFSET_X = 3  # Desplazamiento horizontal
+STICKY_SHADOW_OFFSET_Y = 3  # Desplazamiento vertical
+STICKY_SHADOW_MARGIN = 25  # Margen adicional para la sombra proyectada
 
 # Variables configurables para los botones de color
-COLOR_BUTTON_HEIGHT = 16  # Altura de los botones de color (en pixels)
-COLOR_BUTTON_BORDER_RADIUS = (
+STICKY_COLOR_BUTTON_HEIGHT = 16  # Altura de los botones de color (en pixels)
+STICKY_COLOR_BUTTON_BORDER_RADIUS = (
     2  # Radio de los bordes redondeados de los botones (en pixels)
 )
 
 # Variables para el sistema de debouncing
-DEBOUNCE_DELAY = 150  # Milisegundos de delay para evitar escritura excesiva
+STICKY_DEBOUNCE_DELAY = 150  # Milisegundos de delay para evitar escritura excesiva
 
 
-def debug_print(*message):
-    if DEBUG:
-        print(*message)
+def sticky_debug_print(*message):
+    """Debug print con nombre único para StickyNote"""
+    if STICKY_DEBUG:
+        print("[STICKY DEBUG]", *message)
 
 
 # Colores para el gradiente
@@ -67,7 +93,7 @@ class StickyNoteColorSwatchWidget(QtWidgets.QWidget):
     SecondRow_SatuMult = 0.43  # Multiplicador de saturación para la segunda fila
 
     SWATCH_TOTAL = 10  # Ahora incluye gris
-    SWATCH_CSS = f"background-color: rgb(%03d,%03d,%03d); border: none; height: {COLOR_BUTTON_HEIGHT}px; border-radius: {COLOR_BUTTON_BORDER_RADIUS}px;"
+    SWATCH_CSS = f"background-color: rgb(%03d,%03d,%03d); border: none; height: {STICKY_COLOR_BUTTON_HEIGHT}px; border-radius: {STICKY_COLOR_BUTTON_BORDER_RADIUS}px;"
     SWATCH_COLOR = (58, 58, 58)
 
     # Variable para controlar la saturacion del gradiente en el boton random (0.0 a 1.0)
@@ -282,8 +308,8 @@ class StickyNoteColorSwatchWidget(QtWidgets.QWidget):
                     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
                         {', '.join(stop_values)});
                     border: none;
-                    height: {COLOR_BUTTON_HEIGHT}px;
-                    border-radius: {COLOR_BUTTON_BORDER_RADIUS}px;
+                    height: {STICKY_COLOR_BUTTON_HEIGHT}px;
+                    border-radius: {STICKY_COLOR_BUTTON_BORDER_RADIUS}px;
                 """
                 color_knob.setStyleSheet(gradient_css)
                 color_knob.setProperty("is_random", True)
@@ -356,8 +382,8 @@ class StickyNoteColorSwatchWidget(QtWidgets.QWidget):
                     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
                         {', '.join(stop_values)});
                     border: none;
-                    height: {COLOR_BUTTON_HEIGHT}px;
-                    border-radius: {COLOR_BUTTON_BORDER_RADIUS}px;
+                    height: {STICKY_COLOR_BUTTON_HEIGHT}px;
+                    border-radius: {STICKY_COLOR_BUTTON_BORDER_RADIUS}px;
                 """
                 color_knob.setStyleSheet(gradient_css)
                 color_knob.setProperty("is_random", True)
@@ -417,7 +443,7 @@ class StickyNoteColorSwatchWidget(QtWidgets.QWidget):
             or not self.color_variations
             or row_key not in self.color_variations
         ):
-            debug_print(f"No variations available for {row_key}")
+            sticky_debug_print(f"No variations available for {row_key}")
             return
 
         # Usar tracking interno en lugar de detección de color actual
@@ -428,13 +454,13 @@ class StickyNoteColorSwatchWidget(QtWidgets.QWidget):
         ):
             # Si el último color aplicado es de la misma familia y fila, avanzar al siguiente
             next_index = (self._last_applied_index + 1) % 5  # Loop de 0 a 4
-            debug_print(
+            sticky_debug_print(
                 f"Current {color_name} row{row_number} variation: {self._last_applied_index}, next: {next_index}"
             )
         else:
             # Si no es de la misma familia/fila o es la primera vez, empezar desde 0
             next_index = 0
-            debug_print(
+            sticky_debug_print(
                 f"Starting {color_name} row{row_number} variations from index 0"
             )
 
@@ -459,17 +485,17 @@ class StickyNoteColorSwatchWidget(QtWidgets.QWidget):
                     self._last_applied_index = next_index
                     self._last_applied_row = row_number
 
-                    debug_print(
+                    sticky_debug_print(
                         f"Applied {color_name} row{row_number} variation {next_index}: RGB({r}, {g}, {b}) = {hex_color}"
                     )
                 else:
-                    debug_print(f"Error: Invalid node or missing tile_color knob")
+                    sticky_debug_print(f"Error: Invalid node or missing tile_color knob")
             else:
-                debug_print(
+                sticky_debug_print(
                     f"Error: Invalid RGB values for {color_name} row{row_number} variation {next_index}"
                 )
         else:
-            debug_print(f"Error: No valid variations found for {row_key}")
+            sticky_debug_print(f"Error: No valid variations found for {row_key}")
 
     def _apply_random_color(self, row_number=1):
         """Aplica un color completamente aleatorio según la fila especificada"""
@@ -500,11 +526,11 @@ class StickyNoteColorSwatchWidget(QtWidgets.QWidget):
             self._last_applied_index = -1
             self._last_applied_row = row_number
 
-            debug_print(
+            sticky_debug_print(
                 f"Applied random color row{row_number}: RGB({r}, {g}, {b}) = {hex_color}"
             )
         else:
-            debug_print(f"Error: Invalid node or missing tile_color knob")
+            sticky_debug_print(f"Error: Invalid node or missing tile_color knob")
 
     def set_node(self, node):
         """Establece el nodo StickyNote para aplicar colores"""
@@ -519,6 +545,9 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.drag_position = None  # Para el arrastre de la ventana
         self.state_manager = StickyNoteStateManager()  # Gestor de estado
         self.undo_started = False  # Flag para controlar si se inicio el undo
+
+        # CONTROL DE RECURSOS: Registrar esta instancia
+        _STICKY_NOTE_INSTANCES.add(self)
 
         # DESHABILITAR COMPLETAMENTE EL SISTEMA DE DEBOUNCING
         # Comentando todo el sistema de timer para evitar loops
@@ -544,7 +573,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
         # Layout principal con margenes para la sombra
         main_layout = QtWidgets.QVBoxLayout()
         main_layout.setContentsMargins(
-            SHADOW_MARGIN, SHADOW_MARGIN, SHADOW_MARGIN, SHADOW_MARGIN
+            STICKY_SHADOW_MARGIN, STICKY_SHADOW_MARGIN, STICKY_SHADOW_MARGIN, STICKY_SHADOW_MARGIN
         )  # Margen para la sombra
         main_layout.setSpacing(0)
 
@@ -563,9 +592,9 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
         # Aplicar sombra al frame principal
         self.shadow = QtWidgets.QGraphicsDropShadowEffect()
-        self.shadow.setBlurRadius(SHADOW_BLUR_RADIUS_Sticky)
-        self.shadow.setColor(QtGui.QColor(0, 0, 0, SHADOW_OPACITY_Sticky))
-        self.shadow.setOffset(SHADOW_OFFSET_X, SHADOW_OFFSET_Y)
+        self.shadow.setBlurRadius(STICKY_SHADOW_BLUR_RADIUS)
+        self.shadow.setColor(QtGui.QColor(0, 0, 0, STICKY_SHADOW_OPACITY))
+        self.shadow.setOffset(STICKY_SHADOW_OFFSET_X, STICKY_SHADOW_OFFSET_Y)
         self.main_frame.setGraphicsEffect(self.shadow)
 
         # Layout del frame principal
@@ -1153,13 +1182,13 @@ class StickyNoteEditor(QtWidgets.QDialog):
             self.sticky_node = sticky_notes[0]
             # Guardar estado original para poder restaurarlo
             self.state_manager.save_original_state(self.sticky_node)
-            print(f"Editando StickyNote existente: {self.sticky_node.name()}")
+            sticky_debug_print(f"Editando StickyNote existente: {self.sticky_node.name()}")
         else:
             # Crear un nuevo StickyNote
             self.sticky_node = nuke.createNode("StickyNote")
             # Marcar como nuevo para poder eliminarlo si se cancela
             self.state_manager.set_as_new_node(self.sticky_node)
-            print(f"Creado nuevo StickyNote: {self.sticky_node.name()}")
+            sticky_debug_print(f"Creado nuevo StickyNote: {self.sticky_node.name()}")
 
         # Deseleccionar todos los nodos después de obtener o crear el StickyNote
         for node in nuke.selectedNodes():
@@ -1174,7 +1203,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
         # Cargar texto usando las funciones utilitarias
         current_text = self.sticky_node["label"].value()
-        debug_print(f"Texto actual del StickyNote: '{current_text}'")
+        sticky_debug_print(f"Texto actual del StickyNote: '{current_text}'")
 
         # Extraer texto limpio y márgenes
         final_clean_text, margin_x_detected, margin_y_detected = (
@@ -1308,7 +1337,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
         # Actualizar el sticky note
         self.on_text_changed()
 
-        print(
+        sticky_debug_print(
             f"Flecha izquierda {'removida' if '←' not in new_center_line else 'agregada'} en línea central del texto"
         )
 
@@ -1372,7 +1401,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
         # Actualizar el sticky note
         self.on_text_changed()
 
-        print(
+        sticky_debug_print(
             f"Flecha derecha {'removida' if '→' not in new_center_line else 'agregada'} en línea central del texto"
         )
 
@@ -1388,11 +1417,11 @@ class StickyNoteEditor(QtWidgets.QDialog):
         if len(lines) >= 1 and lines[0] == "↑":
             # Remover la flecha arriba (eliminar la primera línea)
             lines = lines[1:]
-            print("Flecha arriba removida del comienzo del texto")
+            sticky_debug_print("Flecha arriba removida del comienzo del texto")
         else:
             # Agregar la flecha arriba al comienzo
             lines.insert(0, "↑")
-            print("Flecha arriba agregada al comienzo del texto")
+            sticky_debug_print("Flecha arriba agregada al comienzo del texto")
 
         # Reconstruir el texto
         new_text = "\n".join(lines)
@@ -1417,11 +1446,11 @@ class StickyNoteEditor(QtWidgets.QDialog):
         if len(lines) >= 1 and lines[-1] == "↓":
             # Remover la flecha abajo (eliminar la última línea)
             lines = lines[:-1]
-            print("Flecha abajo removida del final del texto")
+            sticky_debug_print("Flecha abajo removida del final del texto")
         else:
             # Agregar la flecha abajo al final
             lines.append("↓")
-            print("Flecha abajo agregada al final del texto")
+            sticky_debug_print("Flecha abajo agregada al final del texto")
 
         # Reconstruir el texto
         new_text = "\n".join(lines)
@@ -1555,11 +1584,11 @@ class StickyNoteEditor(QtWidgets.QDialog):
         try:
             # Cancelar el undo (no crear punto de undo)
             self._cancel_undo_group()
-            print(
+            sticky_debug_print(
                 "Acción de cancelación completada exitosamente - No se creó punto de undo"
             )
         except Exception as e:
-            print(f"Error durante la cancelación: {e}")
+            sticky_debug_print(f"Error durante la cancelación: {e}")
         finally:
             # Limpieza completa antes de cerrar
             self._cleanup_resources()
@@ -1574,9 +1603,9 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
             # Finalizar el grupo de undo (crear punto de undo)
             self._end_undo_group()
-            print("Cambios confirmados exitosamente - Punto de undo creado")
+            sticky_debug_print("Cambios confirmados exitosamente - Punto de undo creado")
         except Exception as e:
-            print(f"Error durante la confirmación: {e}")
+            sticky_debug_print(f"Error durante la confirmación: {e}")
         finally:
             # Limpieza completa antes de cerrar
             self._cleanup_resources()
@@ -1588,9 +1617,9 @@ class StickyNoteEditor(QtWidgets.QDialog):
             if not self.undo_started:
                 nuke.Undo().begin("Edit StickyNote")
                 self.undo_started = True
-                debug_print("Grupo de undo iniciado")
+                sticky_debug_print("Grupo de undo iniciado")
         except Exception as e:
-            print(f"Error al iniciar grupo de undo: {e}")
+            sticky_debug_print(f"Error al iniciar grupo de undo: {e}")
 
     def _end_undo_group(self):
         """Finaliza el grupo de undo creando un punto de undo"""
@@ -1598,9 +1627,9 @@ class StickyNoteEditor(QtWidgets.QDialog):
             if self.undo_started:
                 nuke.Undo().end()
                 self.undo_started = False
-                debug_print("Grupo de undo finalizado - Punto de undo creado")
+                sticky_debug_print("Grupo de undo finalizado - Punto de undo creado")
         except Exception as e:
-            print(f"Error al finalizar grupo de undo: {e}")
+            sticky_debug_print(f"Error al finalizar grupo de undo: {e}")
 
     def _cancel_undo_group(self):
         """Cancela el grupo de undo sin crear punto de undo"""
@@ -1609,9 +1638,9 @@ class StickyNoteEditor(QtWidgets.QDialog):
                 # Cancelar el undo deshaciendo todos los cambios
                 nuke.Undo().cancel()
                 self.undo_started = False
-                debug_print("Grupo de undo cancelado - Cambios revertidos")
+                sticky_debug_print("Grupo de undo cancelado - Cambios revertidos")
         except Exception as e:
-            print(f"Error al cancelar grupo de undo: {e}")
+            sticky_debug_print(f"Error al cancelar grupo de undo: {e}")
 
     def _cleanup_resources(self):
         """Limpieza completa de recursos para evitar memory leaks"""
@@ -1621,7 +1650,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
                 try:
                     nuke.Undo().cancel()
                     self.undo_started = False
-                    debug_print("Grupo de undo cancelado durante limpieza")
+                    sticky_debug_print("Grupo de undo cancelado durante limpieza")
                 except:
                     pass
 
@@ -1641,7 +1670,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
                     pass
 
         except Exception as e:
-            print(f"Error durante la limpieza: {e}")
+            sticky_debug_print(f"Error durante la limpieza: {e}")
 
     def eventFilter(self, obj, event):
         """Filtro de eventos para interceptar Ctrl+Enter en botones de color"""
@@ -1703,7 +1732,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
         # Si el diálogo se cierra sin OK ni Cancel, cancelar el undo
         if self.undo_started:
             self._cancel_undo_group()
-            debug_print("Diálogo cerrado sin OK/Cancel - Undo cancelado")
+            sticky_debug_print("Diálogo cerrado sin OK/Cancel - Undo cancelado")
         self._cleanup_resources()
         super().closeEvent(event)
 
@@ -1793,11 +1822,11 @@ class StickyNoteEditor(QtWidgets.QDialog):
             sticky_top = self.sticky_node.ypos()
             delta_top = (sticky_top - center_y) * zoom
             sticky_top_screen = dag_top_left.y() + dag_widget.height() // 2 + delta_top
-            y_above = int(sticky_top_screen - UI_MARGIN_Y - window_height)
+            y_above = int(sticky_top_screen - STICKY_UI_MARGIN_Y - window_height)
 
             if y_above >= avail.top():
                 window_y = y_above + 20
-                debug_print(f"Arriba: ({window_x}, {window_y})")
+                sticky_debug_print(f"Arriba: ({window_x}, {window_y})")
             else:
                 # Si no cabe, debajo
                 sticky_bot = self.sticky_node.ypos() + self.sticky_node.screenHeight()
@@ -1805,8 +1834,8 @@ class StickyNoteEditor(QtWidgets.QDialog):
                 sticky_bot_screen = (
                     dag_top_left.y() + dag_widget.height() // 2 + delta_bot
                 )
-                window_y = int(sticky_bot_screen + UI_MARGIN_Y)
-                debug_print(f"Debajo: ({window_x}, {window_y})")
+                window_y = int(sticky_bot_screen + STICKY_UI_MARGIN_Y)
+                sticky_debug_print(f"Debajo: ({window_x}, {window_y})")
 
             # Ajustar para que no salga de pantalla
             window_x = min(max(window_x, avail.left()), avail.right() - window_width)
@@ -1815,7 +1844,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
             self.move(QtCore.QPoint(window_x, window_y))
 
         except Exception as e:
-            debug_print(f"Error al posicionar ventana: {e}")
+            sticky_debug_print(f"Error al posicionar ventana: {e}")
             # Fallback al cursor
             cursor_pos = QtGui.QCursor.pos()
             self.move(
@@ -1880,8 +1909,11 @@ def main():
 
 # Para uso en Nuke - INSTANCIACIÓN TARDÍA
 def run_sticky_note_editor():
-    """Mostrar el editor de StickyNote dentro de Nuke usando instanciación tardía"""
+    """Mostrar el editor de StickyNote dentro de Nuke usando control de recursos mejorado"""
     global lga_sticky_note_editor_instance
+
+    # CONTROL DE RECURSOS: Limpiar instancias anteriores
+    sticky_cleanup_instances()
 
     # INSTANCIACIÓN TARDÍA: Solo crear cuando se necesite
     # Verificar que no haya instancias de otros scripts conflictivos
@@ -1895,10 +1927,10 @@ def run_sticky_note_editor():
                 conflicting_widgets.append(widget_name)
 
         if conflicting_widgets:
-            print(
+            sticky_debug_print(
                 f"Advertencia: Se detectaron widgets que pueden causar conflictos: {conflicting_widgets}"
             )
-            print("Cerrando widgets conflictivos...")
+            sticky_debug_print("Cerrando widgets conflictivos...")
             for widget in app_instance.allWidgets():
                 if (
                     widget.__class__.__name__ in conflicting_widgets
@@ -1909,33 +1941,16 @@ def run_sticky_note_editor():
                     except:
                         pass
 
-    # Si ya existe una instancia del editor, cerrarla y eliminarla completamente
-    if lga_sticky_note_editor_instance is not None:
-        try:
-            if isinstance(lga_sticky_note_editor_instance, QtWidgets.QDialog):
-                # Limpieza completa de la instancia anterior
-                if hasattr(lga_sticky_note_editor_instance, "_cleanup_resources"):
-                    lga_sticky_note_editor_instance._cleanup_resources()
-                lga_sticky_note_editor_instance.close()
-                lga_sticky_note_editor_instance.deleteLater()
-            # Forzar procesamiento de eventos para asegurar limpieza
-            if QtWidgets.QApplication.instance():
-                QtWidgets.QApplication.processEvents()
-        except Exception as e:
-            print(f"Error limpiando instancia anterior: {e}")
-        finally:
-            lga_sticky_note_editor_instance = None  # Resetear la variable global
-
     # INSTANCIACIÓN TARDÍA: Crear solo cuando se ejecuta la función
     try:
-        print("Creando instancia de StickyNoteEditor con instanciación tardía...")
+        sticky_debug_print("Creando instancia de StickyNoteEditor con control de recursos...")
         lga_sticky_note_editor_instance = StickyNoteEditor()
         lga_sticky_note_editor_instance.show_sticky_note_editor()
-        print(
+        sticky_debug_print(
             f"LGA_StickyNote iniciado correctamente - Namespace: {LGA_STICKY_NOTE_NAMESPACE}"
         )
     except Exception as e:
-        print(f"Error al iniciar LGA_StickyNote: {e}")
+        sticky_debug_print(f"Error al iniciar LGA_StickyNote: {e}")
         lga_sticky_note_editor_instance = None
 
 
