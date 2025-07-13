@@ -1,7 +1,7 @@
 """
 _______________________________________________
 
-  LGA_StickyNote_Utils v1.00 | 2024 | Lega
+  LGA_StickyNote_Utils v1.00 | Lega
   Utilidades para el editor de StickyNotes
 _______________________________________________
 
