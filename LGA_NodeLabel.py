@@ -19,8 +19,8 @@ DEBUG = True
 UI_MARGIN_Y = 20
 
 # Variables configurables para el drop shadow
-SHADOW_BLUR_RADIUS = 25  # Radio de blur (más alto = más blureado)
-SHADOW_OPACITY = 60  # Opacidad (0-255, más alto = más opaco)
+SHADOW_BLUR_RADIUS_NodeLabel = 25  # Radio de blur (más alto = más blureado)
+SHADOW_OPACITY_NodeLabel = 60  # Opacidad (0-255, más alto = más opaco)
 SHADOW_OFFSET_X = 3  # Desplazamiento horizontal
 SHADOW_OFFSET_Y = 3  # Desplazamiento vertical
 SHADOW_MARGIN = 25  # Margen adicional para la sombra proyectada
@@ -38,10 +38,10 @@ class NodeLabelEditor(QtWidgets.QDialog):
         self.selected_node = None
         self.original_label = ""
         self.drag_position = None  # Para el arrastre de la ventana
-        self.setup_ui()
-        self.setup_connections()
+        self.setup_ui_NodeLabel()
+        self.setup_connections_NodeLabel()
 
-    def setup_ui(self):
+    def setup_ui_NodeLabel(self):
         """Configura la interfaz de usuario"""
         # Configurar ventana contenedora transparente y siempre on top
         self.setWindowFlags(
@@ -74,8 +74,8 @@ class NodeLabelEditor(QtWidgets.QDialog):
 
         # Aplicar sombra al frame principal
         self.shadow = QtWidgets.QGraphicsDropShadowEffect()
-        self.shadow.setBlurRadius(SHADOW_BLUR_RADIUS)
-        self.shadow.setColor(QtGui.QColor(0, 0, 0, SHADOW_OPACITY))
+        self.shadow.setBlurRadius(SHADOW_BLUR_RADIUS_NodeLabel)
+        self.shadow.setColor(QtGui.QColor(0, 0, 0, SHADOW_OPACITY_NodeLabel))
         self.shadow.setOffset(SHADOW_OFFSET_X, SHADOW_OFFSET_Y)
         self.main_frame.setGraphicsEffect(self.shadow)
 
@@ -105,9 +105,9 @@ class NodeLabelEditor(QtWidgets.QDialog):
         self.title_bar.setAlignment(QtCore.Qt.AlignCenter)
 
         # Conectar eventos para arrastrar
-        self.title_bar.mousePressEvent = self.start_move
-        self.title_bar.mouseMoveEvent = self.move_window
-        self.title_bar.mouseReleaseEvent = self.stop_move
+        self.title_bar.mousePressEvent = self.start_move_NodeLabel
+        self.title_bar.mouseMoveEvent = self.move_window_NodeLabel
+        self.title_bar.mouseReleaseEvent = self.stop_move_NodeLabel
 
         frame_layout.addWidget(self.title_bar)
 
@@ -175,14 +175,14 @@ class NodeLabelEditor(QtWidgets.QDialog):
 
         # Crear tooltips personalizados
         self.tooltip_label = None
-        self.cancel_button.enterEvent = lambda event: self.show_custom_tooltip(
+        self.cancel_button.enterEvent = lambda event: self.show_custom_tooltip_NodeLabel(
             "Esc", self.cancel_button
         )
-        self.cancel_button.leaveEvent = lambda event: self.hide_custom_tooltip()
-        self.ok_button.enterEvent = lambda event: self.show_custom_tooltip(
+        self.cancel_button.leaveEvent = lambda event: self.hide_custom_tooltip_NodeLabel()
+        self.ok_button.enterEvent = lambda event: self.show_custom_tooltip_NodeLabel(
             "Ctrl+Enter", self.ok_button
         )
-        self.ok_button.leaveEvent = lambda event: self.hide_custom_tooltip()
+        self.ok_button.leaveEvent = lambda event: self.hide_custom_tooltip_NodeLabel()
 
         # Agregar botones con igual ancho (mitad cada uno)
         buttons_layout.addWidget(self.cancel_button)
@@ -206,23 +206,23 @@ class NodeLabelEditor(QtWidgets.QDialog):
         current_size = self.size()
         self.setFixedSize(current_size.width() - 40, current_size.height())
 
-    def start_move(self, event):
+    def start_move_NodeLabel(self, event):
         """Inicia el movimiento de la ventana"""
         if event.button() == QtCore.Qt.LeftButton:
             self.drag_position = event.globalPos() - self.frameGeometry().topLeft()
             event.accept()
 
-    def move_window(self, event):
+    def move_window_NodeLabel(self, event):
         """Mueve la ventana durante el arrastre"""
         if self.drag_position and event.buttons() & QtCore.Qt.LeftButton:
             self.move(event.globalPos() - self.drag_position)
             event.accept()
 
-    def stop_move(self, event):
+    def stop_move_NodeLabel(self, event):
         """Detiene el movimiento de la ventana"""
         self.drag_position = None
 
-    def show_custom_tooltip(self, text, widget):
+    def show_custom_tooltip_NodeLabel(self, text, widget):
         """Muestra un tooltip personalizado"""
         if self.tooltip_label:
             self.tooltip_label.close()
@@ -255,13 +255,13 @@ class NodeLabelEditor(QtWidgets.QDialog):
 
         self.tooltip_label.show()
 
-    def hide_custom_tooltip(self):
+    def hide_custom_tooltip_NodeLabel(self):
         """Oculta el tooltip personalizado"""
         if self.tooltip_label:
             self.tooltip_label.close()
             self.tooltip_label = None
 
-    def setup_connections(self):
+    def setup_connections_NodeLabel(self):
         """Configura las conexiones de señales"""
         self.cancel_button.clicked.connect(self.on_cancel_clicked)
         self.ok_button.clicked.connect(self.on_ok_clicked)

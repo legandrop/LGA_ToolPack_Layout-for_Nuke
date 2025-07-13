@@ -22,8 +22,8 @@ import LGA_BD_fit
 import LGA_BD_config
 
 # Variables configurables para el drop shadow - UNIQUE NAMES FOR BACKDROP
-BACKDROP_SHADOW_BLUR_RADIUS = 25  # Radio de blur (más alto = más blureado)
-BACKDROP_SHADOW_OPACITY = 60  # Opacidad (0-255, más alto = más opaco)
+BACKDROP_SHADOW_BLUR_RADIUS_Backdrop = 25  # Radio de blur (más alto = más blureado)
+BACKDROP_SHADOW_OPACITY_Backdrop = 60  # Opacidad (0-255, más alto = más opaco)
 BACKDROP_SHADOW_OFFSET_X = 3  # Desplazamiento horizontal
 BACKDROP_SHADOW_OFFSET_Y = 3  # Desplazamiento vertical
 BACKDROP_SHADOW_MARGIN = 25  # Margen adicional para la sombra proyectada
@@ -49,10 +49,10 @@ class BackdropNameDialog(QtWidgets.QDialog):
         self.esc_exit = False
         self.user_text = ""
         self.drag_position = None  # Para el arrastre de la ventana
-        self.backdrop_setup_ui()
-        self.backdrop_setup_connections()
+        self.backdrop_setup_ui_BackDrop()
+        self.backdrop_setup_connections_backdrop()
 
-    def backdrop_setup_ui(self):
+    def backdrop_setup_ui_BackDrop(self):
         """Configura la interfaz de usuario - UNIQUE NAME FOR BACKDROP"""
         # Configurar ventana contenedora transparente y siempre on top
         self.setWindowFlags(
@@ -88,8 +88,8 @@ class BackdropNameDialog(QtWidgets.QDialog):
 
         # Aplicar sombra al frame principal
         self.shadow = QtWidgets.QGraphicsDropShadowEffect()
-        self.shadow.setBlurRadius(BACKDROP_SHADOW_BLUR_RADIUS)
-        self.shadow.setColor(QtGui.QColor(0, 0, 0, BACKDROP_SHADOW_OPACITY))
+        self.shadow.setBlurRadius(BACKDROP_SHADOW_BLUR_RADIUS_Backdrop)
+        self.shadow.setColor(QtGui.QColor(0, 0, 0, BACKDROP_SHADOW_OPACITY_Backdrop))
         self.shadow.setOffset(BACKDROP_SHADOW_OFFSET_X, BACKDROP_SHADOW_OFFSET_Y)
         self.main_frame.setGraphicsEffect(self.shadow)
 
@@ -119,9 +119,9 @@ class BackdropNameDialog(QtWidgets.QDialog):
         self.title_bar.setAlignment(QtCore.Qt.AlignCenter)
 
         # Conectar eventos para arrastrar - UNIQUE NAMES FOR BACKDROP
-        self.title_bar.mousePressEvent = self.backdrop_start_move
-        self.title_bar.mouseMoveEvent = self.backdrop_move_window
-        self.title_bar.mouseReleaseEvent = self.backdrop_stop_move
+        self.title_bar.mousePressEvent = self.backdrop_start_move_backdrop
+        self.title_bar.mouseMoveEvent = self.backdrop_move_window_Backdrop
+        self.title_bar.mouseReleaseEvent = self.backdrop_stop_move_Backdrop
 
         frame_layout.addWidget(self.title_bar)
 
@@ -192,16 +192,16 @@ class BackdropNameDialog(QtWidgets.QDialog):
 
         # Crear tooltips personalizados - UNIQUE NAMES FOR BACKDROP
         self.tooltip_label = None
-        self.cancel_button.enterEvent = lambda event: self.backdrop_show_custom_tooltip(
+        self.cancel_button.enterEvent = lambda event: self.backdrop_show_custom_tooltip_Backdrop(
             "Esc", self.cancel_button
         )
         self.cancel_button.leaveEvent = (
-            lambda event: self.backdrop_hide_custom_tooltip()
+            lambda event: self.backdrop_hide_custom_tooltip_Backdrop()
         )
-        self.ok_button.enterEvent = lambda event: self.backdrop_show_custom_tooltip(
+        self.ok_button.enterEvent = lambda event: self.backdrop_show_custom_tooltip_Backdrop(
             "Ctrl+Enter", self.ok_button
         )
-        self.ok_button.leaveEvent = lambda event: self.backdrop_hide_custom_tooltip()
+        self.ok_button.leaveEvent = lambda event: self.backdrop_hide_custom_tooltip_Backdrop()
 
         # Agregar botones con igual ancho (mitad cada uno)
         buttons_layout.addWidget(self.cancel_button)
@@ -225,23 +225,23 @@ class BackdropNameDialog(QtWidgets.QDialog):
         current_size = self.size()
         self.setFixedSize(current_size.width() - 40, current_size.height())
 
-    def backdrop_start_move(self, event):
+    def backdrop_start_move_backdrop(self, event):
         """Inicia el movimiento de la ventana - UNIQUE NAME FOR BACKDROP"""
         if event.button() == QtCore.Qt.LeftButton:
             self.drag_position = event.globalPos() - self.frameGeometry().topLeft()
             event.accept()
 
-    def backdrop_move_window(self, event):
+    def backdrop_move_window_Backdrop(self, event):
         """Mueve la ventana durante el arrastre - UNIQUE NAME FOR BACKDROP"""
         if self.drag_position and event.buttons() & QtCore.Qt.LeftButton:
             self.move(event.globalPos() - self.drag_position)
             event.accept()
 
-    def backdrop_stop_move(self, event):
+    def backdrop_stop_move_Backdrop(self, event):
         """Detiene el movimiento de la ventana - UNIQUE NAME FOR BACKDROP"""
         self.drag_position = None
 
-    def backdrop_show_custom_tooltip(self, text, widget):
+    def backdrop_show_custom_tooltip_Backdrop(self, text, widget):
         """Muestra un tooltip personalizado - UNIQUE NAME FOR BACKDROP"""
         if self.tooltip_label:
             self.tooltip_label.close()
@@ -274,13 +274,13 @@ class BackdropNameDialog(QtWidgets.QDialog):
 
         self.tooltip_label.show()
 
-    def backdrop_hide_custom_tooltip(self):
+    def backdrop_hide_custom_tooltip_Backdrop(self):
         """Oculta el tooltip personalizado - UNIQUE NAME FOR BACKDROP"""
         if self.tooltip_label:
             self.tooltip_label.close()
             self.tooltip_label = None
 
-    def backdrop_setup_connections(self):
+    def backdrop_setup_connections_backdrop(self):
         """Configura las conexiones de señales - UNIQUE NAME FOR BACKDROP"""
         self.cancel_button.clicked.connect(self.on_cancel_clicked)
         self.ok_button.clicked.connect(self.on_ok_clicked)

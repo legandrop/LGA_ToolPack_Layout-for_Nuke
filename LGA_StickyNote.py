@@ -26,8 +26,8 @@ DEBUG = True
 UI_MARGIN_Y = 20
 
 # Variables configurables para el drop shadow
-SHADOW_BLUR_RADIUS = 25  # Radio de blur (más alto = más blureado)
-SHADOW_OPACITY = 60  # Opacidad (0-255, más alto = más opaco)
+SHADOW_BLUR_RADIUS_Sticky = 25  # Radio de blur (más alto = más blureado)
+SHADOW_OPACITY_Sticky = 60  # Opacidad (0-255, más alto = más opaco)
 SHADOW_OFFSET_X = 3  # Desplazamiento horizontal
 SHADOW_OFFSET_Y = 3  # Desplazamiento vertical
 SHADOW_MARGIN = 25  # Margen adicional para la sombra proyectada
@@ -527,10 +527,10 @@ class StickyNoteEditor(QtWidgets.QDialog):
         # self.update_timer.timeout.connect(self._delayed_text_update)
         # self._pending_update = False
 
-        self.setup_ui()
-        self.setup_connections()
+        self.setup_ui_Sticky()
+        self.setup_connections_Sticky()
 
-    def setup_ui(self):
+    def setup_ui_Sticky(self):
         """Configura la interfaz de usuario"""
         # Configurar ventana contenedora transparente y siempre on top
         self.setWindowFlags(
@@ -563,8 +563,8 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
         # Aplicar sombra al frame principal
         self.shadow = QtWidgets.QGraphicsDropShadowEffect()
-        self.shadow.setBlurRadius(SHADOW_BLUR_RADIUS)
-        self.shadow.setColor(QtGui.QColor(0, 0, 0, SHADOW_OPACITY))
+        self.shadow.setBlurRadius(SHADOW_BLUR_RADIUS_Sticky)
+        self.shadow.setColor(QtGui.QColor(0, 0, 0, SHADOW_OPACITY_Sticky))
         self.shadow.setOffset(SHADOW_OFFSET_X, SHADOW_OFFSET_Y)
         self.main_frame.setGraphicsEffect(self.shadow)
 
@@ -594,9 +594,9 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.title_bar.setAlignment(QtCore.Qt.AlignCenter)
 
         # Conectar eventos para arrastrar
-        self.title_bar.mousePressEvent = self.start_move
-        self.title_bar.mouseMoveEvent = self.move_window
-        self.title_bar.mouseReleaseEvent = self.stop_move
+        self.title_bar.mousePressEvent = self.start_move_Sticky
+        self.title_bar.mouseMoveEvent = self.move_window_Sticky
+        self.title_bar.mouseReleaseEvent = self.stop_move_Sticky
 
         frame_layout.addWidget(self.title_bar)
 
@@ -1060,14 +1060,14 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
         # Crear tooltips personalizados
         self.tooltip_label = None
-        self.cancel_button.enterEvent = lambda event: self.show_custom_tooltip(
+        self.cancel_button.enterEvent = lambda event: self.show_custom_tooltip_Sticky(
             "Esc", self.cancel_button
         )
-        self.cancel_button.leaveEvent = lambda event: self.hide_custom_tooltip()
-        self.ok_button.enterEvent = lambda event: self.show_custom_tooltip(
+        self.cancel_button.leaveEvent = lambda event: self.hide_custom_tooltip_Sticky()
+        self.ok_button.enterEvent = lambda event: self.show_custom_tooltip_Sticky(
             "Ctrl+Enter", self.ok_button
         )
-        self.ok_button.leaveEvent = lambda event: self.hide_custom_tooltip()
+        self.ok_button.leaveEvent = lambda event: self.hide_custom_tooltip_Sticky()
 
         # Agregar botones con igual ancho (mitad cada uno)
         buttons_layout.addWidget(self.cancel_button)
@@ -1092,23 +1092,23 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.setLayout(main_layout)
         self.adjustSize()  # Ajustar tamaño después de configurar todo
 
-    def start_move(self, event):
+    def start_move_Sticky(self, event):
         """Inicia el movimiento de la ventana"""
         if event.button() == QtCore.Qt.LeftButton:
             self.drag_position = event.globalPos() - self.frameGeometry().topLeft()
             event.accept()
 
-    def move_window(self, event):
+    def move_window_Sticky(self, event):
         """Mueve la ventana durante el arrastre"""
         if self.drag_position and event.buttons() & QtCore.Qt.LeftButton:
             self.move(event.globalPos() - self.drag_position)
             event.accept()
 
-    def stop_move(self, event):
+    def stop_move_Sticky(self, event):
         """Detiene el movimiento de la ventana"""
         self.drag_position = None
 
-    def setup_connections(self):
+    def setup_connections_Sticky(self):
         """Configura las conexiones de señales"""
         # Desconectar conexiones previas para evitar acumulación
         self._disconnect_all_signals()
@@ -1825,7 +1825,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
                 )
             )
 
-    def show_custom_tooltip(self, text, widget):
+    def show_custom_tooltip_Sticky(self, text, widget):
         """Muestra un tooltip personalizado"""
         if self.tooltip_label:
             self.tooltip_label.close()
@@ -1858,7 +1858,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
         self.tooltip_label.show()
 
-    def hide_custom_tooltip(self):
+    def hide_custom_tooltip_Sticky(self):
         """Oculta el tooltip personalizado"""
         if self.tooltip_label:
             self.tooltip_label.close()

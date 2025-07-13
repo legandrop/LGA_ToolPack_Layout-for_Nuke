@@ -45,11 +45,11 @@ def _delayed_text_update(self):
 
 **Cambios realizados**:
 - Método `_disconnect_all_signals()` mejorado
-- Desconexión antes de crear nuevas conexiones en `setup_connections()`
+- Desconexión antes de crear nuevas conexiones en `setup_connections_Sticky()`
 
 **Código implementado**:
 ```python
-def setup_connections(self):
+def setup_connections_Sticky(self):
     # Desconectar conexiones previas para evitar acumulación
     self._disconnect_all_signals()
     
@@ -354,26 +354,26 @@ El usuario reportó que cuando importaba LGA_backdrop.py, los otros scripts (LGA
 
 **Conflictos encontrados**:
 1. **Variables globales duplicadas**:
-   - `SHADOW_BLUR_RADIUS`, `SHADOW_OPACITY`, `SHADOW_OFFSET_X`, `SHADOW_OFFSET_Y`, `SHADOW_MARGIN`
+   - `SHADOW_BLUR_RADIUS_Sticky`, `SHADOW_OPACITY_Sticky`, `SHADOW_OFFSET_X`, `SHADOW_OFFSET_Y`, `SHADOW_MARGIN`
    - `DEBUG`
 
 2. **Funciones duplicadas**:
    - `debug_print()`
-   - `setup_ui()`, `setup_connections()`
-   - `show_custom_tooltip()`, `hide_custom_tooltip()`
-   - `start_move()`, `move_window()`, `stop_move()`
+   - `setup_ui_Sticky()`, `setup_connections_Sticky()`
+   - `show_custom_tooltip_Sticky()`, `hide_custom_tooltip_Sticky()`
+   - `start_move_Sticky()`, `move_window_Sticky()`, `stop_move_Sticky()`
 
 **Cambios intentados**:
 1. **Variables renombradas con prefijo único**:
    ```python
    # ANTES
-   SHADOW_BLUR_RADIUS = 25
-   SHADOW_OPACITY = 60
+   SHADOW_BLUR_RADIUS_Sticky = 25
+   SHADOW_OPACITY_Sticky = 60
    DEBUG = False
    
    # DESPUÉS
-   BACKDROP_SHADOW_BLUR_RADIUS = 25
-   BACKDROP_SHADOW_OPACITY = 60
+   BACKDROP_SHADOW_BLUR_RADIUS_Sticky = 25
+   BACKDROP_SHADOW_OPACITY_Sticky = 60
    BACKDROP_DEBUG = False
    ```
 
@@ -381,13 +381,13 @@ El usuario reportó que cuando importaba LGA_backdrop.py, los otros scripts (LGA
    ```python
    # ANTES
    def debug_print(*message):
-   def setup_ui(self):
-   def setup_connections(self):
+   def setup_ui_Sticky(self):
+   def setup_connections_Sticky(self):
    
    # DESPUÉS
    def backdrop_debug_print(*message):
-   def backdrop_setup_ui(self):
-   def backdrop_setup_connections(self):
+   def backdrop_setup_ui_Sticky(self):
+   def backdrop_setup_connections_Sticky(self):
    ```
 
 **Resultado**: ❌ **NO FUNCIONÓ**
@@ -801,24 +801,24 @@ El error `reload() argument must be a module` ocurría porque el sistema de limp
 ## ANÁLISIS TÉCNICO DEL PROBLEMA
 
 ### **CAUSA RAÍZ IDENTIFICADA**
-El problema fundamental es que Python carga todos los módulos en el mismo espacio de nombres global (`sys.modules`). Cuando múltiples módulos tienen funciones con nombres idénticos (como `debug_print()`, `setup_ui()`, `setup_connections()`, etc.), las importaciones posteriores sobrescriben las funciones de los módulos anteriores.
+El problema fundamental es que Python carga todos los módulos en el mismo espacio de nombres global (`sys.modules`). Cuando múltiples módulos tienen funciones con nombres idénticos (como `debug_print()`, `setup_ui_Sticky()`, `setup_connections_Sticky()`, etc.), las importaciones posteriores sobrescriben las funciones de los módulos anteriores.
 
 ### **CONFLICTOS ESPECÍFICOS ENCONTRADOS**
 ```python
 # Funciones duplicadas entre módulos:
 - debug_print()          # En LGA_StickyNote, LGA_NodeLabel, LGA_backdrop
-- setup_ui()             # En LGA_StickyNote, LGA_NodeLabel, LGA_backdrop  
-- setup_connections()    # En LGA_StickyNote, LGA_NodeLabel, LGA_backdrop
-- show_custom_tooltip()  # En LGA_StickyNote, LGA_NodeLabel
-- hide_custom_tooltip()  # En LGA_StickyNote, LGA_NodeLabel
-- start_move()           # En LGA_StickyNote, LGA_NodeLabel
-- move_window()          # En LGA_StickyNote, LGA_NodeLabel
-- stop_move()            # En LGA_StickyNote, LGA_NodeLabel
+- setup_ui_Sticky()             # En LGA_StickyNote, LGA_NodeLabel, LGA_backdrop  
+- setup_connections_Sticky()    # En LGA_StickyNote, LGA_NodeLabel, LGA_backdrop
+- show_custom_tooltip_Sticky()  # En LGA_StickyNote, LGA_NodeLabel
+- hide_custom_tooltip_Sticky()  # En LGA_StickyNote, LGA_NodeLabel
+- start_move_Sticky()           # En LGA_StickyNote, LGA_NodeLabel
+- move_window_Sticky()          # En LGA_StickyNote, LGA_NodeLabel
+- stop_move_Sticky()            # En LGA_StickyNote, LGA_NodeLabel
 
 # Variables globales duplicadas:
 - DEBUG                  # En múltiples módulos
-- SHADOW_BLUR_RADIUS     # En LGA_StickyNote, LGA_backdrop
-- SHADOW_OPACITY         # En LGA_StickyNote, LGA_backdrop
+- SHADOW_BLUR_RADIUS_Sticky     # En LGA_StickyNote, LGA_backdrop
+- SHADOW_OPACITY_Sticky         # En LGA_StickyNote, LGA_backdrop
 - SHADOW_OFFSET_X        # En LGA_StickyNote, LGA_backdrop
 - SHADOW_OFFSET_Y        # En LGA_StickyNote, LGA_backdrop
 ```
