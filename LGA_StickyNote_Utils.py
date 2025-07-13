@@ -119,17 +119,27 @@ def extract_clean_text_and_margins(text):
     margin_x_detected = 0
     margin_y_detected = 0
 
-    # --- Filtrar flechas verticales (nueva lógica para símbolos Unicode) ---
-    # Remover flecha arriba si existe (primera línea es "↑")
+    # --- Detectar flechas verticales para márgenes, pero NO eliminarlas del texto ---
+    has_up_arrow = False
+    has_down_arrow = False
+    
+    # Detectar flecha arriba (primera línea es "↑")
     if len(lines) >= 1 and lines[0].strip() == "↑":
-        lines = lines[1:]
+        has_up_arrow = True
 
-    # Remover flecha abajo si existe (última línea es "↓")
+    # Detectar flecha abajo (última línea es "↓")
     if len(lines) >= 1 and lines[-1].strip() == "↓":
-        lines = lines[:-1]
+        has_down_arrow = True
+
+    # Para detectar márgenes, trabajar con las líneas sin flechas verticales
+    lines_for_margin_detection = lines[:]
+    if has_up_arrow:
+        lines_for_margin_detection = lines_for_margin_detection[1:]
+    if has_down_arrow:
+        lines_for_margin_detection = lines_for_margin_detection[:-1]
 
     # --- Detección de Margin X: buscar primera línea con contenido ---
-    for line in lines:
+    for line in lines_for_margin_detection:
         if line.strip():
             leading = len(line) - len(line.lstrip(" "))
             trailing = len(line) - len(line.rstrip(" "))
@@ -138,14 +148,14 @@ def extract_clean_text_and_margins(text):
 
     # --- Detección de Margin Y: líneas vacías al inicio y al final ---
     start_empty = 0
-    for line in lines:
+    for line in lines_for_margin_detection:
         if line.strip() == "":
             start_empty += 1
         else:
             break
 
     end_empty = 0
-    for line in reversed(lines):
+    for line in reversed(lines_for_margin_detection):
         if line.strip() == "":
             end_empty += 1
         else:
@@ -154,8 +164,8 @@ def extract_clean_text_and_margins(text):
     margin_y_detected = min(start_empty, end_empty)
 
     # --- Extraer solo las líneas de contenido sin margin Y ---
-    if margin_y_detected * 2 < len(lines):
-        content_lines = lines[margin_y_detected : len(lines) - margin_y_detected]
+    if margin_y_detected * 2 < len(lines_for_margin_detection):
+        content_lines = lines_for_margin_detection[margin_y_detected : len(lines_for_margin_detection) - margin_y_detected]
     else:
         content_lines = []
 
@@ -169,7 +179,14 @@ def extract_clean_text_and_margins(text):
             clean_line = line.strip()
         clean_lines.append(clean_line)
 
+    # --- Reconstruir el texto final con flechas verticales preservadas ---
     final_clean_text = "\n".join(clean_lines)
+    
+    # Agregar flechas verticales de vuelta al texto limpio
+    if has_up_arrow:
+        final_clean_text = "↑\n" + final_clean_text
+    if has_down_arrow:
+        final_clean_text = final_clean_text + "\n↓"
 
     return final_clean_text, margin_x_detected, margin_y_detected
 
