@@ -572,4 +572,4 @@ import nuke
 LTP_script_dir = os.path.dirname(os.path.realpath(__file__))
 LTP_pdf_path = os.path.join(LTP_script_dir, "LGA_LayoutToolPack.pdf")
 
-n.addCommand("Documentation v2.5", lambda: webbrowser.open("file://" + LTP_pdf_path))
+n.addCommand("Documentation v2.51", lambda: webbrowser.open("file://" + LTP_pdf_path))
