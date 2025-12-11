@@ -1,7 +1,7 @@
 """
 _____________________________________________________________________________
 
-  LGA_zoom v2.21 | 2025 | Lega
+  LGA_zoom v2.22 | 2025 | Lega
 
   Alterna entre el zoom actual y un zoom que muestra todo el DAG.
   Permite volver al nivel de zoom anterior usando la posición del cursor
@@ -14,18 +14,23 @@ _____________________________________________________________________________
 
 import nuke
 import time
-from PySide2.QtGui import QCursor, QMouseEvent
-from PySide2.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout
-from PySide2.QtCore import (
-    Qt,
-    QEvent,
-    QPoint,
-    QTimer,
-    QPropertyAnimation,
-    QEasingCurve,
-    Property,
-    QObject,
-)
+from qt_compat import QtWidgets, QtGui, QtCore
+
+# Aliases para mantener compatibilidad con el código original
+QCursor = QtGui.QCursor
+QMouseEvent = QtGui.QMouseEvent
+QApplication = QtWidgets.QApplication
+QLabel = QtWidgets.QLabel
+QWidget = QtWidgets.QWidget
+QVBoxLayout = QtWidgets.QVBoxLayout
+Qt = QtCore.Qt
+QEvent = QtCore.QEvent
+QPoint = QtCore.QPoint
+QTimer = QtCore.QTimer
+QPropertyAnimation = QtCore.QPropertyAnimation
+QEasingCurve = QtCore.QEasingCurve
+Property = QtCore.Property
+QObject = QtCore.QObject
 
 # Estado del zoom
 _zoom_state = {"zoom_level": None, "is_zoomed_out": False, "timestamp": None}

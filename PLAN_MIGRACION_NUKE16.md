@@ -16,15 +16,15 @@
  - [x] `LGA_backdrop/LGA_BD_callbacks.py`
 - [X] `oz_backdrop/oz_backdrop.py` ** ESTE NO SE HACE
 - [X] `oz_backdrop/oz_encompassScript.py` ** ESTE NO SE HACE
-- [ ] `scale_widget.py`
-- [ ] `distributeNodes.py`
-- [ ] `dag.py`
-- [ ] `LGA_zoom.py`
-- [ ] `LGA_selectNodes.py.panel`
-- [ ] `LGA_scriptChecker.py`
-- [ ] `LGA_middleClick.py`
-- [ ] `Km_NodeGraphEN/PysideImport.py`
-- [ ] `Km_NodeGraphEN/Km_NodeGraph_Easy_Navigate.py`
+ - [x] `scale_widget.py`
+- [x] `distributeNodes.py`
+- [x] `dag.py`
+ - [x] `LGA_zoom.py` (v2.22)
+- [x] `LGA_selectNodes.py.panel`
+- [x] `LGA_scriptChecker.py`
+- [x] `LGA_middleClick.py`
+- [x] `Km_NodeGraphEN/PysideImport.py`
+- [x] `Km_NodeGraphEN/Km_NodeGraph_Easy_Navigate.py`
  - [x] `scale_widget.py`
 - [x] `distributeNodes.py`
 - [x] `dag.py`
@@ -55,10 +55,18 @@
 - `LGA_BD_callbacks.py` ajusta callback inline para probar PySide6 y luego PySide2 en QFont/QFontMetrics.
 - `scale_widget.py` usa `qt_compat`, DAG QWidget (sin QtOpenGL), reenvío wheel directo al DAG.
 - `distributeNodes.py` y `dag.py` usan `qt_compat`.
-- `LGA_zoom.py` y `LGA_middleClick.py` usan `qt_compat` para PySide6/2.
+- `LGA_zoom.py` usa `qt_compat` y alias para mantener la API original.
 - `LGA_selectNodes.py.panel` usa `qt_compat`.
 - `LGA_scriptChecker.py` usa `qt_compat`.
 - `Km_NodeGraphEN/PysideImport.py` usa `qt_compat` y exporta nombres; `Km_NodeGraph_Easy_Navigate.py` usa `qt_compat` y reemplaza `QDesktopWidget` por `QGuiApplication.primaryScreen()`.
+
+### Nota de problema y solución (LGA_backdrop import en Nuke)
+- Síntoma: al iniciar Nuke, `ImportError: attempted relative import with no known parent package` y luego crasheo.
+- Causa: Nuke carga módulos sin contexto de paquete; imports relativos fallan.
+- Solución:
+  1) Añadir `LGA_backdrop/__pycache__` limpio y asegurar `LGA_backdrop` en `sys.path`.
+  2) Usar imports planos dentro de `LGA_backdrop.py` (`import LGA_BD_knobs`, etc.) y exponer `autoBackdrop` en `__init__.py`.
+  3) En `position_window_relative_to_cursor`, reemplazar `availableGeometry(cursor_pos)` por `screenAt(cursor_pos) or primaryScreen()` y `availableGeometry()` sin argumentos (Qt6).
 
 ### Notas sobre tooltips persistentes (NodeLabel/StickyNote)
 - Problema: tooltips de botones OK/Cancel quedaban flotando tras cerrar/OK/Cancel.
