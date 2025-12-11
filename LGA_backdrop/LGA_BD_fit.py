@@ -4,7 +4,7 @@ LGA_BD_fit.py - Funcionalidad de fit para LGA_backdrop
 
 import re
 import nuke
-from PySide2.QtGui import QFontMetrics, QFont
+from qt_compat import QtGui
 
 # Variable global para activar o desactivar los prints
 DEBUG = False
@@ -106,9 +106,9 @@ def calculate_min_horizontal(text, font_size):
     adjusted_font_size = font_size - adjustment
 
     # Crear una fuente con la familia Verdana y el tamano ajustado
-    font = QFont("Verdana")
+    font = QtGui.QFont("Verdana")
     font.setPointSize(adjusted_font_size)
-    metrics = QFontMetrics(font)
+    metrics = QtGui.QFontMetrics(font)
 
     lines = text.split("\n")  # Dividir el texto en lineas
     max_width = max(

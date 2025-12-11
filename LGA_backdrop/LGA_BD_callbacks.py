@@ -147,7 +147,10 @@ elif knob.name() == 'margin_slider':
                 adjusted_font_size = font_size - adjustment
                 
                 # Crear una fuente con la familia Verdana y el tamaño ajustado
-                from PySide2.QtGui import QFontMetrics, QFont
+                try:
+                    from PySide6.QtGui import QFontMetrics, QFont
+                except ImportError:
+                    from PySide2.QtGui import QFontMetrics, QFont
                 font = QFont("Verdana")
                 font.setPointSize(adjusted_font_size)
                 metrics = QFontMetrics(font)

@@ -4,15 +4,7 @@ LGA_BD_knobs.py - Manejo modular de knobs para LGA_backdrop
 
 import nuke
 import os
-
-try:
-    import PySide.QtCore as QtCore
-    import PySide.QtGui as QtGui
-    import PySide.QtGui as QtWidgets
-except:
-    import PySide2.QtCore as QtCore
-    import PySide2.QtGui as QtGui
-    import PySide2.QtWidgets as QtWidgets
+from qt_compat import QtWidgets, QtGui, QtCore
 
 # Variable global para activar o desactivar los prints
 DEBUG = False

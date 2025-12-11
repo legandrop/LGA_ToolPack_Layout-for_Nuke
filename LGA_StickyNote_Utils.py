@@ -1,13 +1,14 @@
 """
 _______________________________________________
 
-  LGA_StickyNote_Utils v1.00 | Lega
+  LGA_StickyNote_Utils v1.01 | Lega
   Utilidades para el editor de StickyNotes
 _______________________________________________
 
 """
 
 import nuke
+from qt_compat import QtWidgets, QtGui, QtCore
 
 
 class StickyNoteStateManager:
@@ -230,26 +231,6 @@ DEBUG = False
 def debug_print(*message):
     if DEBUG:
         print(*message)
-
-
-try:
-    from PySide2 import QtWidgets, QtGui, QtCore
-except ImportError:
-    try:
-        from PySide import QtCore, QtGui
-        import PySide.QtGui as QtWidgets
-    except ImportError:
-        # Si no se puede importar PySide, crear una clase dummy
-        class QtWidgets:
-            class QWidget:
-                pass
-
-        class QtCore:
-            class Qt:
-                AlignTop = 0
-
-        class QtGui:
-            pass
 
 
 class StickyNoteColorSwatchWidget(QtWidgets.QWidget):

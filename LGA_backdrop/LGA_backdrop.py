@@ -1,7 +1,7 @@
 """
 __________________________________________
 
-  LGA_backdrop v0.80 | Lega Pugliese
+  LGA_backdrop v0.81 | Lega Pugliese
   Backdrop personalizado con knobs modulares
 __________________________________________
 
@@ -13,9 +13,8 @@ import random
 import colorsys
 import gc
 import weakref
-from PySide2 import QtWidgets, QtGui, QtCore
-from PySide2.QtWidgets import QFrame
-from PySide2.QtGui import QFontMetrics, QFont
+from qt_compat import QtWidgets, QtGui, QtCore, QGuiApplication
+from QtGui import QFontMetrics, QFont
 
 # Importar modulos propios
 import LGA_BD_knobs
@@ -25,7 +24,7 @@ import LGA_BD_config
 
 # ===== CONTROL DE RECURSOS Y GESTIÓN DE MEMORIA =====
 # Namespace único para evitar conflictos con otros scripts
-LGA_BACKDROP_NAMESPACE = "LGA_Backdrop_v080"
+LGA_BACKDROP_NAMESPACE = "LGA_Backdrop_v081"
 
 # Control de instancias para evitar múltiples widgets
 _BACKDROP_INSTANCES = weakref.WeakSet()
@@ -278,8 +277,19 @@ class BackdropNameDialog(QtWidgets.QDialog):
         if self.tooltip_label:
             self.tooltip_label.close()
 
-        self.tooltip_label = QtWidgets.QLabel(text)
-        self.tooltip_label.setWindowFlags(QtCore.Qt.ToolTip)
+        self.tooltip_label = QtWidgets.QLabel(text, parent=self)
+        self.tooltip_label.setWindowFlags(
+            QtCore.Qt.Tool
+            | QtCore.Qt.FramelessWindowHint
+            | QtCore.Qt.WindowStaysOnTopHint
+        )
+        self.tooltip_label.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+        self.tooltip_label.setAttribute(QtCore.Qt.WA_ShowWithoutActivating, True)
+        try:
+            self.destroyed.disconnect(self.backdrop_hide_custom_tooltip_Backdrop)
+        except Exception:
+            pass
+        self.destroyed.connect(self.backdrop_hide_custom_tooltip_Backdrop)
         self.tooltip_label.setStyleSheet(
             """
             QLabel {
@@ -310,7 +320,13 @@ class BackdropNameDialog(QtWidgets.QDialog):
         """Oculta el tooltip personalizado - UNIQUE NAME FOR BACKDROP"""
         if self.tooltip_label:
             self.tooltip_label.close()
+            try:
+                self.tooltip_label.deleteLater()
+            except Exception:
+                pass
             self.tooltip_label = None
+        QtWidgets.QToolTip.hideText()
+        QtWidgets.QApplication.processEvents(QtCore.QEventLoop.AllEvents, 50)
 
     def backdrop_setup_connections_backdrop(self):
         """Configura las conexiones de señales - UNIQUE NAME FOR BACKDROP"""
@@ -319,11 +335,13 @@ class BackdropNameDialog(QtWidgets.QDialog):
 
     def on_cancel_clicked(self):
         """Callback cuando se hace click en Cancel"""
+        self.backdrop_hide_custom_tooltip_Backdrop()
         self.esc_exit = True
         self.reject()
 
     def on_ok_clicked(self):
         """Callback cuando se hace click en OK"""
+        self.backdrop_hide_custom_tooltip_Backdrop()
         self.user_text = self.text_edit.toPlainText()
         self.accept()
 
@@ -341,6 +359,14 @@ class BackdropNameDialog(QtWidgets.QDialog):
                 super().keyPressEvent(event)
         else:
             super().keyPressEvent(event)
+
+    def closeEvent(self, event):
+        """Cierra y limpia tooltips persistentes"""
+        try:
+            self.backdrop_hide_custom_tooltip_Backdrop()
+        except Exception:
+            pass
+        return super(BackdropNameDialog, self).closeEvent(event)
 
     def showEvent(self, event):
         """Se ejecuta cuando se muestra el diálogo"""
@@ -374,7 +400,14 @@ class BackdropNameDialog(QtWidgets.QDialog):
         cursor_pos = QtGui.QCursor.pos()
 
         # Obtener geometría de la pantalla disponible
-        avail_space = QtWidgets.QDesktopWidget().availableGeometry(cursor_pos)
+        screen = QGuiApplication.primaryScreen()
+        if screen:
+            avail_space = screen.availableGeometry(cursor_pos)
+        else:
+            # Fallback simple alrededor del cursor
+            avail_space = QtCore.QRect(
+                cursor_pos.x() - 400, cursor_pos.y() - 400, 800, 800
+            )
 
         # Calcular posición centrada respecto al cursor
         posx = min(

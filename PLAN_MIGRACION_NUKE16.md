@@ -9,11 +9,11 @@
 ## Checklist de archivos a actualizar
 - [x] `LGA_StickyNote.py`
  - [x] `LGA_NodeLabel.py`
-- [ ] `LGA_StickyNote_Utils.py`
-- [ ] `LGA_backdrop/LGA_backdrop.py`
-- [ ] `LGA_backdrop/LGA_BD_knobs.py`
-- [ ] `LGA_backdrop/LGA_BD_fit.py`
-- [ ] `LGA_backdrop/LGA_BD_callbacks.py`
+- [x] `LGA_StickyNote_Utils.py`
+- [x] `LGA_backdrop/LGA_backdrop.py`
+ - [x] `LGA_backdrop/LGA_BD_knobs.py`
+ - [x] `LGA_backdrop/LGA_BD_fit.py`
+ - [x] `LGA_backdrop/LGA_BD_callbacks.py`
 - [X] `oz_backdrop/oz_backdrop.py` ** ESTE NO SE HACE
 - [X] `oz_backdrop/oz_encompassScript.py` ** ESTE NO SE HACE
 - [ ] `scale_widget.py`
@@ -39,6 +39,11 @@
 - `qt_compat.py` agregado: fallback PySide6 → PySide2.
 - `LGA_StickyNote.py` actualizado a v1.92: usa `qt_compat`, tooltips ahora se cierran al cerrar/OK/Cancel, debug apagado por defecto, auto-run comentado.
 - `LGA_NodeLabel.py` actualizado a v0.83: usa `qt_compat`, tooltips con parent y cierre garantizado en OK/Cancel/cierre de ventana, namespace/version bumped.
+- `LGA_StickyNote_Utils.py` actualizado a v1.01: usa `qt_compat` para PySide6/2 (sin fallback legacy).
+- `LGA_backdrop.py` actualizado a v0.81: usa `qt_compat`, tooltips con parent/cierre asegurado en OK/Cancel/closeEvent, `QDesktopWidget` reemplazado por `QGuiApplication.primaryScreen().availableGeometry()`, namespace/version bumped.
+- `LGA_BD_knobs.py` actualizado a imports `qt_compat`.
+- `LGA_BD_fit.py` actualizado a imports `qt_compat` (QFont/QFontMetrics).
+- `LGA_BD_callbacks.py` ajusta callback inline para probar PySide6 y luego PySide2 en QFont/QFontMetrics.
 
 ### Notas sobre tooltips persistentes (NodeLabel/StickyNote)
 - Problema: tooltips de botones OK/Cancel quedaban flotando tras cerrar/OK/Cancel.
