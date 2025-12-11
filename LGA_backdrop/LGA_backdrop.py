@@ -13,14 +13,23 @@ import random
 import colorsys
 import gc
 import weakref
+import os
+import sys
 from qt_compat import QtWidgets, QtGui, QtCore, QGuiApplication
-from QtGui import QFontMetrics, QFont
+QFrame = QtWidgets.QFrame
+QFontMetrics = QtGui.QFontMetrics
+QFont = QtGui.QFont
 
-# Importar modulos propios
-import LGA_BD_knobs
-import LGA_BD_callbacks
-import LGA_BD_fit
-import LGA_BD_config
+# Asegurar ruta del módulo en sys.path para imports planos
+_BD_DIR = os.path.dirname(__file__)
+if _BD_DIR not in sys.path:
+    sys.path.insert(0, _BD_DIR)
+
+# Importar modulos propios usando nombres planos (evita el problema de paquete/no paquete)
+import LGA_BD_knobs as LGA_BD_knobs  # type: ignore
+import LGA_BD_callbacks as LGA_BD_callbacks  # type: ignore
+import LGA_BD_fit as LGA_BD_fit  # type: ignore
+import LGA_BD_config as LGA_BD_config  # type: ignore
 
 # ===== CONTROL DE RECURSOS Y GESTIÓN DE MEMORIA =====
 # Namespace único para evitar conflictos con otros scripts
@@ -400,9 +409,11 @@ class BackdropNameDialog(QtWidgets.QDialog):
         cursor_pos = QtGui.QCursor.pos()
 
         # Obtener geometría de la pantalla disponible
-        screen = QGuiApplication.primaryScreen()
+        screen = QGuiApplication.screenAt(cursor_pos)
+        if screen is None:
+            screen = QGuiApplication.primaryScreen()
         if screen:
-            avail_space = screen.availableGeometry(cursor_pos)
+            avail_space = screen.availableGeometry()
         else:
             # Fallback simple alrededor del cursor
             avail_space = QtCore.QRect(

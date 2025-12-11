@@ -1,9 +1,12 @@
 import nuke
-from PySide2 import QtWidgets, QtCore, QtGui
 import time
-from PySide2.QtGui import QCursor, QMouseEvent
-from PySide2.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout
-from PySide2.QtCore import Qt, QEvent, QPoint, QTimer, QPropertyAnimation, QEasingCurve, Property
+from qt_compat import QtWidgets, QtGui, QtCore
+
+Qt = QtCore.Qt
+QPoint = QtCore.QPoint
+QCursor = QtGui.QCursor
+QMouseEvent = QtGui.QMouseEvent
+QEasingCurve = QtCore.QEasingCurve
 
 # Estado del zoom
 _zoom_state = {
@@ -20,23 +23,23 @@ floating_message = None
 
 def find_dag_widget():
     """Encuentra el widget del DAG"""
-    for widget in QApplication.allWidgets():
+    for widget in QtWidgets.QApplication.allWidgets():
         if widget.objectName() == "DAG.1":
             return widget
     return None
 
-class FloatingMessage(QWidget):
+class FloatingMessage(QtWidgets.QWidget):
     def __init__(self, text, parent=None):
         super(FloatingMessage, self).__init__(parent)
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Tool | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
         
         # Layout principal
-        layout = QVBoxLayout(self)
+        layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         
         # Label con el texto
-        self.label = QLabel(text)
+        self.label = QtWidgets.QLabel(text)
         self.label.setStyleSheet("""
             QLabel {
                 color: #FFFFFF;
@@ -68,7 +71,7 @@ class FloatingMessage(QWidget):
         self._opacity = 1.0
         
         # Crear la animación
-        self.animation = QPropertyAnimation(self, b"opacity")
+        self.animation = QtCore.QPropertyAnimation(self, b"opacity")
         self.animation.setDuration(1000)  # 1 segundo
         self.animation.setStartValue(1.0)
         self.animation.setEndValue(0.0)
@@ -95,7 +98,7 @@ class FloatingMessage(QWidget):
         """)
     
     # Definir la propiedad opacity
-    opacity = Property(float, get_opacity, set_opacity)
+    opacity = QtCore.Property(float, get_opacity, set_opacity)
 
 def show_message(text):
     """Muestra un mensaje flotante cerca del cursor"""
@@ -143,28 +146,28 @@ def zoom_toggle():
         
     else:
         # Obtener el widget bajo el cursor
-        widget = QApplication.widgetAt(QCursor.pos())
-        cursor_before = QCursor.pos()
+        widget = QtWidgets.QApplication.widgetAt(QtGui.QCursor.pos())
+        cursor_before = QtGui.QCursor.pos()
         
         if widget:
             # Simular un click completo (press y release) en el widget
             local_pos = widget.mapFromGlobal(cursor_before)
             
             # Mouse press
-            press_event = QMouseEvent(QEvent.MouseButtonPress, 
+            press_event = QtGui.QMouseEvent(QtCore.QEvent.MouseButtonPress, 
                                     local_pos,
-                                    Qt.LeftButton, 
-                                    Qt.LeftButton, 
-                                    Qt.NoModifier)
-            QApplication.sendEvent(widget, press_event)
+                                    QtCore.Qt.LeftButton, 
+                                    QtCore.Qt.LeftButton, 
+                                    QtCore.Qt.NoModifier)
+            QtWidgets.QApplication.sendEvent(widget, press_event)
             
             # Mouse release
-            release_event = QMouseEvent(QEvent.MouseButtonRelease, 
+            release_event = QtGui.QMouseEvent(QtCore.QEvent.MouseButtonRelease, 
                                       local_pos,
-                                      Qt.LeftButton, 
-                                      Qt.LeftButton, 
-                                      Qt.NoModifier)
-            QApplication.sendEvent(widget, release_event)
+                                      QtCore.Qt.LeftButton, 
+                                      QtCore.Qt.LeftButton, 
+                                      QtCore.Qt.NoModifier)
+            QtWidgets.QApplication.sendEvent(widget, release_event)
             
             # Crear un NoOp temporal
             temp_node = nuke.createNode("NoOp", inpanel=False)

@@ -11,7 +11,7 @@ _____________________________________________________________________
 
 from collections import defaultdict, namedtuple
 import re
-from PySide2 import QtCore, QtWidgets, QtGui
+from qt_compat import QtCore, QtWidgets, QtGui
 import nuke
 
 class NodeWrapper(object):

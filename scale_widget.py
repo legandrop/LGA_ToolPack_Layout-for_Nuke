@@ -1,7 +1,7 @@
 import nuke
-from PySide2 import QtCore, QtGui, QtWidgets, QtOpenGL
 import re
 from collections import namedtuple
+from qt_compat import QtCore, QtGui, QtWidgets
 
 DAG_TITLE = "Node Graph"
 DAG_OBJECT_NAME = "DAG"
@@ -588,9 +588,8 @@ class ScaleWidget(QtWidgets.QWidget):
                     not QtWidgets.QApplication.keyboardModifiers()
                     and event.buttons() == event.button()
                 ):
-                    # The mouse press event had no other button pressed at the same time
-                    # However, events can happen on other widgets, so check click position
-                    if isinstance(widget, QtOpenGL.QGLWidget):
+                    # El DAG ya no es OpenGL; cerrar si el widget es el DAG
+                    if widget.objectName().startswith("DAG"):
                         self.close()
                     return False
 
@@ -632,11 +631,10 @@ class ScaleWidget(QtWidgets.QWidget):
         # See https://bugreports.qt.io/browse/QTBUG-53418
         elif event.type() == QtCore.QEvent.Wheel and widget is self:
             dag = get_dag_widgets()[0]
-            gl_widget = dag.findChild(QtOpenGL.QGLWidget)
-            if gl_widget:
-                QtWidgets.QApplication.sendEvent(gl_widget, event)
-                self.repaint()
-                return True
+            # reenviar al DAG directamente
+            QtWidgets.QApplication.sendEvent(dag, event)
+            self.repaint()
+            return True
 
         return False
 

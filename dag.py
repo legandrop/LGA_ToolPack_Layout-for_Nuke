@@ -6,7 +6,7 @@ Generic dag utilities
 import re
 from collections import namedtuple
 
-from PySide2 import QtCore, QtWidgets, QtGui
+from qt_compat import QtCore, QtWidgets, QtGui
 
 # nuke
 import nuke

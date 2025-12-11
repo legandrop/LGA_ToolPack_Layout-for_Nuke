@@ -72,6 +72,33 @@ from re import template
 
 import nuke  
 import nukescripts
+from qt_compat import QtWidgets, QtGui, QtCore, QGuiApplication
+# Alias rápidos usados en el código
+Qt = QtCore.Qt
+QPoint = QtCore.QPoint
+QCursor = QtGui.QCursor
+QVBoxLayout = QtWidgets.QVBoxLayout
+QWidget = QtWidgets.QWidget
+QGridLayout = QtWidgets.QGridLayout
+QSize = QtCore.QSize
+QGraphicsOpacityEffect = QtWidgets.QGraphicsOpacityEffect
+QPropertyAnimation = QtCore.QPropertyAnimation
+QHBoxLayout = QtWidgets.QHBoxLayout
+QSpacerItem = QtWidgets.QSpacerItem
+QSizePolicy = QtWidgets.QSizePolicy
+QLayout = QtWidgets.QLayout
+QPushButton = QtWidgets.QPushButton
+QIcon = QtGui.QIcon
+QMainWindow = QtWidgets.QMainWindow
+QColor = QtGui.QColor
+QStyleFactory = QtWidgets.QStyleFactory
+QListWidgetItem = QtWidgets.QListWidgetItem
+QMessageBox = QtWidgets.QMessageBox
+QTableWidgetItem = QtWidgets.QTableWidgetItem
+QEvent = QtCore.QEvent
+QLabel = QtWidgets.QLabel
+QFont = QtGui.QFont
+QGraphicsDropShadowEffect = QtWidgets.QGraphicsDropShadowEffect
 
 # Import built-in Libraries
 import math
@@ -607,8 +634,10 @@ class SettingsWindow(QMainWindow,Ui_SettingsWindowUI):
         self.pushButton_close.clicked.connect(self.close)
 
         # for linux , set window position to center 
-        centerX = int(QDesktopWidget().screenGeometry(-1).width()/2.0 - self.width()/2.0)
-        centerY = int(QDesktopWidget().screenGeometry(-1).height()/2.0 - self.height()/2.0)
+        screen = QGuiApplication.primaryScreen()
+        geo = screen.geometry() if screen else QGuiApplication.screens()[0].geometry()
+        centerX = int(geo.width()/2.0 - self.width()/2.0)
+        centerY = int(geo.height()/2.0 - self.height()/2.0)
         self.move(centerX,centerY)
         
         self.updateUI()
@@ -769,8 +798,10 @@ class TemplatesWindow(QMainWindow,Ui_TemplatesWindowUI):
         self.listWidget_templateList.currentItemChanged.connect(self.selectedTemplateItemsListUpdateUI)
 
         # for linux , set window position to center 
-        centerX = int(QDesktopWidget().screenGeometry(-1).width()/2.0 - self.width()/2.0)
-        centerY = int(QDesktopWidget().screenGeometry(-1).height()/2.0 - self.height()/2.0)
+        screen = QGuiApplication.primaryScreen()
+        geo = screen.geometry() if screen else QGuiApplication.screens()[0].geometry()
+        centerX = int(geo.width()/2.0 - self.width()/2.0)
+        centerY = int(geo.height()/2.0 - self.height()/2.0)
         self.move(centerX,centerY)
 
         checkBoxStyle = 'QCheckBox::indicator:checked {background-image: url('+os.path.dirname(__file__).replace(os.sep,'/')+'/icons/cil-check-alt.png);}'
@@ -920,8 +951,10 @@ class EditBookmarksWindow(QMainWindow,Ui_EditBookmarksWindowUI):
         self.tableWidget_BookmarksList.itemChanged.connect(self.BookmarkUpdate)
 
         # for linux , set window position to center 
-        centerX = int(QDesktopWidget().screenGeometry(-1).width()/2.0 - self.width()/2.0)
-        centerY = int(QDesktopWidget().screenGeometry(-1).height()/2.0 - self.height()/2.0)
+        screen = QGuiApplication.primaryScreen()
+        geo = screen.geometry() if screen else QGuiApplication.screens()[0].geometry()
+        centerX = int(geo.width()/2.0 - self.width()/2.0)
+        centerY = int(geo.height()/2.0 - self.height()/2.0)
         self.move(centerX,centerY)
 
         # UpdateUI

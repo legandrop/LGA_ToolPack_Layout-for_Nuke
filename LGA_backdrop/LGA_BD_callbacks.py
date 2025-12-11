@@ -3,7 +3,8 @@ LGA_BD_callbacks.py - Callbacks para LGA_backdrop
 """
 
 import nuke
-import LGA_BD_knobs
+# Import plano; la ruta se asegura en LGA_backdrop.py
+import LGA_BD_knobs as LGA_BD_knobs  # type: ignore
 
 # Variable global para activar o desactivar los prints
 DEBUG = False

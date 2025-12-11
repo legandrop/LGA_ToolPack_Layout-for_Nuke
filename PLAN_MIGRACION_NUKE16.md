@@ -25,6 +25,15 @@
 - [ ] `LGA_middleClick.py`
 - [ ] `Km_NodeGraphEN/PysideImport.py`
 - [ ] `Km_NodeGraphEN/Km_NodeGraph_Easy_Navigate.py`
+ - [x] `scale_widget.py`
+- [x] `distributeNodes.py`
+- [x] `dag.py`
+- [x] `LGA_zoom.py`
+- [x] `LGA_selectNodes.py.panel`
+- [x] `LGA_scriptChecker.py`
+- [x] `LGA_middleClick.py`
+- [x] `Km_NodeGraphEN/PysideImport.py`
+- [x] `Km_NodeGraphEN/Km_NodeGraph_Easy_Navigate.py`
 
 ## Pasos sugeridos
 1) Crear helper `qt_compat.py` (o usar `qtpy`) que exporte `QtWidgets`, `QtGui`, `QtCore`, `QAction`, `QGuiApplication`, `PYSIDE_VER`.
@@ -44,6 +53,12 @@
 - `LGA_BD_knobs.py` actualizado a imports `qt_compat`.
 - `LGA_BD_fit.py` actualizado a imports `qt_compat` (QFont/QFontMetrics).
 - `LGA_BD_callbacks.py` ajusta callback inline para probar PySide6 y luego PySide2 en QFont/QFontMetrics.
+- `scale_widget.py` usa `qt_compat`, DAG QWidget (sin QtOpenGL), reenvío wheel directo al DAG.
+- `distributeNodes.py` y `dag.py` usan `qt_compat`.
+- `LGA_zoom.py` y `LGA_middleClick.py` usan `qt_compat` para PySide6/2.
+- `LGA_selectNodes.py.panel` usa `qt_compat`.
+- `LGA_scriptChecker.py` usa `qt_compat`.
+- `Km_NodeGraphEN/PysideImport.py` usa `qt_compat` y exporta nombres; `Km_NodeGraph_Easy_Navigate.py` usa `qt_compat` y reemplaza `QDesktopWidget` por `QGuiApplication.primaryScreen()`.
 
 ### Notas sobre tooltips persistentes (NodeLabel/StickyNote)
 - Problema: tooltips de botones OK/Cancel quedaban flotando tras cerrar/OK/Cancel.

@@ -1,26 +1,12 @@
 """import compatible pyside lib for each version of nuke"""
 
-# Import Nuke Libraries
-import nuke  
+import nuke
+from qt_compat import QtCore, QtGui, QtWidgets
 
-# Pyside Library Import (pyside and pyside 2)  : pyside for nuke10.5 and older , pyside2 for nuke 11.0 and newer
-try:
+# Exportar todo como hacía el import original
+globals().update({name: getattr(QtCore, name) for name in dir(QtCore) if not name.startswith("_")})
+globals().update({name: getattr(QtGui, name) for name in dir(QtGui) if not name.startswith("_")})
+globals().update({name: getattr(QtWidgets, name) for name in dir(QtWidgets) if not name.startswith("_")})
 
-    if int(nuke.env ["NukeVersionMajor"]) < 11:
-        from PySide.QtCore import *
-        from PySide.QtGui import *
-    else:
-        from PySide2.QtCore import *
-        from PySide2.QtGui import *
-        from PySide2.QtWidgets import *
-except ImportError:
-    print ("not in nuke") # pycharm
-    try:
-        from PySide.QtCore import *
-        from PySide.QtGui import *
-        #print "using pyside"
-    except ImportError:
-        from PyQt4.QtCore import *
-        from PyQt4.QtGui import *
-        Signal = pyqtSignal
-    pass
+# Compatibilidad con Signal si se usaba
+Signal = getattr(QtCore, "Signal", getattr(QtCore, "pyqtSignal", None))

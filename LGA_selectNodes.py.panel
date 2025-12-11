@@ -1,7 +1,7 @@
 import os
 import nuke
 from nukescripts import panels
-from PySide2 import QtWidgets, QtCore, QtGui
+from qt_compat import QtWidgets, QtCore, QtGui
 
 app = QtWidgets.QApplication.instance()  # Obtiene la instancia actual de la aplicación
 if not app:  # Si la aplicación no existe, crea una nueva instancia
@@ -21,13 +21,6 @@ app.setStyleSheet("""
 
 # Asumiendo que estamos dentro de un archivo .py, usa __file__ para obtener la ruta del script actual
 script_path = os.path.dirname(__file__)
-
-# Elige entre PySide y PySide2 en función de la versión de Nuke
-if nuke.NUKE_VERSION_MAJOR < 11:
-    from PySide import QtGui, QtCore
-    QtWidgets = QtGui
-else:
-    from PySide2 import QtWidgets, QtCore, QtGui
 
 def showToolTip(widget, text):
     QtCore.QTimer.singleShot(1, lambda: QtWidgets.QToolTip.showText(QtGui.QCursor.pos(), text, widget))

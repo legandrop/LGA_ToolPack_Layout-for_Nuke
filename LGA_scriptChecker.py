@@ -9,21 +9,8 @@ ________________________________________________________________________________
 """
 
 import nuke
-from PySide2.QtWidgets import (
-    QApplication,
-    QWidget,
-    QVBoxLayout,
-    QTableWidget,
-    QTableWidgetItem,
-    QHeaderView,
-    QPushButton,
-    QHBoxLayout,
-    QStyledItemDelegate,
-)
-from PySide2.QtGui import QColor, QBrush, QCursor, QFontMetrics
-from PySide2.QtCore import Qt, QRect, QMargins
-
 import time
+from qt_compat import QtWidgets, QtGui, QtCore
 
 # Variable global para activar o desactivar los prints
 DEBUG = False
@@ -511,7 +498,7 @@ class ScriptCheckerWindow(QWidget):
         height = table_height + 50
 
         # Limitar la altura maxima al 90% de la altura de la pantalla
-        screen = QApplication.primaryScreen()
+        screen = QtWidgets.QApplication.primaryScreen()
         screen_geometry = screen.geometry()
         max_height = int(screen_geometry.height() * 0.80)
 
@@ -707,7 +694,7 @@ def main():
         return
 
     # Check if there's already an instance of QApplication
-    app = QApplication.instance() or QApplication([])
+    app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
     window = ScriptCheckerWindow(initial_results)
     window.show()
 
