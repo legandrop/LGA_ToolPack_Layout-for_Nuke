@@ -8,7 +8,7 @@
 
 ## Checklist de archivos a actualizar
 - [x] `LGA_StickyNote.py`
-- [ ] `LGA_NodeLabel.py`
+ - [x] `LGA_NodeLabel.py`
 - [ ] `LGA_StickyNote_Utils.py`
 - [ ] `LGA_backdrop/LGA_backdrop.py`
 - [ ] `LGA_backdrop/LGA_BD_knobs.py`
@@ -38,6 +38,15 @@
 ## Cambios aplicados hasta ahora
 - `qt_compat.py` agregado: fallback PySide6 → PySide2.
 - `LGA_StickyNote.py` actualizado a v1.92: usa `qt_compat`, tooltips ahora se cierran al cerrar/OK/Cancel, debug apagado por defecto, auto-run comentado.
+- `LGA_NodeLabel.py` actualizado a v0.83: usa `qt_compat`, tooltips con parent y cierre garantizado en OK/Cancel/cierre de ventana, namespace/version bumped.
+
+### Notas sobre tooltips persistentes (NodeLabel/StickyNote)
+- Problema: tooltips de botones OK/Cancel quedaban flotando tras cerrar/OK/Cancel.
+- Solución aplicada:
+  - Crear tooltip como `QLabel` con `parent=self`, flags `Qt.Tool | FramelessWindowHint | WindowStaysOnTopHint`, `WA_DeleteOnClose`, `WA_ShowWithoutActivating`.
+  - Conectar `destroyed` del diálogo a `hide_custom_tooltip_*`.
+  - Llamar a `hide_custom_tooltip_*` en OK/Cancel/closeEvent.
+  - En `hide_custom_tooltip_*`, llamar a `close()`, `deleteLater()`, `QToolTip.hideText()` y `QApplication.processEvents(...)` para forzar cierre visual.
 
 ## Cómo cargar el ToolPack en Nuke
 ```python

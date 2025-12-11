@@ -1,7 +1,7 @@
 """
 _______________________________________________
 
-  LGA_NodeLabel v0.81 | Lega
+  LGA_NodeLabel v0.83 | Lega
   Editor de labels para nodos en el Node Graph
 _______________________________________________
 
@@ -11,11 +11,11 @@ import nuke
 import os
 import gc
 import weakref
-from PySide2 import QtWidgets, QtGui, QtCore
+from qt_compat import QtWidgets, QtGui, QtCore
 
 # ===== CONTROL DE RECURSOS Y GESTIÓN DE MEMORIA =====
 # Namespace único para evitar conflictos con otros scripts
-LGA_NODE_LABEL_NAMESPACE = "LGA_NodeLabel_v081"
+LGA_NODE_LABEL_NAMESPACE = "LGA_NodeLabel_v083"
 
 # Control de instancias para evitar múltiples widgets
 _NODE_LABEL_INSTANCES = weakref.WeakSet()
@@ -266,8 +266,21 @@ class NodeLabelEditor(QtWidgets.QDialog):
         if self.tooltip_label:
             self.tooltip_label.close()
 
-        self.tooltip_label = QtWidgets.QLabel(text)
-        self.tooltip_label.setWindowFlags(QtCore.Qt.ToolTip)
+        # Crear tooltip con parent para cerrarlo junto a la ventana
+        self.tooltip_label = QtWidgets.QLabel(text, parent=self)
+        self.tooltip_label.setWindowFlags(
+            QtCore.Qt.Tool
+            | QtCore.Qt.FramelessWindowHint
+            | QtCore.Qt.WindowStaysOnTopHint
+        )
+        self.tooltip_label.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+        self.tooltip_label.setAttribute(QtCore.Qt.WA_ShowWithoutActivating, True)
+        # Cerrar tooltip si el diálogo se destruye
+        try:
+            self.destroyed.disconnect(self.hide_custom_tooltip_NodeLabel)
+        except Exception:
+            pass
+        self.destroyed.connect(self.hide_custom_tooltip_NodeLabel)
         self.tooltip_label.setStyleSheet(
             """
             QLabel {
@@ -298,7 +311,14 @@ class NodeLabelEditor(QtWidgets.QDialog):
         """Oculta el tooltip personalizado"""
         if self.tooltip_label:
             self.tooltip_label.close()
+            try:
+                self.tooltip_label.deleteLater()
+            except Exception:
+                pass
             self.tooltip_label = None
+        QtWidgets.QToolTip.hideText()
+        # Procesar eventos pendientes para asegurar cierre visual
+        QtWidgets.QApplication.processEvents(QtCore.QEventLoop.AllEvents, 50)
 
     def setup_connections_NodeLabel(self):
         """Configura las conexiones de señales"""
@@ -338,11 +358,13 @@ class NodeLabelEditor(QtWidgets.QDialog):
 
     def on_cancel_clicked(self):
         """Callback cuando se hace click en Cancel"""
+        self.hide_custom_tooltip_NodeLabel()
         debug_print("Cancelando edición de label")
         self.close()
 
     def on_ok_clicked(self):
         """Callback cuando se hace click en OK"""
+        self.hide_custom_tooltip_NodeLabel()
         if not self.selected_node:
             debug_print("No hay nodo seleccionado para aplicar el label")
             self.close()
@@ -373,6 +395,17 @@ class NodeLabelEditor(QtWidgets.QDialog):
                 super().keyPressEvent(event)
         else:
             super().keyPressEvent(event)
+
+    def closeEvent(self, event):
+        """Cerrar y limpiar tooltips persistentes."""
+        try:
+            self.hide_custom_tooltip_NodeLabel()
+        except Exception:
+            pass
+        # Limpiar referencias para evitar memory leaks
+        self.selected_node = None
+        self.drag_position = None
+        super(NodeLabelEditor, self).closeEvent(event)
 
     def showEvent(self, event):
         """Se ejecuta cuando se muestra el diálogo"""
