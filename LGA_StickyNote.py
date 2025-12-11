@@ -1,7 +1,7 @@
 """
 _______________________________________________
 
-  LGA_StickyNote v1.91 | Lega
+  LGA_StickyNote v1.92 | Lega
   Editor en tiempo real para StickyNotes en el Node Graph
 _______________________________________________
 
@@ -11,7 +11,7 @@ import nuke
 import os
 import gc
 import weakref
-from PySide2 import QtWidgets, QtGui, QtCore
+from qt_compat import QtWidgets, QtGui, QtCore
 from LGA_StickyNote_Utils import (
     StickyNoteStateManager,
     extract_clean_text_and_margins,
@@ -20,7 +20,7 @@ from LGA_StickyNote_Utils import (
 
 # ===== CONTROL DE RECURSOS Y GESTIÓN DE MEMORIA =====
 # Namespace único para evitar conflictos con otros scripts
-LGA_STICKY_NOTE_NAMESPACE = "LGA_StickyNote_v191"
+LGA_STICKY_NOTE_NAMESPACE = "LGA_StickyNote_v192"
 
 # Control de instancias para evitar múltiples widgets
 _STICKY_NOTE_INSTANCES = weakref.WeakSet()
@@ -1677,6 +1677,8 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
     def on_cancel_clicked(self):
         """Callback cuando se hace click en Cancel"""
+        # Ocultar tooltip persistente antes de cerrar
+        self.hide_custom_tooltip_Sticky()
         try:
             # Cancelar el undo (no crear punto de undo)
             self._cancel_undo_group()
@@ -1692,6 +1694,8 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
     def on_ok_clicked(self):
         """Callback cuando se hace click en OK"""
+        # Ocultar tooltip persistente antes de cerrar
+        self.hide_custom_tooltip_Sticky()
         try:
             # YA NO HAY TIMER QUE DETENER
             # self.update_timer.stop()
@@ -1741,6 +1745,8 @@ class StickyNoteEditor(QtWidgets.QDialog):
     def _cleanup_resources(self):
         """Limpieza completa de recursos para evitar memory leaks"""
         try:
+            # Asegurar que el tooltip no quede persistente
+            self.hide_custom_tooltip_Sticky()
             # Asegurarse de que el undo esté cerrado si aún está abierto
             if self.undo_started:
                 try:
@@ -1955,8 +1961,14 @@ class StickyNoteEditor(QtWidgets.QDialog):
         if self.tooltip_label:
             self.tooltip_label.close()
 
-        self.tooltip_label = QtWidgets.QLabel(text)
-        self.tooltip_label.setWindowFlags(QtCore.Qt.ToolTip)
+        # Crear tooltip con parent para que se cierre junto a la ventana
+        self.tooltip_label = QtWidgets.QLabel(text, parent=self)
+        self.tooltip_label.setWindowFlags(
+            QtCore.Qt.Tool
+            | QtCore.Qt.FramelessWindowHint
+            | QtCore.Qt.WindowStaysOnTopHint
+        )
+        self.tooltip_label.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
         self.tooltip_label.setStyleSheet(
             """
             QLabel {
@@ -1987,7 +1999,21 @@ class StickyNoteEditor(QtWidgets.QDialog):
         """Oculta el tooltip personalizado"""
         if self.tooltip_label:
             self.tooltip_label.close()
+            try:
+                self.tooltip_label.deleteLater()
+            except Exception:
+                pass
             self.tooltip_label = None
+        # Ocultar tooltips estándar por si acaso
+        QtWidgets.QToolTip.hideText()
+
+    def closeEvent(self, event):
+        """Cerrar tooltips persistentes al cerrar la ventana."""
+        try:
+            self.hide_custom_tooltip_Sticky()
+        except Exception:
+            pass
+        super(StickyNoteEditor, self).closeEvent(event)
 
 
 # Variables globales con nombres únicos para evitar conflictos
