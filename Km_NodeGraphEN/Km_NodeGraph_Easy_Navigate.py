@@ -72,7 +72,7 @@ from re import template
 
 import nuke  
 import nukescripts
-from qt_compat import QtWidgets, QtGui, QtCore, QGuiApplication
+from LGA_QtAdapter_ToolPack_Layout import QtWidgets, QtGui, QtCore, QGuiApplication
 # Alias rápidos usados en el código
 Qt = QtCore.Qt
 QPoint = QtCore.QPoint

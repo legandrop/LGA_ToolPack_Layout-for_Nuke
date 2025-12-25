@@ -1,7 +1,7 @@
 import nuke
 import re
 from collections import namedtuple
-from qt_compat import QtCore, QtGui, QtWidgets
+from LGA_QtAdapter_ToolPack_Layout import QtCore, QtGui, QtWidgets
 
 DAG_TITLE = "Node Graph"
 DAG_OBJECT_NAME = "DAG"

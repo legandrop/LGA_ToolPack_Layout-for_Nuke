@@ -14,7 +14,7 @@ _____________________________________________________________________________
 
 import nuke
 import time
-from qt_compat import QtWidgets, QtGui, QtCore
+from LGA_QtAdapter_ToolPack_Layout import QtWidgets, QtGui, QtCore
 
 # Aliases para mantener compatibilidad con el código original
 QCursor = QtGui.QCursor

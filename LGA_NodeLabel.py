@@ -11,7 +11,7 @@ import nuke
 import os
 import gc
 import weakref
-from qt_compat import QtWidgets, QtGui, QtCore
+from LGA_QtAdapter_ToolPack_Layout import QtWidgets, QtGui, QtCore
 
 # ===== CONTROL DE RECURSOS Y GESTIÓN DE MEMORIA =====
 # Namespace único para evitar conflictos con otros scripts

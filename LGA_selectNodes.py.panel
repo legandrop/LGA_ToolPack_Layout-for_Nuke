@@ -1,7 +1,7 @@
 import os
 import nuke
 from nukescripts import panels
-from qt_compat import QtWidgets, QtCore, QtGui
+from LGA_QtAdapter_ToolPack_Layout import QtWidgets, QtCore, QtGui
 
 app = QtWidgets.QApplication.instance()  # Obtiene la instancia actual de la aplicación
 if not app:  # Si la aplicación no existe, crea una nueva instancia

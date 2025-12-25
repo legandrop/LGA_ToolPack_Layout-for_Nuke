@@ -10,7 +10,7 @@ ________________________________________________________________________________
 
 import nuke
 import time
-from qt_compat import QtWidgets, QtGui, QtCore
+from LGA_QtAdapter_ToolPack_Layout import QtWidgets, QtGui, QtCore
 
 # Variable global para activar o desactivar los prints
 DEBUG = False

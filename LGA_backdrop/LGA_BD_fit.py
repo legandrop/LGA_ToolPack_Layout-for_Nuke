@@ -4,7 +4,7 @@ LGA_BD_fit.py - Funcionalidad de fit para LGA_backdrop
 
 import re
 import nuke
-from qt_compat import QtGui
+from LGA_QtAdapter_ToolPack_Layout import QtGui
 
 # Variable global para activar o desactivar los prints
 DEBUG = False

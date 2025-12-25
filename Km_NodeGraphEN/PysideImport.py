@@ -1,7 +1,7 @@
 """import compatible pyside lib for each version of nuke"""
 
 import nuke
-from qt_compat import QtCore, QtGui, QtWidgets
+from LGA_QtAdapter_ToolPack_Layout import QtCore, QtGui, QtWidgets
 
 # Exportar todo como hacía el import original
 globals().update({name: getattr(QtCore, name) for name in dir(QtCore) if not name.startswith("_")})

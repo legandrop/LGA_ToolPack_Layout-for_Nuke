@@ -8,7 +8,7 @@ _______________________________________________
 """
 
 import nuke
-from qt_compat import QtWidgets, QtGui, QtCore
+from LGA_QtAdapter_ToolPack_Layout import QtWidgets, QtGui, QtCore
 
 
 class StickyNoteStateManager:

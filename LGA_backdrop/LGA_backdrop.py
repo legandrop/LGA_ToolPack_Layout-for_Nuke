@@ -15,7 +15,7 @@ import gc
 import weakref
 import os
 import sys
-from qt_compat import QtWidgets, QtGui, QtCore, QGuiApplication
+from LGA_QtAdapter_ToolPack_Layout import QtWidgets, QtGui, QtCore, QGuiApplication
 QFrame = QtWidgets.QFrame
 QFontMetrics = QtGui.QFontMetrics
 QFont = QtGui.QFont

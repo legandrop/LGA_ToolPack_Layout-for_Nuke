@@ -11,7 +11,7 @@ _____________________________________________________________________
 
 from collections import defaultdict, namedtuple
 import re
-from qt_compat import QtCore, QtWidgets, QtGui
+from LGA_QtAdapter_ToolPack_Layout import QtCore, QtWidgets, QtGui
 import nuke
 
 class NodeWrapper(object):

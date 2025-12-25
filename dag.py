@@ -6,7 +6,7 @@ Generic dag utilities
 import re
 from collections import namedtuple
 
-from qt_compat import QtCore, QtWidgets, QtGui
+from LGA_QtAdapter_ToolPack_Layout import QtCore, QtWidgets, QtGui
 
 # nuke
 import nuke

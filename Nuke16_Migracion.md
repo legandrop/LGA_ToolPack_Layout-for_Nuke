@@ -1,7 +1,7 @@
 # Plan de migración Nuke 15 → Nuke 16 (PySide2 → PySide6)
 
 ## Estrategia
-- Usar capa de compatibilidad de imports (`qt_compat.py`) con funciones helper avanzadas y fallback PySide6 → PySide2.
+- Usar capa de compatibilidad de imports (`LGA_QtAdapter_ToolPack_Layout.py`) con funciones helper avanzadas y fallback PySide6 → PySide2.
 - Funciones helper automatizan cambios de API Qt5/Qt6: `horizontal_advance()`, `primary_screen_geometry()`, `set_layout_margin()`.
 - Reemplazar APIs Qt5 deprecadas: `QDesktopWidget`, `QtOpenGL.QGLWidget`, `QAction` en `QtWidgets`, enums de `QSizePolicy` en instancias, `QSound`.
 - Ajustar accesos a DAG: ya es `QWidget`, no OpenGL; usar `objectName` y `render()`.
@@ -37,31 +37,31 @@
 - [x] `Km_NodeGraphEN/Km_NodeGraph_Easy_Navigate.py`
 
 ## Pasos sugeridos
-1) `qt_compat.py` incluye funciones helper avanzadas (`horizontal_advance`, `primary_screen_geometry`, `set_layout_margin`) con fallback PySide6 → PySide2.
-2) Cambiar imports en todos los scripts para usar `qt_compat` en lugar de imports directos de PySide.
-3) Para geometría de pantalla usar `qt_compat.primary_screen_geometry(pos)` (maneja automáticamente QDesktopWidget vs QGuiApplication).
-4) Para ancho de texto usar `qt_compat.horizontal_advance(metrics, text)` (compatible Qt5/Qt6 automáticamente).
-5) Para márgenes de layout usar `qt_compat.set_layout_margin(layout, margin)` (compatible Qt5/Qt6 automáticamente).
+1) `LGA_QtAdapter_ToolPack_Layout.py` incluye funciones helper avanzadas (`horizontal_advance`, `primary_screen_geometry`, `set_layout_margin`) con fallback PySide6 → PySide2.
+2) Cambiar imports en todos los scripts para usar `LGA_QtAdapter_ToolPack_Layout` en lugar de imports directos de PySide.
+3) Para geometría de pantalla usar `LGA_QtAdapter_ToolPack_Layout.primary_screen_geometry(pos)` (maneja automáticamente QDesktopWidget vs QGuiApplication).
+4) Para ancho de texto usar `LGA_QtAdapter_ToolPack_Layout.horizontal_advance(metrics, text)` (compatible Qt5/Qt6 automáticamente).
+5) Para márgenes de layout usar `LGA_QtAdapter_ToolPack_Layout.set_layout_margin(layout, margin)` (compatible Qt5/Qt6 automáticamente).
 6) Sustituir `QtOpenGL.QGLWidget` en `scale_widget.py`; si no se usa GL real, eliminar dependencia y usar DAG como QWidget.
-7) Asegurar `QAction` se importe desde `QtGui` en PySide6 (ya manejado por qt_compat).
+7) Asegurar `QAction` se importe desde `QtGui` en PySide6 (ya manejado por LGA_QtAdapter_ToolPack_Layout).
 8) Si aparece audio con `QSound`, migrar a `QMediaPlayer + QAudioOutput`.
 9) Probar manualmente en Nuke 15 y 16 apertura de paneles, backdrops, zoom middle-click, selectNodes, Km NodeGraph, captura/render de DAG.
 
 ## Cambios aplicados hasta ahora
-- `qt_compat.py` incluye funciones helper avanzadas: `horizontal_advance()`, `primary_screen_geometry()`, `set_layout_margin()` con fallback PySide6 → PySide2.
-- `LGA_StickyNote.py` actualizado a v1.92: usa `qt_compat`, tooltips ahora se cierran al cerrar/OK/Cancel, debug apagado por defecto, auto-run comentado.
-- `LGA_NodeLabel.py` actualizado a v0.83: usa `qt_compat`, tooltips con parent y cierre garantizado en OK/Cancel/cierre de ventana, namespace/version bumped.
-- `LGA_StickyNote_Utils.py` actualizado a v1.01: usa `qt_compat` para PySide6/2 (sin fallback legacy).
-- `LGA_backdrop.py` actualizado a v0.81: usa `qt_compat`, tooltips con parent/cierre asegurado en OK/Cancel/closeEvent, `QDesktopWidget` reemplazado por `QGuiApplication.primaryScreen().availableGeometry()`, namespace/version bumped.
-- `LGA_BD_knobs.py` actualizado a imports `qt_compat`.
-- `LGA_BD_fit.py` actualizado a imports `qt_compat` (QFont/QFontMetrics).
+- `LGA_QtAdapter_ToolPack_Layout.py` incluye funciones helper avanzadas: `horizontal_advance()`, `primary_screen_geometry()`, `set_layout_margin()` con fallback PySide6 → PySide2.
+- `LGA_StickyNote.py` actualizado a v1.92: usa `LGA_QtAdapter_ToolPack_Layout`, tooltips ahora se cierran al cerrar/OK/Cancel, debug apagado por defecto, auto-run comentado.
+- `LGA_NodeLabel.py` actualizado a v0.83: usa `LGA_QtAdapter_ToolPack_Layout`, tooltips con parent y cierre garantizado en OK/Cancel/cierre de ventana, namespace/version bumped.
+- `LGA_StickyNote_Utils.py` actualizado a v1.01: usa `LGA_QtAdapter_ToolPack_Layout` para PySide6/2 (sin fallback legacy).
+- `LGA_backdrop.py` actualizado a v0.81: usa `LGA_QtAdapter_ToolPack_Layout`, tooltips con parent/cierre asegurado en OK/Cancel/closeEvent, `QDesktopWidget` reemplazado por `QGuiApplication.primaryScreen().availableGeometry()`, namespace/version bumped.
+- `LGA_BD_knobs.py` actualizado a imports `LGA_QtAdapter_ToolPack_Layout`.
+- `LGA_BD_fit.py` actualizado a imports `LGA_QtAdapter_ToolPack_Layout` (QFont/QFontMetrics).
 - `LGA_BD_callbacks.py` ajusta callback inline para probar PySide6 y luego PySide2 en QFont/QFontMetrics.
-- `scale_widget.py` usa `qt_compat`, DAG QWidget (sin QtOpenGL), reenvío wheel directo al DAG.
-- `distributeNodes.py` y `dag.py` usan `qt_compat`.
-- `LGA_zoom.py` usa `qt_compat` y alias para mantener la API original.
-- `LGA_selectNodes.py.panel` usa `qt_compat`.
-- `LGA_scriptChecker.py` usa `qt_compat`.
-- `Km_NodeGraphEN/PysideImport.py` usa `qt_compat` y exporta nombres; `Km_NodeGraph_Easy_Navigate.py` usa `qt_compat` y reemplaza `QDesktopWidget` por `QGuiApplication.primaryScreen()`.
+- `scale_widget.py` usa `LGA_QtAdapter_ToolPack_Layout`, DAG QWidget (sin QtOpenGL), reenvío wheel directo al DAG.
+- `distributeNodes.py` y `dag.py` usan `LGA_QtAdapter_ToolPack_Layout`.
+- `LGA_zoom.py` usa `LGA_QtAdapter_ToolPack_Layout` y alias para mantener la API original.
+- `LGA_selectNodes.py.panel` usa `LGA_QtAdapter_ToolPack_Layout`.
+- `LGA_scriptChecker.py` usa `LGA_QtAdapter_ToolPack_Layout`.
+- `Km_NodeGraphEN/PysideImport.py` usa `LGA_QtAdapter_ToolPack_Layout` y exporta nombres; `Km_NodeGraph_Easy_Navigate.py` usa `LGA_QtAdapter_ToolPack_Layout` y reemplaza `QDesktopWidget` por `QGuiApplication.primaryScreen()`.
 
 ### Nota de problema y solución (LGA_backdrop import en Nuke)
 - Síntoma: al iniciar Nuke, `ImportError: attempted relative import with no known parent package` y luego crasheo.
