@@ -222,6 +222,16 @@ if is_enabled("LGA_Backdrop_System"):
         icon=icon_LTPB,
     )
 
+    # Toggle Fill/Border para todos los backdrops usando el primero como master
+    import LGA_backdropToggleAppearance
+
+    n.addCommand(
+        "  Toggle Backdrop Fill | Border",
+        "LGA_backdropToggleAppearance.toggle_backdrop_fill_border()",
+        "Ctrl+Alt+b",
+        icon=icon_LTPB,
+    )
+
 
 add_tool(
     n,
