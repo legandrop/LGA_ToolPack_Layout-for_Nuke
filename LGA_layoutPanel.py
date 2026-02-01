@@ -917,7 +917,12 @@ class LayoutPanel(QtWidgets.QDialog):
             self._toggle_func_button(key_id)
             return
         if key_id in self._mod_locked:
-            self._mod_locked[key_id] = not self._mod_locked[key_id]
+            # Click overrides current key state: if pressed, force off; else toggle lock
+            if self._mod_pressed.get(key_id):
+                self._mod_pressed[key_id] = False
+                self._mod_locked[key_id] = False
+            else:
+                self._mod_locked[key_id] = not self._mod_locked[key_id]
             self._func_active = None
             self._update_mode_labels()
             return
@@ -1055,6 +1060,8 @@ class LayoutPanel(QtWidgets.QDialog):
         mod_key = self._modifier_map.get(event.key())
         if mod_key:
             self._mod_pressed[mod_key] = True
+            # Keyboard press overrides any click-lock for this modifier
+            self._mod_locked[mod_key] = False
             self._update_mode_labels()
             return
 
