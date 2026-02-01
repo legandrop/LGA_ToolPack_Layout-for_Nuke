@@ -143,7 +143,7 @@ COLOR_DIMMED = "#5a5959"
 COLOR_MODE = "#8455e2"
 COLOR_HOVER = "#b48cff"
 ARROW_ACTIVE_SCALE = 0.8
-CLOSE_SIZE_PX = 15
+CLOSE_SIZE_PX = 10
 
 _ARROW_SVG_CACHE: Dict[str, Optional[str]] = {}
 
@@ -496,6 +496,7 @@ class LayoutPanel(QtWidgets.QDialog):
         top_bar.setObjectName("topbar")
         top_bar_layout = QtWidgets.QHBoxLayout(top_bar)
         top_bar_layout.setContentsMargins(0, 0, 0, 0)
+        top_bar_layout.setSpacing(0)
         top_bar.setFixedHeight(int(round(CLOSE_SIZE_PX * LAYOUT_SCALE)))
         top_bar_layout.addStretch(1)
 
@@ -503,6 +504,7 @@ class LayoutPanel(QtWidgets.QDialog):
         close_size = int(round(CLOSE_SIZE_PX * LAYOUT_SCALE))
         close_btn.setFixedSize(close_size, close_size)
         close_btn.setProperty("closeButton", True)
+        close_btn.setMinimumSize(0, 0)
         close_btn.setToolButtonStyle(Qt.ToolButtonTextOnly)
         close_btn.setContentsMargins(0, 0, 0, 0)
         close_btn.clicked.connect(self.close)
