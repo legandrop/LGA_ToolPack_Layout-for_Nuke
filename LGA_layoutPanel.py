@@ -126,7 +126,7 @@ _panel_instance = None
 LAYOUT_SCALE = 1.2
 FONT_SCALE = 1 + (LAYOUT_SCALE - 1) * 0.5
 FONT_SIZE = max(12, int(round(12 * FONT_SCALE)))
-FONT_WEIGHT = 600 if LAYOUT_SCALE >= 1.2 else 500
+FONT_WEIGHT = 700 if LAYOUT_SCALE >= 1.2 else 500
 
 
 class NumpadButton(QtWidgets.QPushButton):
@@ -231,21 +231,21 @@ class LayoutPanel(QtWidgets.QDialog):
         add_btn("*", 0, 2, key_id="*")
         add_btn("-", 0, 3, key_id="-")
 
-        add_btn("7", 1, 0, key_id="7", sub_label="Home")
-        add_btn("8", 1, 1, key_id="8", sub_label="↑")
-        add_btn("9", 1, 2, key_id="9", sub_label="PgUp")
+        add_btn("Home", 1, 0, key_id="7")
+        add_btn("⬆", 1, 1, key_id="8")
+        add_btn("PgUp", 1, 2, key_id="9")
         add_btn("+", 1, 3, row_span=2, key_id="+")
 
-        add_btn("4", 2, 0, key_id="4", sub_label="←")
-        add_btn("5", 2, 1, key_id="5", sub_label=None)
-        add_btn("6", 2, 2, key_id="6", sub_label="→")
+        add_btn("⬅", 2, 0, key_id="4")
+        add_btn("", 2, 1, key_id="5", sub_label=None)
+        add_btn("➡", 2, 2, key_id="6")
 
-        add_btn("1", 3, 0, key_id="1", sub_label="End")
-        add_btn("2", 3, 1, key_id="2", sub_label="↓")
-        add_btn("3", 3, 2, key_id="3", sub_label="PgDn")
+        add_btn("End", 3, 0, key_id="1")
+        add_btn("⬇", 3, 1, key_id="2")
+        add_btn("PgDn", 3, 2, key_id="3")
         add_btn("enter", 3, 3, row_span=2, key_id="enter")
 
-        add_btn("0", 4, 0, col_span=2, key_id="0", sub_label="Ins")
+        add_btn("Ins", 4, 0, col_span=2, key_id="0")
         add_btn("del", 4, 2, key_id="del")
 
         mods = QtWidgets.QFrame(self)
@@ -351,16 +351,16 @@ class LayoutPanel(QtWidgets.QDialog):
 
     def _build_mode_labels(self) -> None:
         base = {
-            "7": ("7", "Home"),
-            "8": ("8", "↑"),
-            "9": ("9", "PgUp"),
-            "4": ("4", "←"),
-            "5": ("5", None),
-            "6": ("6", "→"),
-            "1": ("1", "End"),
-            "2": ("2", "↓"),
-            "3": ("3", "PgDn"),
-            "0": ("0", "Ins"),
+            "7": ("Home", None),
+            "8": ("⬆", None),
+            "9": ("PgUp", None),
+            "4": ("⬅", None),
+            "5": ("", None),
+            "6": ("➡", None),
+            "1": ("End", None),
+            "2": ("⬇", None),
+            "3": ("PgDn", None),
+            "0": ("Ins", None),
             "del": ("del", None),
             "+": ("+", None),
             "-": ("-", None),
@@ -375,46 +375,46 @@ class LayoutPanel(QtWidgets.QDialog):
 
         self._mode_labels[(False, False, True, False)] = {
             **base,
-            "4": ("4", "Select L"),
-            "6": ("6", "Select R"),
-            "8": ("8", "Select T"),
-            "2": ("2", "Select B"),
+            "4": ("⬅", "Select L"),
+            "6": ("➡", "Select R"),
+            "8": ("⬆", "Select T"),
+            "2": ("⬇", "Select B"),
         }
 
         self._mode_labels[(False, False, False, True)] = {
             **base,
-            "4": ("4", "Conn L"),
-            "6": ("6", "Conn R"),
-            "8": ("8", "Conn T"),
-            "2": ("2", "Conn B"),
+            "4": ("⬅", "Conn L"),
+            "6": ("➡", "Conn R"),
+            "8": ("⬆", "Conn T"),
+            "2": ("⬇", "Conn B"),
         }
 
         self._mode_labels[(False, True, False, False)] = {
             **base,
-            "4": ("4", "Align L"),
-            "6": ("6", "Align R"),
-            "8": ("8", "Align T"),
-            "2": ("2", "Align B"),
-            "0": ("0", "Dist H"),
+            "4": ("⬅", "Align L"),
+            "6": ("➡", "Align R"),
+            "8": ("⬆", "Align T"),
+            "2": ("⬇", "Align B"),
+            "0": ("Ins", "Dist H"),
             "del": ("del", "Dist V"),
-            "5": ("5", "Arrange"),
+            "5": ("", "Arrange"),
             "+": ("+", "Scale"),
         }
 
         self._mode_labels[(False, True, True, False)] = {
             **base,
-            "4": ("4", "Push L"),
-            "6": ("6", "Push R"),
-            "8": ("8", "Push U"),
-            "2": ("2", "Push D"),
+            "4": ("⬅", "Push L"),
+            "6": ("➡", "Push R"),
+            "8": ("⬆", "Push U"),
+            "2": ("⬇", "Push D"),
         }
 
         self._mode_labels[(True, True, True, False)] = {
             **base,
-            "4": ("4", "Pull L"),
-            "6": ("6", "Pull R"),
-            "8": ("8", "Pull U"),
-            "2": ("2", "Pull D"),
+            "4": ("⬅", "Pull L"),
+            "6": ("➡", "Pull R"),
+            "8": ("⬆", "Pull U"),
+            "2": ("⬇", "Pull D"),
         }
         self._numpad_keys = set(base.keys())
 

@@ -16,6 +16,8 @@ UI
 - Esc siempre activo y muestra una X, con look de tecla con función
 - Escala general del panel/botones: LAYOUT_SCALE = 1.2 (no cambia la tipografía)
 - Tipografía escala levemente con LAYOUT_SCALE (FONT_SIZE y FONT_WEIGHT)
+- Sin números en el numpad: se muestran flechas/Home/PgUp/PgDn/End/Ins centrados
+- En modo con función: arriba símbolo y abajo el nombre de la función
 
 Idea
 - Panel estilo numpad para el Layout ToolPack.
