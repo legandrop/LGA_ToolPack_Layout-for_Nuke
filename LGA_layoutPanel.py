@@ -7,12 +7,13 @@ __________________________________________
 
 from __future__ import annotations
 
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 import logging
 import os
 import queue
 import time
+import platform
 from logging.handlers import QueueHandler, QueueListener
 
 from LGA_QtAdapter_ToolPack_Layout import (
@@ -136,6 +137,8 @@ class NumpadButton(QtWidgets.QPushButton):
         text = label if not sub_label else f"{label}\n{sub_label}"
         super().__init__(text, parent)
         self.key_id = key_id
+        self._base_label = label
+        self._base_sub_label = sub_label
         self.setProperty("active", False)
         self.setFocusPolicy(Qt.NoFocus)
 
@@ -147,6 +150,12 @@ class NumpadButton(QtWidgets.QPushButton):
         self.style().polish(self)
         self.update()
 
+    def set_labels(self, label: str, sub_label: Optional[str] = None) -> None:
+        self._base_label = label
+        self._base_sub_label = sub_label
+        text = label if not sub_label else f"{label}\n{sub_label}"
+        self.setText(text)
+
 
 class LayoutPanel(QtWidgets.QDialog):
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
@@ -157,8 +166,15 @@ class LayoutPanel(QtWidgets.QDialog):
         self.setFocusPolicy(Qt.StrongFocus)
 
         self._buttons: Dict[str, NumpadButton] = {}
+        self._drag_active = False
+        self._drag_offset = QtCore.QPoint(0, 0)
+        self._mod_pressed = {"shift": False, "ctrl": False, "alt": False, "win": False}
+        self._mod_locked = {"shift": False, "ctrl": False, "alt": False, "win": False}
+        self._mode_labels: Dict[Tuple[bool, bool, bool, bool], Dict[str, Tuple[str, Optional[str]]]] = {}
         self._build_ui()
         self._build_key_map()
+        self._build_mode_labels()
+        self._update_mode_labels()
         debug_print("LayoutPanel init")
 
     def _build_ui(self) -> None:
@@ -236,7 +252,7 @@ class LayoutPanel(QtWidgets.QDialog):
         mods_layout.addStretch(1)
         add_mod("shift", "shift")
         add_mod("ctrl", "ctrl")
-        add_mod("win", "win")
+        add_mod(self._platform_mod_label(), "win")
         add_mod("alt", "alt")
         mods_layout.addStretch(1)
 
@@ -301,9 +317,111 @@ class LayoutPanel(QtWidgets.QDialog):
             Qt.Key_Meta: "win",
         }
 
+    def _platform_mod_label(self) -> str:
+        system = platform.system().lower()
+        if "darwin" in system or "mac" in system:
+            return "⌘"
+        return "win"
+
+    def _build_mode_labels(self) -> None:
+        base = {
+            "7": ("7", "Home"),
+            "8": ("8", "↑"),
+            "9": ("9", "PgUp"),
+            "4": ("4", "←"),
+            "5": ("5", "Clear"),
+            "6": ("6", "→"),
+            "1": ("1", "End"),
+            "2": ("2", "↓"),
+            "3": ("3", "PgDn"),
+            "0": ("0", "Ins"),
+            "del": ("del", None),
+            "+": ("+", None),
+            "-": ("-", None),
+            "*": ("*", None),
+            "/": ("/", None),
+            "enter": ("enter", None),
+            "esc": ("esc", None),
+        }
+
+        # (shift, ctrl, alt, win)
+        self._mode_labels[(False, False, False, False)] = base
+
+        self._mode_labels[(False, False, True, False)] = {
+            **base,
+            "4": ("4", "Select L"),
+            "6": ("6", "Select R"),
+            "8": ("8", "Select T"),
+            "2": ("2", "Select B"),
+        }
+
+        self._mode_labels[(False, False, False, True)] = {
+            **base,
+            "4": ("4", "Conn L"),
+            "6": ("6", "Conn R"),
+            "8": ("8", "Conn T"),
+            "2": ("2", "Conn B"),
+        }
+
+        self._mode_labels[(False, True, False, False)] = {
+            **base,
+            "4": ("4", "Align L"),
+            "6": ("6", "Align R"),
+            "8": ("8", "Align T"),
+            "2": ("2", "Align B"),
+            "0": ("0", "Dist H"),
+            "del": ("del", "Dist V"),
+            "5": ("5", "Arrange"),
+            "+": ("+", "Scale"),
+        }
+
+        self._mode_labels[(False, True, True, False)] = {
+            **base,
+            "4": ("4", "Push L"),
+            "6": ("6", "Push R"),
+            "8": ("8", "Push U"),
+            "2": ("2", "Push D"),
+        }
+
+        self._mode_labels[(True, True, True, False)] = {
+            **base,
+            "4": ("4", "Pull L"),
+            "6": ("6", "Pull R"),
+            "8": ("8", "Pull U"),
+            "2": ("2", "Pull D"),
+        }
+
+    def _effective_mod_state(self) -> Tuple[bool, bool, bool, bool]:
+        shift = self._mod_pressed["shift"] or self._mod_locked["shift"]
+        ctrl = self._mod_pressed["ctrl"] or self._mod_locked["ctrl"]
+        alt = self._mod_pressed["alt"] or self._mod_locked["alt"]
+        win = self._mod_pressed["win"] or self._mod_locked["win"]
+        return shift, ctrl, alt, win
+
+    def _update_mode_labels(self) -> None:
+        mode = self._effective_mod_state()
+        mapping = self._mode_labels.get(mode) or self._mode_labels[
+            (False, False, False, False)
+        ]
+        for key_id, labels in mapping.items():
+            btn = self._buttons.get(key_id)
+            if not btn:
+                continue
+            label, sub = labels
+            btn.set_labels(label, sub)
+
+        for mod_key in ("shift", "ctrl", "alt", "win"):
+            self._set_modifier_state(mod_key, self._effective_mod_state()[
+                ("shift", "ctrl", "alt", "win").index(mod_key)
+            ])
+
     def _on_button_click(self, key_id: str) -> None:
         if key_id == "esc":
             self.close()
+            return
+        if key_id in self._mod_locked:
+            self._mod_locked[key_id] = not self._mod_locked[key_id]
+            self._update_mode_labels()
             return
         self._flash_button(key_id)
 
@@ -327,7 +445,8 @@ class LayoutPanel(QtWidgets.QDialog):
 
         mod_key = self._modifier_map.get(event.key())
         if mod_key:
-            self._set_modifier_state(mod_key, True)
+            self._mod_pressed[mod_key] = True
+            self._update_mode_labels()
             return
 
         key_id = self._key_map.get(event.key())
@@ -340,9 +459,40 @@ class LayoutPanel(QtWidgets.QDialog):
     def keyReleaseEvent(self, event: QtGui.QKeyEvent) -> None:
         mod_key = self._modifier_map.get(event.key())
         if mod_key:
-            self._set_modifier_state(mod_key, False)
+            self._mod_pressed[mod_key] = False
+            self._update_mode_labels()
             return
         super().keyReleaseEvent(event)
+
+    def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
+        if event.button() == Qt.LeftButton:
+            child = self.childAt(event.pos())
+            if child is None or isinstance(child, QtWidgets.QFrame):
+                self._drag_active = True
+                self._drag_offset = self._global_pos(event) - self.frameGeometry().topLeft()
+                event.accept()
+                return
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event: QtGui.QMouseEvent) -> None:
+        if self._drag_active:
+            self.move(self._global_pos(event) - self._drag_offset)
+            event.accept()
+            return
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event: QtGui.QMouseEvent) -> None:
+        if event.button() == Qt.LeftButton and self._drag_active:
+            self._drag_active = False
+            event.accept()
+            return
+        super().mouseReleaseEvent(event)
+
+    @staticmethod
+    def _global_pos(event: QtGui.QMouseEvent) -> QtCore.QPoint:
+        if hasattr(event, "globalPosition"):
+            return event.globalPosition().toPoint()
+        return event.globalPos()
 
 def _place_near_cursor(widget: QtWidgets.QWidget) -> None:
     pos = QtGui.QCursor.pos()
