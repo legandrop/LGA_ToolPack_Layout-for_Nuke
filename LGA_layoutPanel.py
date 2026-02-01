@@ -124,6 +124,9 @@ def debug_print(*message, level="info"):
 
 _panel_instance = None
 LAYOUT_SCALE = 1.2
+FONT_SCALE = 1 + (LAYOUT_SCALE - 1) * 0.5
+FONT_SIZE = max(12, int(round(12 * FONT_SCALE)))
+FONT_WEIGHT = 600 if LAYOUT_SCALE >= 1.2 else 500
 
 
 class NumpadButton(QtWidgets.QPushButton):
@@ -270,8 +273,7 @@ class LayoutPanel(QtWidgets.QDialog):
         self._apply_style()
 
     def _apply_style(self) -> None:
-        self.setStyleSheet(
-            """
+        style = """
             #panel {
                 background-color: #161616;
                 border: 0px solid #a9a9a9;
@@ -287,7 +289,7 @@ class LayoutPanel(QtWidgets.QDialog):
                 color: #a9a9a9;
                 border: 2px solid #929292;
                 border-radius: 10px;
-                font: 12px "Segoe UI";
+                font: __FONT_WEIGHT__ __FONT_SIZE__px "Segoe UI";
                 text-transform: lowercase;
             }
             QPushButton[active="true"] {
@@ -309,7 +311,10 @@ class LayoutPanel(QtWidgets.QDialog):
                 border: 2px solid #b48cff;
             }
             """
+        style = style.replace("__FONT_SIZE__", str(FONT_SIZE)).replace(
+            "__FONT_WEIGHT__", str(FONT_WEIGHT)
         )
+        self.setStyleSheet(style)
 
     def _build_key_map(self) -> None:
         self._key_map = {
