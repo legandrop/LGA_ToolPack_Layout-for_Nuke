@@ -351,6 +351,8 @@ class NumpadButton(QtWidgets.QToolButton):
                 content.width(),
                 text_h,
             )
+            if self._arrow_dir in ("left", "right"):
+                text_rect.moveTop(text_rect.top() - int(round(2 * LAYOUT_SCALE)))
             self.icon().paint(painter, icon_rect, Qt.AlignCenter)
             painter.drawText(text_rect, Qt.AlignHCenter | Qt.AlignTop, text)
             return
