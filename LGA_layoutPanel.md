@@ -25,7 +25,8 @@ UI
 - Botones de función debajo de modificadores: Push/Pull/Select/Sel Con y Align/Distrib/Arrange/Scale (toggle exclusivo)
 - Al activar un modificador manual, se sincronizan los botones de función
 - Con Ctrl manual se encienden Align/Distrib/Arrange/Scale en bloque
-- Labels de acciones sin sufijos L/T/R/B; el texto es blanco (#cccccc)
+- Labels de acciones sin sufijos L/T/R/B; nombre de tecla en violeta y nombre de función en #cccccc
+- Clic en Align/Distrib/Arrange/Scale desactiva el bloque Ctrl si está activo
 
 Idea
 - Panel estilo numpad para el Layout ToolPack.

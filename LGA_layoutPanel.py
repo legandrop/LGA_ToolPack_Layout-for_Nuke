@@ -337,7 +337,8 @@ class NumpadButton(QtWidgets.QToolButton):
         if has_icon and text:
             lines = text.split("\n")
             fm = painter.fontMetrics()
-            text_h = fm.height() * len(lines)
+            line_h = fm.height()
+            text_h = line_h * len(lines)
             total_h = icon_size.height() + gap + text_h
             start_y = int(content.center().y() - total_h / 2)
             icon_rect = QtCore.QRect(
@@ -355,7 +356,68 @@ class NumpadButton(QtWidgets.QToolButton):
             if self._arrow_dir in ("left", "right"):
                 text_rect.moveTop(text_rect.top() - int(round(2 * LAYOUT_SCALE)))
             self.icon().paint(painter, icon_rect, Qt.AlignCenter)
-            painter.drawText(text_rect, Qt.AlignHCenter | Qt.AlignTop, text)
+            if self.property("hasFuncText"):
+                # line 0 (label) stays violet, line 1 (function) in cccc
+                base_color = QtGui.QColor(COLOR_MODE)
+                func_color = QtGui.QColor(COLOR_ACTIVE)
+                if len(lines) == 1:
+                    painter.setPen(func_color)
+                    painter.drawText(text_rect, Qt.AlignHCenter | Qt.AlignTop, lines[0])
+                else:
+                    painter.setPen(base_color)
+                    line0_rect = QtCore.QRect(
+                        text_rect.left(),
+                        text_rect.top(),
+                        text_rect.width(),
+                        line_h,
+                    )
+                    painter.drawText(
+                        line0_rect, Qt.AlignHCenter | Qt.AlignTop, lines[0]
+                    )
+                    painter.setPen(func_color)
+                    line1_rect = QtCore.QRect(
+                        text_rect.left(),
+                        text_rect.top() + line_h,
+                        text_rect.width(),
+                        line_h,
+                    )
+                    painter.drawText(
+                        line1_rect, Qt.AlignHCenter | Qt.AlignTop, lines[1]
+                    )
+            else:
+                painter.drawText(text_rect, Qt.AlignHCenter | Qt.AlignTop, text)
+            return
+
+        if self.property("hasFuncText"):
+            lines = text.split("\n")
+            fm = painter.fontMetrics()
+            line_h = fm.height()
+            text_h = line_h * len(lines)
+            start_y = int(content.center().y() - text_h / 2)
+            base_color = QtGui.QColor(COLOR_MODE)
+            func_color = QtGui.QColor(COLOR_ACTIVE)
+            if len(lines) == 1:
+                painter.setPen(func_color)
+                painter.drawText(
+                    QtCore.QRect(content.left(), start_y, content.width(), line_h),
+                    Qt.AlignHCenter | Qt.AlignTop,
+                    lines[0],
+                )
+            else:
+                painter.setPen(base_color)
+                painter.drawText(
+                    QtCore.QRect(content.left(), start_y, content.width(), line_h),
+                    Qt.AlignHCenter | Qt.AlignTop,
+                    lines[0],
+                )
+                painter.setPen(func_color)
+                painter.drawText(
+                    QtCore.QRect(
+                        content.left(), start_y + line_h, content.width(), line_h
+                    ),
+                    Qt.AlignHCenter | Qt.AlignTop,
+                    lines[1],
+                )
             return
 
         painter.drawText(content, Qt.AlignCenter, text)
@@ -560,7 +622,7 @@ class LayoutPanel(QtWidgets.QDialog):
             }
             QToolButton[modeChanged="true"] {
                 background-color: #1d1d1d;
-                color: #cccccc;
+                color: #8455e2;
                 border: 2px solid #8455e2;
             }
             QToolButton[modeChanged="true"]:hover {
@@ -568,9 +630,11 @@ class LayoutPanel(QtWidgets.QDialog):
                 border: 2px solid #b48cff;
             }
             """
-        style = style.replace("__FONT_SIZE__", str(FONT_SIZE)).replace(
-            "__FONT_WEIGHT__", str(FONT_WEIGHT)
-        ).replace("__FUNC_FONT_WEIGHT__", str(FUNC_FONT_WEIGHT))
+        style = (
+            style.replace("__FONT_SIZE__", str(FONT_SIZE))
+            .replace("__FONT_WEIGHT__", str(FONT_WEIGHT))
+            .replace("__FUNC_FONT_WEIGHT__", str(FUNC_FONT_WEIGHT))
+        )
         self.setStyleSheet(style)
 
     def _build_key_map(self) -> None:
@@ -706,6 +770,7 @@ class LayoutPanel(QtWidgets.QDialog):
             if is_changed:
                 changed_keys.add(key_id)
             btn.setProperty("modeChanged", is_changed)
+            btn.setProperty("hasFuncText", bool(sub))
             if key_id in ("2", "4", "6", "8"):
                 btn.set_icon_only(not is_changed)
                 btn.update_arrow_icon()
@@ -754,21 +819,67 @@ class LayoutPanel(QtWidgets.QDialog):
         self._flash_button(key_id)
 
     def _toggle_func_button(self, key_id: str) -> None:
+        if (
+            key_id in ("func_align", "func_distrib", "func_arrange", "func_scale")
+            and self._mod_locked["ctrl"]
+            and not self._mod_locked["alt"]
+            and not self._mod_locked["shift"]
+            and not self._mod_locked["win"]
+        ):
+            self._func_active = None
+            self._mod_locked = {
+                "shift": False,
+                "ctrl": False,
+                "alt": False,
+                "win": False,
+            }
+            self._update_mode_labels()
+            return
         if self._func_active == key_id:
             self._func_active = None
-            self._mod_locked = {"shift": False, "ctrl": False, "alt": False, "win": False}
+            self._mod_locked = {
+                "shift": False,
+                "ctrl": False,
+                "alt": False,
+                "win": False,
+            }
         else:
             self._func_active = key_id
             if key_id == "func_push":
-                self._mod_locked = {"shift": False, "ctrl": True, "alt": True, "win": False}
+                self._mod_locked = {
+                    "shift": False,
+                    "ctrl": True,
+                    "alt": True,
+                    "win": False,
+                }
             elif key_id == "func_pull":
-                self._mod_locked = {"shift": True, "ctrl": True, "alt": True, "win": False}
+                self._mod_locked = {
+                    "shift": True,
+                    "ctrl": True,
+                    "alt": True,
+                    "win": False,
+                }
             elif key_id == "func_select":
-                self._mod_locked = {"shift": False, "ctrl": False, "alt": True, "win": False}
+                self._mod_locked = {
+                    "shift": False,
+                    "ctrl": False,
+                    "alt": True,
+                    "win": False,
+                }
             elif key_id == "func_selcon":
-                self._mod_locked = {"shift": False, "ctrl": False, "alt": False, "win": True}
+                self._mod_locked = {
+                    "shift": False,
+                    "ctrl": False,
+                    "alt": False,
+                    "win": True,
+                }
             elif key_id in ("func_align", "func_distrib", "func_arrange", "func_scale"):
-                self._mod_locked = {"shift": False, "ctrl": True, "alt": False, "win": False}
+                self._mod_locked = {
+                    "shift": False,
+                    "ctrl": True,
+                    "alt": False,
+                    "win": False,
+                }
         for fid in (
             "func_push",
             "func_pull",
