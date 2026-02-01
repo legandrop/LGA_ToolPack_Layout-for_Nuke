@@ -18,7 +18,7 @@ UI
 - Tipografía escala levemente con LAYOUT_SCALE (FONT_SIZE y FONT_WEIGHT)
 - Sin números en el numpad: se muestran flechas/Home/PgUp/PgDn/End/Ins centrados
 - En modo con función: arriba símbolo y abajo el nombre de la función
-- Flechas usan SVG y escalan con LAYOUT_SCALE
+- Flechas usan arrow_down.svg con variantes de color (base/active/dimmed/mode/hover) y se rotan por código
 
 Idea
 - Panel estilo numpad para el Layout ToolPack.

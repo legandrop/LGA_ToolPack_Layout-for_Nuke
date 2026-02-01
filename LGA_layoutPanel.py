@@ -23,6 +23,13 @@ from LGA_QtAdapter_ToolPack_Layout import (
     Qt,
     primary_screen_geometry,
 )
+try:
+    from PySide6 import QtSvg
+except Exception:
+    try:
+        from PySide2 import QtSvg
+    except Exception:
+        QtSvg = None
 
 # -----------------------------------------------------------------------------
 # Logging (ver Docu_Logging_System.md)
@@ -128,6 +135,60 @@ FONT_SCALE = 1 + (LAYOUT_SCALE - 1) * 0.5
 FONT_SIZE = max(12, int(round(12 * FONT_SCALE)))
 FONT_WEIGHT = 700 if LAYOUT_SCALE >= 1.2 else 500
 ARROW_STROKE = 10
+COLOR_BASE = "#a9a9a9"
+COLOR_ACTIVE = "#cccccc"
+COLOR_DIMMED = "#5a5959"
+COLOR_MODE = "#8455e2"
+COLOR_HOVER = "#b48cff"
+
+_ARROW_SVG_CACHE: Dict[str, Optional[str]] = {}
+
+
+def _load_arrow_svg(variant: str) -> Optional[str]:
+    global _ARROW_SVG_CACHE
+    if variant in _ARROW_SVG_CACHE:
+        return _ARROW_SVG_CACHE[variant]
+    icons_root = os.path.join(os.path.dirname(__file__), "icons_layoutpanel")
+    path = os.path.join(icons_root, f"arrow_down_{variant}.svg")
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            _ARROW_SVG_CACHE[variant] = f.read()
+    except Exception:
+        _ARROW_SVG_CACHE[variant] = None
+    return _ARROW_SVG_CACHE[variant]
+
+
+def _arrow_rotation(direction: str) -> int:
+    if direction == "up":
+        return 180
+    if direction == "left":
+        return 90
+    if direction == "right":
+        return -90
+    return 0
+
+
+def _render_arrow_pixmap(variant: str, size: int, direction: str) -> Optional[QtGui.QPixmap]:
+    if QtSvg is None:
+        return None
+    svg_data = _load_arrow_svg(variant)
+    if not svg_data:
+        return None
+    renderer = QtSvg.QSvgRenderer(QtCore.QByteArray(svg_data.encode("utf-8")))
+    if not renderer.isValid():
+        return None
+    image = QtGui.QImage(size, size, QtGui.QImage.Format_ARGB32_Premultiplied)
+    image.fill(QtCore.Qt.transparent)
+    painter = QtGui.QPainter(image)
+    renderer.render(painter)
+    painter.end()
+    pixmap = QtGui.QPixmap.fromImage(image)
+    rotation = _arrow_rotation(direction)
+    if rotation != 0:
+        pixmap = pixmap.transformed(
+            QtGui.QTransform().rotate(rotation), QtCore.Qt.SmoothTransformation
+        )
+    return pixmap
 
 
 class NumpadButton(QtWidgets.QToolButton):
@@ -149,6 +210,9 @@ class NumpadButton(QtWidgets.QToolButton):
         self.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         self._has_icon = False
         self._icon_only = False
+        self._arrow_dir = None
+        self._arrow_size = 0
+        self._hovered = False
 
     def set_active(self, active: bool) -> None:
         if self.property("active") == active:
@@ -176,11 +240,42 @@ class NumpadButton(QtWidgets.QToolButton):
         else:
             self.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
 
+    def set_arrow(self, direction: str, size: int) -> None:
+        self._arrow_dir = direction
+        self._arrow_size = size
+        self.update_arrow_icon()
 
-def _get_svg_icon(name: str) -> QtGui.QIcon:
-    icons_root = os.path.join(os.path.dirname(__file__), "icons_layoutpanel")
-    path = os.path.join(icons_root, name) + ".svg"
-    return QtGui.QIcon(path)
+    def update_arrow_icon(self) -> None:
+        if not self._arrow_dir or self._arrow_size <= 0:
+            return
+        variant = self._resolve_arrow_variant()
+        pixmap = _render_arrow_pixmap(variant, self._arrow_size, self._arrow_dir)
+        if pixmap is None:
+            return
+        self.setIcon(QtGui.QIcon(pixmap))
+        self.setIconSize(QtCore.QSize(self._arrow_size, self._arrow_size))
+        self._has_icon = True
+
+    def _resolve_arrow_variant(self) -> str:
+        if self.property("dimmed"):
+            return "dimmed"
+        if self._hovered and self.property("modeChanged"):
+            return "hover"
+        if self.property("modeChanged"):
+            return "mode"
+        if self.property("active"):
+            return "active"
+        return "base"
+
+    def enterEvent(self, event: QtCore.QEvent) -> None:
+        self._hovered = True
+        self.update_arrow_icon()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event: QtCore.QEvent) -> None:
+        self._hovered = False
+        self.update_arrow_icon()
+        super().leaveEvent(event)
 
 
 class LayoutPanel(QtWidgets.QDialog):
@@ -227,13 +322,7 @@ class LayoutPanel(QtWidgets.QDialog):
         grid.setVerticalSpacing(spacing)
 
         base = int(round(52 * scale))
-        arrow_size = int(round(base * 0.55))
-        arrow_icon = {
-            "up": _get_svg_icon("arrow_up"),
-            "down": _get_svg_icon("arrow_down"),
-            "left": _get_svg_icon("arrow_left"),
-            "right": _get_svg_icon("arrow_right"),
-        }
+        arrow_size = int(round(base * 0.42))
 
         def add_btn(
             label: str,
@@ -263,22 +352,22 @@ class LayoutPanel(QtWidgets.QDialog):
 
         add_btn("Home", 1, 0, key_id="7")
         add_btn("", 1, 1, key_id="8")
-        self._buttons["8"].set_icon(arrow_icon["up"], QtCore.QSize(arrow_size, arrow_size))
+        self._buttons["8"].set_arrow("up", arrow_size)
         self._buttons["8"].set_icon_only(True)
         add_btn("PgUp", 1, 2, key_id="9")
         add_btn("+", 1, 3, row_span=2, key_id="+")
 
         add_btn("", 2, 0, key_id="4")
-        self._buttons["4"].set_icon(arrow_icon["left"], QtCore.QSize(arrow_size, arrow_size))
+        self._buttons["4"].set_arrow("left", arrow_size)
         self._buttons["4"].set_icon_only(True)
         add_btn("", 2, 1, key_id="5", sub_label=None)
         add_btn("", 2, 2, key_id="6")
-        self._buttons["6"].set_icon(arrow_icon["right"], QtCore.QSize(arrow_size, arrow_size))
+        self._buttons["6"].set_arrow("right", arrow_size)
         self._buttons["6"].set_icon_only(True)
 
         add_btn("End", 3, 0, key_id="1")
         add_btn("", 3, 1, key_id="2")
-        self._buttons["2"].set_icon(arrow_icon["down"], QtCore.QSize(arrow_size, arrow_size))
+        self._buttons["2"].set_arrow("down", arrow_size)
         self._buttons["2"].set_icon_only(True)
         add_btn("PgDn", 3, 2, key_id="3")
         add_btn("enter", 3, 3, row_span=2, key_id="enter")
@@ -489,6 +578,7 @@ class LayoutPanel(QtWidgets.QDialog):
             btn.setProperty("modeChanged", is_changed)
             if key_id in ("2", "4", "6", "8"):
                 btn.set_icon_only(not is_changed)
+                btn.update_arrow_icon()
             btn.style().unpolish(btn)
             btn.style().polish(btn)
             btn.update()
