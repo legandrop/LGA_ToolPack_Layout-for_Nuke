@@ -8,6 +8,9 @@ UI
 - Hover: #cccccc
 - Mod activado (toggle): fondo #2a2a2a, texto #774dcb
 - Teclas con función cambiada: fondo #1d1d1d, texto #443a91
+- Atenuado (greyed out): #5a5959
+- En modo base (sin modificadores) todo el numpad está atenuado
+- Cuando hay modo activo con cambios, el resto del numpad se atenúa (greyed out)
 
 Idea
 - Panel estilo numpad para el Layout ToolPack.
