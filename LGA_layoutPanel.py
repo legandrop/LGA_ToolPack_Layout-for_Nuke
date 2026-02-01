@@ -173,6 +173,7 @@ class LayoutPanel(QtWidgets.QDialog):
             Tuple[bool, bool, bool, bool], Dict[str, Tuple[str, Optional[str]]]
         ] = {}
         self._numpad_keys = set()
+        self._always_active_keys = set()
         self._build_ui()
         self._build_key_map()
         self._build_mode_labels()
@@ -214,7 +215,10 @@ class LayoutPanel(QtWidgets.QDialog):
             btn.clicked.connect(lambda _=False, k=kid: self._on_button_click(k))
             self._buttons[kid] = btn
 
-        add_btn("esc", 0, 0, key_id="esc")
+        add_btn("esc", 0, 0, key_id="esc", sub_label="X")
+        self._always_active_keys.add("esc")
+        self._buttons["esc"].set_active(True)
+        self._buttons["esc"].setProperty("modeChanged", True)
         add_btn("/", 0, 1, key_id="/")
         add_btn("*", 0, 2, key_id="*")
         add_btn("-", 0, 3, key_id="-")
@@ -293,10 +297,11 @@ class LayoutPanel(QtWidgets.QDialog):
             QPushButton[modeChanged="true"] {
                 background-color: #1d1d1d;
                 color: #8455e2;
+                border: 2px solid #8455e2;
             }
-            QPushButton:hover {
-                color: #cccccc;
-                border: 2px solid #cccccc;
+            QPushButton[modeChanged="true"]:hover {
+                color: #b48cff;
+                border: 2px solid #b48cff;
             }
             """
         )
@@ -427,7 +432,10 @@ class LayoutPanel(QtWidgets.QDialog):
             base_label, base_sub = self._mode_labels[(False, False, False, False)].get(
                 key_id, (label, sub)
             )
-            is_changed = (label, sub) != (base_label, base_sub)
+            if key_id in self._always_active_keys:
+                is_changed = True
+            else:
+                is_changed = (label, sub) != (base_label, base_sub)
             if is_changed:
                 changed_keys.add(key_id)
             btn.setProperty("modeChanged", is_changed)
@@ -435,16 +443,14 @@ class LayoutPanel(QtWidgets.QDialog):
             btn.style().polish(btn)
             btn.update()
 
-        if not mode_active:
-            should_dim = True
-        else:
-            should_dim = len(changed_keys) > 0
         for key_id in self._numpad_keys:
             btn = self._buttons.get(key_id)
             if not btn:
                 continue
-            if mode_active:
-                is_dimmed = should_dim and key_id not in changed_keys
+            if key_id in self._always_active_keys:
+                is_dimmed = False
+            elif mode_active and len(changed_keys) > 0:
+                is_dimmed = key_id not in changed_keys
             else:
                 is_dimmed = True
             btn.setProperty("dimmed", is_dimmed)

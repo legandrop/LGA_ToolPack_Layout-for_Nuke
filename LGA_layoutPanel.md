@@ -11,6 +11,9 @@ UI
 - Atenuado (greyed out): #5a5959
 - En modo base (sin modificadores) todo el numpad está atenuado
 - Cuando hay modo activo con cambios, el resto del numpad se atenúa (greyed out)
+- Si no hay funciones activas (ej: Shift solo), todo el numpad se mantiene atenuado
+- Hover solo aplica a teclas con función (no a greyed out)
+- Esc siempre activo y muestra una X, con look de tecla con función
 
 Idea
 - Panel estilo numpad para el Layout ToolPack.
