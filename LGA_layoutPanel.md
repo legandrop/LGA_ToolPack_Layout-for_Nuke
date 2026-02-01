@@ -1,5 +1,7 @@
 # LGA Layout Panel
 
+Nota: Priorizar código modular siempre que sea posible.
+
 Idea
 - Panel estilo numpad para el Layout ToolPack.
 - Muestra los atajos y permite ejecutar herramientas desde el panel.

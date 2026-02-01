@@ -9,6 +9,12 @@ from __future__ import annotations
 
 from typing import Dict, Optional
 
+import logging
+import os
+import queue
+import time
+from logging.handlers import QueueHandler, QueueListener
+
 from LGA_QtAdapter_ToolPack_Layout import (
     QtWidgets,
     QtGui,
@@ -16,6 +22,105 @@ from LGA_QtAdapter_ToolPack_Layout import (
     Qt,
     primary_screen_geometry,
 )
+
+# -----------------------------------------------------------------------------
+# Logging (ver Docu_Logging_System.md)
+# -----------------------------------------------------------------------------
+DEBUG = True
+DEBUG_CONSOLE = False
+DEBUG_LOG = True
+script_start_time = None
+debug_log_listener = None
+
+
+class RelativeTimeFormatter(logging.Formatter):
+    def format(self, record):
+        global script_start_time
+        if script_start_time is None:
+            script_start_time = record.created
+        relative_time = record.created - script_start_time
+        record.relative_time = f"{relative_time:.3f}s"
+        return super().format(record)
+
+
+def setup_debug_logging(script_name="LGA_layoutPanel"):
+    global debug_log_listener
+
+    log_filename = f"debugPy_{script_name}.log"
+    log_file_path = os.path.join(
+        os.path.dirname(__file__), "..", "logs", log_filename
+    )
+
+    os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
+
+    if os.path.exists(log_file_path):
+        try:
+            with open(log_file_path, "w", encoding="utf-8") as f:
+                f.write("")
+        except Exception as e:
+            print(f"Warning: No se pudo limpiar el log: {e}")
+
+    logger_name = f"{script_name.lower()}_logger"
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False
+
+    if logger.handlers:
+        logger.handlers.clear()
+
+    file_handler = logging.FileHandler(log_file_path, encoding="utf-8")
+    file_handler.setLevel(logging.DEBUG)
+    formatter = RelativeTimeFormatter("[%(relative_time)s] %(message)s")
+    file_handler.setFormatter(formatter)
+
+    log_queue = queue.Queue()
+    queue_handler = QueueHandler(log_queue)
+    queue_handler.setLevel(logging.DEBUG)
+    logger.addHandler(queue_handler)
+
+    if debug_log_listener:
+        try:
+            debug_log_listener.stop()
+        except Exception:
+            pass
+
+    debug_log_listener = QueueListener(
+        log_queue, file_handler, respect_handler_level=True
+    )
+    debug_log_listener.daemon = True
+    debug_log_listener.start()
+
+    return logger
+
+
+debug_logger = setup_debug_logging(script_name="LGA_layoutPanel")
+
+
+def debug_print(*message, level="info"):
+    global script_start_time
+
+    msg = " ".join(str(arg) for arg in message)
+
+    if DEBUG and DEBUG_LOG:
+        if script_start_time is None:
+            script_start_time = time.time()
+
+        if level == "debug":
+            debug_logger.debug(msg)
+        elif level == "warning":
+            debug_logger.warning(msg)
+        elif level == "error":
+            debug_logger.error(msg)
+        else:
+            debug_logger.info(msg)
+
+    if DEBUG and DEBUG_CONSOLE:
+        if script_start_time is None:
+            script_start_time = time.time()
+
+        relative_time = time.time() - script_start_time
+        timestamped_msg = f"[{relative_time:.3f}s] {msg}"
+        print(timestamped_msg)
 
 _panel_instance = None
 
@@ -54,6 +159,7 @@ class LayoutPanel(QtWidgets.QDialog):
         self._buttons: Dict[str, NumpadButton] = {}
         self._build_ui()
         self._build_key_map()
+        debug_print("LayoutPanel init")
 
     def _build_ui(self) -> None:
         outer_layout = QtWidgets.QVBoxLayout(self)
@@ -122,15 +228,17 @@ class LayoutPanel(QtWidgets.QDialog):
 
         def add_mod(label: str, key_id: str) -> None:
             btn = NumpadButton(label, key_id, mods)
-            btn.setFixedSize(68, 32)
+            btn.setFixedSize(base, 32)
             mods_layout.addWidget(btn)
             btn.clicked.connect(lambda _=False, k=key_id: self._on_button_click(k))
             self._buttons[key_id] = btn
 
+        mods_layout.addStretch(1)
         add_mod("shift", "shift")
         add_mod("ctrl", "ctrl")
         add_mod("win", "win")
         add_mod("alt", "alt")
+        mods_layout.addStretch(1)
 
         self._apply_style()
 
@@ -186,6 +294,12 @@ class LayoutPanel(QtWidgets.QDialog):
             Qt.Key_Return: "enter",
             Qt.Key_Delete: "del",
         }
+        self._modifier_map = {
+            Qt.Key_Shift: "shift",
+            Qt.Key_Control: "ctrl",
+            Qt.Key_Alt: "alt",
+            Qt.Key_Meta: "win",
+        }
 
     def _on_button_click(self, key_id: str) -> None:
         if key_id == "esc":
@@ -200,9 +314,20 @@ class LayoutPanel(QtWidgets.QDialog):
         btn.set_active(True)
         QtCore.QTimer.singleShot(140, lambda: btn.set_active(False))
 
+    def _set_modifier_state(self, key_id: str, is_down: bool) -> None:
+        btn = self._buttons.get(key_id)
+        if not btn:
+            return
+        btn.set_active(is_down)
+
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
         if event.key() == Qt.Key_Escape:
             self.close()
+            return
+
+        mod_key = self._modifier_map.get(event.key())
+        if mod_key:
+            self._set_modifier_state(mod_key, True)
             return
 
         key_id = self._key_map.get(event.key())
@@ -212,6 +337,12 @@ class LayoutPanel(QtWidgets.QDialog):
 
         super().keyPressEvent(event)
 
+    def keyReleaseEvent(self, event: QtGui.QKeyEvent) -> None:
+        mod_key = self._modifier_map.get(event.key())
+        if mod_key:
+            self._set_modifier_state(mod_key, False)
+            return
+        super().keyReleaseEvent(event)
 
 def _place_near_cursor(widget: QtWidgets.QWidget) -> None:
     pos = QtGui.QCursor.pos()
@@ -241,6 +372,7 @@ def show_panel() -> None:
     _panel_instance.raise_()
     _panel_instance.activateWindow()
     _panel_instance.setFocus()
+    debug_print("Panel shown")
 
 
 __all__ = ["show_panel", "LayoutPanel"]
