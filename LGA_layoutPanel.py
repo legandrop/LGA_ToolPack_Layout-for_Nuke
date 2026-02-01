@@ -594,6 +594,8 @@ class LayoutPanel(QtWidgets.QDialog):
             else:
                 is_dimmed = True
             btn.setProperty("dimmed", is_dimmed)
+            if key_id in ("2", "4", "6", "8"):
+                btn.update_arrow_icon()
             btn.style().unpolish(btn)
             btn.style().polish(btn)
             btn.update()
