@@ -135,6 +135,7 @@ LAYOUT_SCALE = 1.2
 FONT_SCALE = 1 + (LAYOUT_SCALE - 1) * 0.5
 FONT_SIZE = max(12, int(round(12 * FONT_SCALE)))
 FONT_WEIGHT = 600 if LAYOUT_SCALE >= 1.1 else 500
+FUNC_FONT_WEIGHT = 500
 ARROW_STROKE = 10
 COLOR_BASE = "#a9a9a9"
 COLOR_ACTIVE = "#cccccc"
@@ -373,6 +374,7 @@ class LayoutPanel(QtWidgets.QDialog):
         self._drag_offset = QtCore.QPoint(0, 0)
         self._mod_pressed = {"shift": False, "ctrl": False, "alt": False, "win": False}
         self._mod_locked = {"shift": False, "ctrl": False, "alt": False, "win": False}
+        self._func_active = None
         self._mode_labels: Dict[
             Tuple[bool, bool, bool, bool], Dict[str, Tuple[str, Optional[str]]]
         ] = {}
@@ -479,6 +481,43 @@ class LayoutPanel(QtWidgets.QDialog):
         add_mod("alt", "alt")
         mods_layout.addStretch(1)
 
+        func = QtWidgets.QFrame(self)
+        func.setObjectName("func")
+        outer_layout.addWidget(func)
+
+        func_layout = QtWidgets.QVBoxLayout(func)
+        func_layout.setContentsMargins(m10, m6, m10, m6)
+        func_layout.setSpacing(spacing)
+
+        row1 = QtWidgets.QHBoxLayout()
+        row1.setSpacing(spacing)
+        func_layout.addLayout(row1)
+
+        def add_func(layout: QtWidgets.QHBoxLayout, label: str, key_id: str) -> None:
+            btn = NumpadButton(label, key_id, func)
+            btn.setFixedSize(base, int(round(32 * scale)))
+            btn.setProperty("funcButton", True)
+            layout.addWidget(btn)
+            btn.clicked.connect(lambda _=False, k=key_id: self._on_button_click(k))
+            self._buttons[key_id] = btn
+
+        row1.addStretch(1)
+        add_func(row1, "Push", "func_push")
+        add_func(row1, "Pull", "func_pull")
+        add_func(row1, "Select", "func_select")
+        add_func(row1, "Sel Con", "func_selcon")
+        row1.addStretch(1)
+
+        row2 = QtWidgets.QHBoxLayout()
+        row2.setSpacing(spacing)
+        func_layout.addLayout(row2)
+        row2.addStretch(1)
+        add_func(row2, "Align", "func_align")
+        add_func(row2, "Distrib", "func_distrib")
+        add_func(row2, "Arrange", "func_arrange")
+        add_func(row2, "Scale", "func_scale")
+        row2.addStretch(1)
+
         self._apply_style()
 
     def _apply_style(self) -> None:
@@ -493,6 +532,11 @@ class LayoutPanel(QtWidgets.QDialog):
                 border: 0px solid #a9a9a9;
                 border-radius: 12px;
             }
+            #func {
+                background-color: #161616;
+                border: 0px solid #a9a9a9;
+                border-radius: 12px;
+            }
             QToolButton {
                 background-color: #161616;
                 color: #a9a9a9;
@@ -500,6 +544,10 @@ class LayoutPanel(QtWidgets.QDialog):
                 border-radius: 10px;
                 font: __FONT_WEIGHT__ __FONT_SIZE__px "Segoe UI";
                 text-transform: lowercase;
+            }
+            QToolButton[funcButton="true"] {
+                font: __FUNC_FONT_WEIGHT__ __FONT_SIZE__px "Segoe UI";
+                text-transform: none;
             }
             QToolButton[active="true"] {
                 background-color: #4f377e;
@@ -522,7 +570,7 @@ class LayoutPanel(QtWidgets.QDialog):
             """
         style = style.replace("__FONT_SIZE__", str(FONT_SIZE)).replace(
             "__FONT_WEIGHT__", str(FONT_WEIGHT)
-        )
+        ).replace("__FUNC_FONT_WEIGHT__", str(FUNC_FONT_WEIGHT))
         self.setStyleSheet(style)
 
     def _build_key_map(self) -> None:
@@ -694,11 +742,45 @@ class LayoutPanel(QtWidgets.QDialog):
         if key_id == "esc":
             self.close()
             return
+        if key_id.startswith("func_"):
+            self._toggle_func_button(key_id)
+            return
         if key_id in self._mod_locked:
             self._mod_locked[key_id] = not self._mod_locked[key_id]
             self._update_mode_labels()
             return
         self._flash_button(key_id)
+
+    def _toggle_func_button(self, key_id: str) -> None:
+        if self._func_active == key_id:
+            self._func_active = None
+            self._mod_locked = {"shift": False, "ctrl": False, "alt": False, "win": False}
+        else:
+            self._func_active = key_id
+            if key_id == "func_push":
+                self._mod_locked = {"shift": False, "ctrl": True, "alt": True, "win": False}
+            elif key_id == "func_pull":
+                self._mod_locked = {"shift": True, "ctrl": True, "alt": True, "win": False}
+            elif key_id == "func_select":
+                self._mod_locked = {"shift": False, "ctrl": False, "alt": True, "win": False}
+            elif key_id == "func_selcon":
+                self._mod_locked = {"shift": False, "ctrl": False, "alt": False, "win": True}
+            elif key_id in ("func_align", "func_distrib", "func_arrange", "func_scale"):
+                self._mod_locked = {"shift": False, "ctrl": True, "alt": False, "win": False}
+        for fid in (
+            "func_push",
+            "func_pull",
+            "func_select",
+            "func_selcon",
+            "func_align",
+            "func_distrib",
+            "func_arrange",
+            "func_scale",
+        ):
+            btn = self._buttons.get(fid)
+            if btn:
+                btn.set_active(fid == self._func_active)
+        self._update_mode_labels()
 
     def _flash_button(self, key_id: str) -> None:
         btn = self._buttons.get(key_id)

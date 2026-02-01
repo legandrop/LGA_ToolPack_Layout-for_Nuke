@@ -22,6 +22,7 @@ UI
 - Tecla 5 muestra "5" en modo base y "5 + Arrange" cuando corresponde
 - Flechas siempre se renderizan con ARROW_ACTIVE_SCALE (0.8)
 - Texto de flechas izquierda/derecha se desplaza 5px hacia arriba
+- Botones de función debajo de modificadores: Push/Pull/Select/Sel Con y Align/Distrib/Arrange/Scale (toggle exclusivo)
 
 Idea
 - Panel estilo numpad para el Layout ToolPack.
