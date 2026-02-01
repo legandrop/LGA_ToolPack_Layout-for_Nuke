@@ -13,7 +13,8 @@ UI
 - Cuando hay modo activo con cambios, el resto del numpad se atenúa (greyed out)
 - Si no hay funciones activas (ej: Shift solo), todo el numpad se mantiene atenuado
 - Hover solo aplica a teclas con función (no a greyed out)
-- Esc siempre activo y muestra una X, con look de tecla con función
+- Barra superior con botón X alineado a la derecha para cerrar
+- Botón de cierre usa CLOSE_SIZE_SCALE (más chico que una tecla)
 - Escala general del panel/botones: LAYOUT_SCALE = 1.2 (no cambia la tipografía)
 - Tipografía escala levemente con LAYOUT_SCALE (FONT_SIZE y FONT_WEIGHT; >=1.1 usa peso 600)
 - Sin números en el numpad: se muestran flechas/Home/PgUp/PgDn/End/Ins centrados

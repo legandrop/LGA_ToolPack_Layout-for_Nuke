@@ -143,6 +143,7 @@ COLOR_DIMMED = "#5a5959"
 COLOR_MODE = "#8455e2"
 COLOR_HOVER = "#b48cff"
 ARROW_ACTIVE_SCALE = 0.8
+CLOSE_SIZE_SCALE = 0.55
 
 _ARROW_SVG_CACHE: Dict[str, Optional[str]] = {}
 
@@ -211,6 +212,7 @@ class NumpadButton(QtWidgets.QToolButton):
         self._base_label = label
         self._base_sub_label = sub_label
         self.setProperty("active", False)
+        self.setProperty("dimmed", False)
         self.setFocusPolicy(Qt.NoFocus)
         self.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         self._has_icon = False
@@ -488,13 +490,22 @@ class LayoutPanel(QtWidgets.QDialog):
             btn.clicked.connect(lambda _=False, k=kid: self._on_button_click(k))
             self._buttons[kid] = btn
 
-        add_btn("esc", 0, 0, key_id="esc", sub_label="X")
-        self._always_active_keys.add("esc")
-        self._buttons["esc"].set_active(True)
-        self._buttons["esc"].setProperty("modeChanged", True)
-        add_btn("/", 0, 1, key_id="/")
-        add_btn("*", 0, 2, key_id="*")
-        add_btn("-", 0, 3, key_id="-")
+        top_bar = QtWidgets.QFrame(panel)
+        top_bar.setObjectName("topbar")
+        top_bar_layout = QtWidgets.QHBoxLayout(top_bar)
+        top_bar_layout.setContentsMargins(0, 0, 0, 0)
+        top_bar_layout.addStretch(1)
+
+        close_btn = NumpadButton("X", "close", top_bar)
+        close_size = int(round(base * CLOSE_SIZE_SCALE))
+        close_btn.setFixedSize(close_size, close_size)
+        close_btn.setProperty("modeChanged", True)
+        close_btn.setProperty("closeButton", True)
+        close_btn.clicked.connect(self.close)
+        top_bar_layout.addWidget(close_btn)
+        self._buttons["close"] = close_btn
+
+        grid.addWidget(top_bar, 0, 0, 1, 4)
 
         add_btn("Home", 1, 0, key_id="7")
         add_btn("", 1, 1, key_id="8")
@@ -599,6 +610,11 @@ class LayoutPanel(QtWidgets.QDialog):
                 border: 0px solid #a9a9a9;
                 border-radius: 12px;
             }
+            #topbar {
+                background-color: #161616;
+                border: 0px solid #a9a9a9;
+                border-radius: 10px;
+            }
             QToolButton {
                 background-color: #161616;
                 color: #a9a9a9;
@@ -628,6 +644,9 @@ class LayoutPanel(QtWidgets.QDialog):
             QToolButton[modeChanged="true"]:hover {
                 color: #b48cff;
                 border: 2px solid #b48cff;
+            }
+            QToolButton[closeButton="true"] {
+                text-transform: none;
             }
             """
         style = (
@@ -684,11 +703,7 @@ class LayoutPanel(QtWidgets.QDialog):
             "0": ("Ins", None),
             "del": ("del", None),
             "+": ("+", None),
-            "-": ("-", None),
-            "*": ("*", None),
-            "/": ("/", None),
             "enter": ("enter", None),
-            "esc": ("esc", None),
         }
 
         # (shift, ctrl, alt, win)
@@ -805,7 +820,7 @@ class LayoutPanel(QtWidgets.QDialog):
         self._sync_func_buttons()
 
     def _on_button_click(self, key_id: str) -> None:
-        if key_id == "esc":
+        if key_id == "close":
             self.close()
             return
         if key_id.startswith("func_"):
