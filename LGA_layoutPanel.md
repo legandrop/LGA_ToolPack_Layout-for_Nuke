@@ -14,6 +14,7 @@ UI
 - Si no hay funciones activas (ej: Shift solo), todo el numpad se mantiene atenuado
 - Hover solo aplica a teclas con función (no a greyed out)
 - Esc siempre activo y muestra una X, con look de tecla con función
+- Escala general del panel/botones: LAYOUT_SCALE = 1.2 (no cambia la tipografía)
 
 Idea
 - Panel estilo numpad para el Layout ToolPack.

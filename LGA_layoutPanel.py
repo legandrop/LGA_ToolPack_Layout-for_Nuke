@@ -123,6 +123,7 @@ def debug_print(*message, level="info"):
 
 
 _panel_instance = None
+LAYOUT_SCALE = 1.2
 
 
 class NumpadButton(QtWidgets.QPushButton):
@@ -181,21 +182,25 @@ class LayoutPanel(QtWidgets.QDialog):
         debug_print("LayoutPanel init")
 
     def _build_ui(self) -> None:
+        scale = LAYOUT_SCALE
+        m6 = int(round(6 * scale))
+        m10 = int(round(10 * scale))
+        spacing = int(round(8 * scale))
+
         outer_layout = QtWidgets.QVBoxLayout(self)
-        outer_layout.setContentsMargins(6, 6, 6, 6)
-        outer_layout.setSpacing(8)
+        outer_layout.setContentsMargins(m6, m6, m6, m6)
+        outer_layout.setSpacing(spacing)
 
         panel = QtWidgets.QFrame(self)
         panel.setObjectName("panel")
         outer_layout.addWidget(panel)
 
         grid = QtWidgets.QGridLayout(panel)
-        grid.setContentsMargins(10, 10, 10, 10)
-        grid.setHorizontalSpacing(8)
-        grid.setVerticalSpacing(8)
+        grid.setContentsMargins(m10, m10, m10, m10)
+        grid.setHorizontalSpacing(spacing)
+        grid.setVerticalSpacing(spacing)
 
-        base = 52
-        spacing = 8
+        base = int(round(52 * scale))
 
         def add_btn(
             label: str,
@@ -245,12 +250,12 @@ class LayoutPanel(QtWidgets.QDialog):
         outer_layout.addWidget(mods)
 
         mods_layout = QtWidgets.QHBoxLayout(mods)
-        mods_layout.setContentsMargins(10, 6, 10, 6)
-        mods_layout.setSpacing(8)
+        mods_layout.setContentsMargins(m10, m6, m10, m6)
+        mods_layout.setSpacing(spacing)
 
         def add_mod(label: str, key_id: str) -> None:
             btn = NumpadButton(label, key_id, mods)
-            btn.setFixedSize(base, 32)
+            btn.setFixedSize(base, int(round(32 * scale)))
             mods_layout.addWidget(btn)
             btn.clicked.connect(lambda _=False, k=key_id: self._on_button_click(k))
             self._buttons[key_id] = btn
