@@ -1,6 +1,6 @@
 """
 __________________________________________
-LGA_layoutPanel v0.01 | Lega Pugliese
+LGA_layoutPanel v1.00 | Lega Pugliese
 Numpad style panel for layout toolpack
 __________________________________________
 """
@@ -14,6 +14,7 @@ import os
 import queue
 import time
 import platform
+import importlib
 from logging.handlers import QueueHandler, QueueListener
 
 from LGA_QtAdapter_ToolPack_Layout import (
@@ -571,7 +572,9 @@ class LayoutPanel(QtWidgets.QDialog):
         close_btn.setMinimumSize(0, 0)
         close_btn.setToolButtonStyle(Qt.ToolButtonIconOnly)
         close_btn.setContentsMargins(0, 0, 0, 0)
-        close_btn.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        close_btn.setSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )
         close_btn.setAttribute(Qt.WA_Hover, True)
         close_btn.setMouseTracking(True)
         close_btn.set_close(close_size)
@@ -926,6 +929,10 @@ class LayoutPanel(QtWidgets.QDialog):
             self._func_active = None
             self._update_mode_labels()
             return
+        if key_id in self._numpad_keys:
+            if self._execute_action(key_id):
+                self._flash_button(key_id)
+                return
         self._flash_button(key_id)
 
     def _toggle_func_button(self, key_id: str) -> None:
@@ -1067,10 +1074,80 @@ class LayoutPanel(QtWidgets.QDialog):
 
         key_id = self._key_map.get(event.key())
         if key_id:
+            if self._execute_action(key_id):
+                self._flash_button(key_id)
+                return
             self._flash_button(key_id)
             return
 
         super().keyPressEvent(event)
+
+    def _execute_action(self, key_id: str) -> bool:
+        direction_map = {"4": "l", "6": "r", "8": "t", "2": "b"}
+        direction = direction_map.get(key_id)
+        shift, ctrl, alt, win = self._effective_mod_state()
+
+        try:
+            if alt and not ctrl and not shift and not win and direction:
+                m = importlib.import_module("LGA_selectNodes")
+                m.selectNodes(direction)
+                return True
+
+            if win and not ctrl and not shift and not alt and direction:
+                m = importlib.import_module("LGA_selectNodes")
+                m.selectConnectedNodes(direction)
+                return True
+
+            if ctrl and not alt and not shift and not win:
+                if direction:
+                    m = importlib.import_module("LGA_alignNodes_Backdrops")
+                    m.alignNodes(direction=direction)
+                    return True
+                if key_id == "0":
+                    m = importlib.import_module("LGA_distributeNodes_Backdrops")
+                    m.distribute(direction="h")
+                    return True
+                if key_id == "del":
+                    m = importlib.import_module("LGA_distributeNodes_Backdrops")
+                    m.distribute(direction="v")
+                    return True
+                if key_id == "5":
+                    m = importlib.import_module("LGA_arrangeNodes")
+                    m.main()
+                    return True
+                if key_id == "+":
+                    m = importlib.import_module("scale_widget")
+                    m.scale_tree()
+                    return True
+
+            if ctrl and alt and not shift and not win and direction:
+                m = importlib.import_module("nuke_move_nodes.push_nodes")
+                if direction == "t":
+                    m.push(up=True)
+                elif direction == "b":
+                    m.push(down=True)
+                elif direction == "l":
+                    m.push(left=True)
+                elif direction == "r":
+                    m.push(right=True)
+                return True
+
+            if ctrl and alt and shift and not win and direction:
+                m = importlib.import_module("nuke_move_nodes.pull_nodes")
+                if direction == "t":
+                    m.pull(up=True)
+                elif direction == "b":
+                    m.pull(down=True)
+                elif direction == "l":
+                    m.pull(left=True)
+                elif direction == "r":
+                    m.pull(right=True)
+                return True
+        except Exception as exc:
+            debug_print("execute_action error", key_id, exc, level="error")
+            return False
+
+        return False
 
     def keyReleaseEvent(self, event: QtGui.QKeyEvent) -> None:
         mod_key = self._modifier_map.get(event.key())
