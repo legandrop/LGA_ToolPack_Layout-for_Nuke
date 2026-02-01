@@ -162,9 +162,9 @@ def _arrow_rotation(direction: str) -> int:
     if direction == "up":
         return 180
     if direction == "left":
-        return 90
-    if direction == "right":
         return -90
+    if direction == "right":
+        return 90
     return 0
 
 
@@ -277,6 +277,62 @@ class NumpadButton(QtWidgets.QToolButton):
         self.update_arrow_icon()
         super().leaveEvent(event)
 
+    def paintEvent(self, event: QtGui.QPaintEvent) -> None:
+        painter = QtGui.QPainter(self)
+        opt = QtWidgets.QStyleOptionToolButton()
+        self.initStyleOption(opt)
+        style = self.style()
+        style.drawPrimitive(QtWidgets.QStyle.PE_PanelButtonTool, opt, painter, self)
+
+        se_contents = (
+            QtWidgets.QStyle.SE_ToolButtonContents
+            if hasattr(QtWidgets.QStyle, "SE_ToolButtonContents")
+            else QtWidgets.QStyle.SE_PushButtonContents
+        )
+        content = style.subElementRect(se_contents, opt, self)
+        if content.width() <= 0 or content.height() <= 0:
+            pad = int(round(6 * LAYOUT_SCALE))
+            content = self.rect().adjusted(pad, pad, -pad, -pad)
+        text = self.text() or ""
+        has_icon = self._has_icon and not self.icon().isNull()
+        icon_size = self.iconSize()
+        gap = int(round(4 * LAYOUT_SCALE))
+        painter.setPen(opt.palette.buttonText().color())
+
+        if has_icon and self._icon_only:
+            icon_rect = QtCore.QRect(
+                content.center().x() - int(icon_size.width() / 2),
+                content.center().y() - int(icon_size.height() / 2),
+                icon_size.width(),
+                icon_size.height(),
+            )
+            self.icon().paint(painter, icon_rect, Qt.AlignCenter)
+            return
+
+        if has_icon and text:
+            lines = text.split("\n")
+            fm = painter.fontMetrics()
+            text_h = fm.height() * len(lines)
+            total_h = icon_size.height() + gap + text_h
+            start_y = int(content.center().y() - total_h / 2)
+            icon_rect = QtCore.QRect(
+                content.center().x() - int(icon_size.width() / 2),
+                start_y,
+                icon_size.width(),
+                icon_size.height(),
+            )
+            text_rect = QtCore.QRect(
+                content.left(),
+                start_y + icon_size.height() + gap,
+                content.width(),
+                text_h,
+            )
+            self.icon().paint(painter, icon_rect, Qt.AlignCenter)
+            painter.drawText(text_rect, Qt.AlignHCenter | Qt.AlignTop, text)
+            return
+
+        painter.drawText(content, Qt.AlignCenter, text)
+
 
 class LayoutPanel(QtWidgets.QDialog):
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
@@ -360,7 +416,7 @@ class LayoutPanel(QtWidgets.QDialog):
         add_btn("", 2, 0, key_id="4")
         self._buttons["4"].set_arrow("left", arrow_size)
         self._buttons["4"].set_icon_only(True)
-        add_btn("", 2, 1, key_id="5", sub_label=None)
+        add_btn("5", 2, 1, key_id="5", sub_label=None)
         add_btn("", 2, 2, key_id="6")
         self._buttons["6"].set_arrow("right", arrow_size)
         self._buttons["6"].set_icon_only(True)
@@ -482,7 +538,7 @@ class LayoutPanel(QtWidgets.QDialog):
             "8": ("", None),
             "9": ("PgUp", None),
             "4": ("", None),
-            "5": ("", None),
+            "5": ("5", None),
             "6": ("", None),
             "1": ("End", None),
             "2": ("", None),
@@ -524,7 +580,7 @@ class LayoutPanel(QtWidgets.QDialog):
             "2": ("", "Align B"),
             "0": ("Ins", "Dist H"),
             "del": ("del", "Dist V"),
-            "5": ("", "Arrange"),
+            "5": ("5", "Arrange"),
             "+": ("+", "Scale"),
         }
 

@@ -19,6 +19,7 @@ UI
 - Sin números en el numpad: se muestran flechas/Home/PgUp/PgDn/End/Ins centrados
 - En modo con función: arriba símbolo y abajo el nombre de la función
 - Flechas usan arrow_down.svg con variantes de color (base/active/dimmed/mode/hover) y se rotan por código
+- Tecla 5 muestra "5" en modo base y "5 + Arrange" cuando corresponde
 
 Idea
 - Panel estilo numpad para el Layout ToolPack.

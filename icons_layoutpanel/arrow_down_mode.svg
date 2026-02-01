@@ -3,22 +3,22 @@
   <!-- Generator: Adobe Illustrator 30.0.0, SVG Export Plug-In . SVG Version: 2.1.1 Build 123)  -->
   <defs>
     <style>
-      .st0 {
-        display: none;
+      .st0, .st1 {
+        fill: #8455e2;
       }
 
-      .st1 {
-        fill: #8455e2;
+      .st2, .st1 {
+        display: none;
       }
     </style>
   </defs>
-  <g class="st0">
-    <g id="Layer_11" data-name="Layer_1">
+  <g class="st2">
+    <g id="Layer_11">
       <g id="Layer_1-2">
-        <g id="Layer_1-21" data-name="Layer_1-2">
+        <g id="Layer_1-21">
           <g id="Layer_1-2-2">
-            <g id="Layer_1-2-21" data-name="Layer_1-2-2">
-              <path class="st1" d="M328.1,186.6h-85.2V22h-127.8v164.6H29.9l149.1,154.3,149.1-154.3h0Z"/>
+            <g id="Layer_1-2-21">
+              <path class="st0" d="M328.1,186.6h-85.2V22h-127.8v164.6H29.9l149.1,154.3,149.1-154.3h0Z"/>
             </g>
           </g>
         </g>
@@ -26,4 +26,5 @@
     </g>
   </g>
   <polygon class="st1" points="114.9 215.2 179 326 243.1 215.2 206.1 215.2 206.1 32 151.9 32 151.9 215.2 114.9 215.2"/>
+  <path class="st0" d="M115.9,227.8c-7.4,0-12.1,8-8.4,14.5l31.8,55.1,31.8,55.1c3.7,6.4,13,6.4,16.7,0l31.8-55.1,31.8-55.1c3.7-6.4-.9-14.5-8.4-14.5h-31.2c-5.3,0-9.7-4.3-9.7-9.7V8.9c0-5.3-4.3-9.7-9.7-9.7h-26.1c-5.3,0-9.7,4.3-9.7,9.7v209.3c0,5.3-4.3,9.7-9.7,9.7h-31.2Z"/>
 </svg>
