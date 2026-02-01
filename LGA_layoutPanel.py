@@ -143,7 +143,7 @@ COLOR_DIMMED = "#5a5959"
 COLOR_MODE = "#8455e2"
 COLOR_HOVER = "#b48cff"
 ARROW_ACTIVE_SCALE = 0.8
-CLOSE_SIZE_SCALE = 0.55
+CLOSE_SIZE_PX = 15
 
 _ARROW_SVG_CACHE: Dict[str, Optional[str]] = {}
 
@@ -307,6 +307,8 @@ class NumpadButton(QtWidgets.QToolButton):
         if content.width() <= 0 or content.height() <= 0:
             pad = int(round(6 * LAYOUT_SCALE))
             content = self.rect().adjusted(pad, pad, -pad, -pad)
+        if self.property("closeButton"):
+            content = self.rect()
         text = self.text() or ""
         has_icon = self._has_icon and not self.icon().isNull()
         icon_size = self.iconSize()
@@ -494,18 +496,30 @@ class LayoutPanel(QtWidgets.QDialog):
         top_bar.setObjectName("topbar")
         top_bar_layout = QtWidgets.QHBoxLayout(top_bar)
         top_bar_layout.setContentsMargins(0, 0, 0, 0)
+        top_bar.setFixedHeight(int(round(CLOSE_SIZE_PX * LAYOUT_SCALE)))
         top_bar_layout.addStretch(1)
 
         close_btn = NumpadButton("X", "close", top_bar)
-        close_size = int(round(base * CLOSE_SIZE_SCALE))
+        close_size = int(round(CLOSE_SIZE_PX * LAYOUT_SCALE))
         close_btn.setFixedSize(close_size, close_size)
-        close_btn.setProperty("modeChanged", True)
         close_btn.setProperty("closeButton", True)
+        close_btn.setToolButtonStyle(Qt.ToolButtonTextOnly)
+        close_btn.setContentsMargins(0, 0, 0, 0)
         close_btn.clicked.connect(self.close)
         top_bar_layout.addWidget(close_btn)
         self._buttons["close"] = close_btn
 
         grid.addWidget(top_bar, 0, 0, 1, 4)
+        debug_print(
+            "topbar",
+            "height",
+            top_bar.height(),
+            "close_size",
+            close_size,
+            "topbar_sizeHint",
+            top_bar.sizeHint().width(),
+            top_bar.sizeHint().height(),
+        )
 
         add_btn("Home", 1, 0, key_id="7")
         add_btn("", 1, 1, key_id="8")
@@ -646,7 +660,13 @@ class LayoutPanel(QtWidgets.QDialog):
                 border: 2px solid #b48cff;
             }
             QToolButton[closeButton="true"] {
+                background-color: transparent;
+                border: 0px solid transparent;
+                color: #a9a9a9;
                 text-transform: none;
+            }
+            QToolButton[closeButton="true"]:hover {
+                color: #b48cff;
             }
             """
         style = (
