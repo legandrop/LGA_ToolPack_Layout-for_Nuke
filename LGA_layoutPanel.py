@@ -1,6 +1,6 @@
 """
 __________________________________________
-LGA Layout Panel v0.01 | Lega Pugliese
+LGA_layoutPanel v0.01 | Lega Pugliese
 Numpad style panel for layout toolpack
 __________________________________________
 """
@@ -22,9 +22,14 @@ _panel_instance = None
 
 class NumpadButton(QtWidgets.QPushButton):
     def __init__(
-        self, label: str, key_id: str, parent: Optional[QtWidgets.QWidget] = None
+        self,
+        label: str,
+        key_id: str,
+        parent: Optional[QtWidgets.QWidget] = None,
+        sub_label: Optional[str] = None,
     ) -> None:
-        super().__init__(label, parent)
+        text = label if not sub_label else f"{label}\n{sub_label}"
+        super().__init__(text, parent)
         self.key_id = key_id
         self.setProperty("active", False)
         self.setFocusPolicy(Qt.NoFocus)
@@ -53,7 +58,7 @@ class LayoutPanel(QtWidgets.QDialog):
     def _build_ui(self) -> None:
         outer_layout = QtWidgets.QVBoxLayout(self)
         outer_layout.setContentsMargins(6, 6, 6, 6)
-        outer_layout.setSpacing(0)
+        outer_layout.setSpacing(8)
 
         panel = QtWidgets.QFrame(self)
         panel.setObjectName("panel")
@@ -74,9 +79,10 @@ class LayoutPanel(QtWidgets.QDialog):
             row_span: int = 1,
             col_span: int = 1,
             key_id: Optional[str] = None,
+            sub_label: Optional[str] = None,
         ) -> None:
             kid = key_id or label
-            btn = NumpadButton(label, kid, panel)
+            btn = NumpadButton(label, kid, panel, sub_label=sub_label)
             width = base * col_span + spacing * (col_span - 1)
             height = base * row_span + spacing * (row_span - 1)
             btn.setFixedSize(width, height)
@@ -89,22 +95,42 @@ class LayoutPanel(QtWidgets.QDialog):
         add_btn("*", 0, 2, key_id="*")
         add_btn("-", 0, 3, key_id="-")
 
-        add_btn("7", 1, 0, key_id="7")
-        add_btn("8", 1, 1, key_id="8")
-        add_btn("9", 1, 2, key_id="9")
+        add_btn("7", 1, 0, key_id="7", sub_label="Home")
+        add_btn("8", 1, 1, key_id="8", sub_label="↑")
+        add_btn("9", 1, 2, key_id="9", sub_label="PgUp")
         add_btn("+", 1, 3, row_span=2, key_id="+")
 
-        add_btn("4", 2, 0, key_id="4")
-        add_btn("5", 2, 1, key_id="5")
-        add_btn("6", 2, 2, key_id="6")
+        add_btn("4", 2, 0, key_id="4", sub_label="←")
+        add_btn("5", 2, 1, key_id="5", sub_label="Clear")
+        add_btn("6", 2, 2, key_id="6", sub_label="→")
 
-        add_btn("1", 3, 0, key_id="1")
-        add_btn("2", 3, 1, key_id="2")
-        add_btn("3", 3, 2, key_id="3")
+        add_btn("1", 3, 0, key_id="1", sub_label="End")
+        add_btn("2", 3, 1, key_id="2", sub_label="↓")
+        add_btn("3", 3, 2, key_id="3", sub_label="PgDn")
         add_btn("enter", 3, 3, row_span=2, key_id="enter")
 
-        add_btn("0", 4, 0, col_span=2, key_id="0")
+        add_btn("0", 4, 0, col_span=2, key_id="0", sub_label="Ins")
         add_btn("del", 4, 2, key_id="del")
+
+        mods = QtWidgets.QFrame(self)
+        mods.setObjectName("mods")
+        outer_layout.addWidget(mods)
+
+        mods_layout = QtWidgets.QHBoxLayout(mods)
+        mods_layout.setContentsMargins(10, 6, 10, 6)
+        mods_layout.setSpacing(8)
+
+        def add_mod(label: str, key_id: str) -> None:
+            btn = NumpadButton(label, key_id, mods)
+            btn.setFixedSize(68, 32)
+            mods_layout.addWidget(btn)
+            btn.clicked.connect(lambda _=False, k=key_id: self._on_button_click(k))
+            self._buttons[key_id] = btn
+
+        add_mod("shift", "shift")
+        add_mod("ctrl", "ctrl")
+        add_mod("win", "win")
+        add_mod("alt", "alt")
 
         self._apply_style()
 
@@ -112,6 +138,11 @@ class LayoutPanel(QtWidgets.QDialog):
         self.setStyleSheet(
             """
             #panel {
+                background-color: #121417;
+                border: 2px solid #2a2d31;
+                border-radius: 12px;
+            }
+            #mods {
                 background-color: #121417;
                 border: 2px solid #2a2d31;
                 border-radius: 12px;
