@@ -144,8 +144,10 @@ COLOR_MODE = "#8455e2"
 COLOR_HOVER = "#b48cff"
 ARROW_ACTIVE_SCALE = 0.8
 CLOSE_SIZE_PX = 10
+CLOSE_WIDE_SCALE = 1.6
 
 _ARROW_SVG_CACHE: Dict[str, Optional[str]] = {}
+_CLOSE_SVG_CACHE: Dict[str, Optional[str]] = {}
 
 
 def _load_arrow_svg(variant: str) -> Optional[str]:
@@ -160,6 +162,20 @@ def _load_arrow_svg(variant: str) -> Optional[str]:
     except Exception:
         _ARROW_SVG_CACHE[variant] = None
     return _ARROW_SVG_CACHE[variant]
+
+
+def _load_close_svg(variant: str) -> Optional[str]:
+    global _CLOSE_SVG_CACHE
+    if variant in _CLOSE_SVG_CACHE:
+        return _CLOSE_SVG_CACHE[variant]
+    icons_root = os.path.join(os.path.dirname(__file__), "icons_layoutpanel")
+    path = os.path.join(icons_root, f"close_{variant}.svg")
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            _CLOSE_SVG_CACHE[variant] = f.read()
+    except Exception:
+        _CLOSE_SVG_CACHE[variant] = None
+    return _CLOSE_SVG_CACHE[variant]
 
 
 def _arrow_rotation(direction: str) -> int:
@@ -197,6 +213,23 @@ def _render_arrow_pixmap(
     return pixmap
 
 
+def _render_close_pixmap(variant: str, size: int) -> Optional[QtGui.QPixmap]:
+    if QtSvg is None:
+        return None
+    svg_data = _load_close_svg(variant)
+    if not svg_data:
+        return None
+    renderer = QtSvg.QSvgRenderer(QtCore.QByteArray(svg_data.encode("utf-8")))
+    if not renderer.isValid():
+        return None
+    image = QtGui.QImage(size, size, QtGui.QImage.Format_ARGB32_Premultiplied)
+    image.fill(QtCore.Qt.transparent)
+    painter = QtGui.QPainter(image)
+    renderer.render(painter)
+    painter.end()
+    return QtGui.QPixmap.fromImage(image)
+
+
 class NumpadButton(QtWidgets.QToolButton):
     def __init__(
         self,
@@ -221,6 +254,7 @@ class NumpadButton(QtWidgets.QToolButton):
         self._arrow_size = 0
         self._hovered = False
         self._logged_paint = False
+        self._close_size = 0
 
     def set_active(self, active: bool) -> None:
         if self.property("active") == active:
@@ -258,6 +292,21 @@ class NumpadButton(QtWidgets.QToolButton):
         self._arrow_size = size
         self.update_arrow_icon()
 
+    def set_close(self, size: int) -> None:
+        self._close_size = size
+        self.update_close_icon()
+
+    def update_close_icon(self) -> None:
+        if self._close_size <= 0:
+            return
+        variant = "hover" if self._hovered else "base"
+        pixmap = _render_close_pixmap(variant, self._close_size)
+        if pixmap is None:
+            return
+        self.setIcon(QtGui.QIcon(pixmap))
+        self.setIconSize(QtCore.QSize(self._close_size, self._close_size))
+        self._has_icon = True
+
     def update_arrow_icon(self) -> None:
         if not self._arrow_dir or self._arrow_size <= 0:
             return
@@ -284,11 +333,15 @@ class NumpadButton(QtWidgets.QToolButton):
     def enterEvent(self, event: QtCore.QEvent) -> None:
         self._hovered = True
         self.update_arrow_icon()
+        if self.property("closeButton"):
+            self.update_close_icon()
         super().enterEvent(event)
 
     def leaveEvent(self, event: QtCore.QEvent) -> None:
         self._hovered = False
         self.update_arrow_icon()
+        if self.property("closeButton"):
+            self.update_close_icon()
         super().leaveEvent(event)
 
     def paintEvent(self, event: QtGui.QPaintEvent) -> None:
@@ -309,6 +362,17 @@ class NumpadButton(QtWidgets.QToolButton):
             content = self.rect().adjusted(pad, pad, -pad, -pad)
         if self.property("closeButton"):
             content = self.rect()
+            if not self._has_icon or self.icon().isNull():
+                self.update_close_icon()
+            icon_size = self.iconSize()
+            icon_rect = QtCore.QRect(
+                content.center().x() - int(icon_size.width() / 2),
+                content.center().y() - int(icon_size.height() / 2),
+                icon_size.width(),
+                icon_size.height(),
+            )
+            self.icon().paint(painter, icon_rect, Qt.AlignCenter)
+            return
         text = self.text() or ""
         has_icon = self._has_icon and not self.icon().isNull()
         icon_size = self.iconSize()
@@ -500,13 +564,17 @@ class LayoutPanel(QtWidgets.QDialog):
         top_bar.setFixedHeight(int(round(CLOSE_SIZE_PX * LAYOUT_SCALE)))
         top_bar_layout.addStretch(1)
 
-        close_btn = NumpadButton("X", "close", top_bar)
+        close_btn = NumpadButton("", "close", top_bar)
         close_size = int(round(CLOSE_SIZE_PX * LAYOUT_SCALE))
-        close_btn.setFixedSize(close_size, close_size)
+        close_btn.setFixedSize(int(round(close_size * CLOSE_WIDE_SCALE)), close_size)
         close_btn.setProperty("closeButton", True)
         close_btn.setMinimumSize(0, 0)
-        close_btn.setToolButtonStyle(Qt.ToolButtonTextOnly)
+        close_btn.setToolButtonStyle(Qt.ToolButtonIconOnly)
         close_btn.setContentsMargins(0, 0, 0, 0)
+        close_btn.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        close_btn.setAttribute(Qt.WA_Hover, True)
+        close_btn.setMouseTracking(True)
+        close_btn.set_close(close_size)
         close_btn.clicked.connect(self.close)
         top_bar_layout.addWidget(close_btn)
         self._buttons["close"] = close_btn

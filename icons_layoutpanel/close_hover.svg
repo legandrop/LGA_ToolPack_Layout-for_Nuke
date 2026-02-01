@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 100 100">
+  <!-- Generator: Adobe Illustrator 30.0.0, SVG Export Plug-In . SVG Version: 2.1.1 Build 123)  -->
+  <defs>
+    <style>
+      .st0 {
+        fill: none;
+        stroke: #b48cff;
+        stroke-linecap: square;
+        stroke-width: 12px;
+      }
+
+      .st1 {
+        display: none;
+      }
+    </style>
+  </defs>
+  <g class="st1">
+    <line class="st0" x1="30" y1="20" x2="90" y2="80"/>
+    <line class="st0" x1="90" y1="20" x2="30" y2="80"/>
+  </g>
+  <g>
+    <line class="st0" x1="12.4" y1="12.4" x2="87.6" y2="87.6"/>
+    <line class="st0" x1="87.6" y1="12.4" x2="12.4" y2="87.6"/>
+  </g>
+</svg>

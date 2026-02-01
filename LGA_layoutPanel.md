@@ -14,7 +14,7 @@ UI
 - Si no hay funciones activas (ej: Shift solo), todo el numpad se mantiene atenuado
 - Hover solo aplica a teclas con función (no a greyed out)
 - Barra superior con botón X alineado a la derecha para cerrar
-- Botón de cierre usa CLOSE_SIZE_PX (sin borde, solo hover en la X)
+- Botón de cierre usa SVG (close_base/close_hover) con CLOSE_SIZE_PX y CLOSE_WIDE_SCALE
 - Escala general del panel/botones: LAYOUT_SCALE = 1.2 (no cambia la tipografía)
 - Tipografía escala levemente con LAYOUT_SCALE (FONT_SIZE y FONT_WEIGHT; >=1.1 usa peso 600)
 - Sin números en el numpad: se muestran flechas/Home/PgUp/PgDn/End/Ins centrados
