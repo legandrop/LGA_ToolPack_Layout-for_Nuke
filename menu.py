@@ -255,6 +255,17 @@ icon_LTPC = _get_icon("LTPC")
 
 
 if is_enabled("Select_Nodes"):
+    add_tool(
+        n,
+        label="  Layout Panel",
+        key="Layout_Panel",
+        module="LGA_layoutPanel",
+        attr="show_panel",
+        shortcut="Alt+5",
+        icon=icon_LTPC,
+        context=2,
+    )
+
     import LGA_selectNodes
 
     n.addCommand(
