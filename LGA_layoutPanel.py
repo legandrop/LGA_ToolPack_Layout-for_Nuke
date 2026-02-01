@@ -560,7 +560,7 @@ class LayoutPanel(QtWidgets.QDialog):
             }
             QToolButton[modeChanged="true"] {
                 background-color: #1d1d1d;
-                color: #8455e2;
+                color: #cccccc;
                 border: 2px solid #8455e2;
             }
             QToolButton[modeChanged="true"]:hover {
@@ -632,26 +632,26 @@ class LayoutPanel(QtWidgets.QDialog):
 
         self._mode_labels[(False, False, True, False)] = {
             **base,
-            "4": ("", "Select L"),
-            "6": ("", "Select R"),
-            "8": ("", "Select T"),
-            "2": ("", "Select B"),
+            "4": ("", "Select"),
+            "6": ("", "Select"),
+            "8": ("", "Select"),
+            "2": ("", "Select"),
         }
 
         self._mode_labels[(False, False, False, True)] = {
             **base,
-            "4": ("", "Conn L"),
-            "6": ("", "Conn R"),
-            "8": ("", "Conn T"),
-            "2": ("", "Conn B"),
+            "4": ("", "Sel Con"),
+            "6": ("", "Sel Con"),
+            "8": ("", "Sel Con"),
+            "2": ("", "Sel Con"),
         }
 
         self._mode_labels[(False, True, False, False)] = {
             **base,
-            "4": ("", "Align L"),
-            "6": ("", "Align R"),
-            "8": ("", "Align T"),
-            "2": ("", "Align B"),
+            "4": ("", "Align"),
+            "6": ("", "Align"),
+            "8": ("", "Align"),
+            "2": ("", "Align"),
             "0": ("Ins", "Dist H"),
             "del": ("del", "Dist V"),
             "5": ("5", "Arrange"),
@@ -660,18 +660,18 @@ class LayoutPanel(QtWidgets.QDialog):
 
         self._mode_labels[(False, True, True, False)] = {
             **base,
-            "4": ("", "Push L"),
-            "6": ("", "Push R"),
-            "8": ("", "Push U"),
-            "2": ("", "Push D"),
+            "4": ("", "Push"),
+            "6": ("", "Push"),
+            "8": ("", "Push"),
+            "2": ("", "Push"),
         }
 
         self._mode_labels[(True, True, True, False)] = {
             **base,
-            "4": ("", "Pull L"),
-            "6": ("", "Pull R"),
-            "8": ("", "Pull U"),
-            "2": ("", "Pull D"),
+            "4": ("", "Pull"),
+            "6": ("", "Pull"),
+            "8": ("", "Pull"),
+            "2": ("", "Pull"),
         }
         self._numpad_keys = set(base.keys())
 
@@ -737,6 +737,7 @@ class LayoutPanel(QtWidgets.QDialog):
                     ("shift", "ctrl", "alt", "win").index(mod_key)
                 ],
             )
+        self._sync_func_buttons()
 
     def _on_button_click(self, key_id: str) -> None:
         if key_id == "esc":
@@ -747,6 +748,7 @@ class LayoutPanel(QtWidgets.QDialog):
             return
         if key_id in self._mod_locked:
             self._mod_locked[key_id] = not self._mod_locked[key_id]
+            self._func_active = None
             self._update_mode_labels()
             return
         self._flash_button(key_id)
@@ -781,6 +783,40 @@ class LayoutPanel(QtWidgets.QDialog):
             if btn:
                 btn.set_active(fid == self._func_active)
         self._update_mode_labels()
+        self._sync_func_buttons()
+
+    def _sync_func_buttons(self) -> None:
+        ctrl = self._mod_locked["ctrl"]
+        alt = self._mod_locked["alt"]
+        shift = self._mod_locked["shift"]
+        win = self._mod_locked["win"]
+
+        active_set = set()
+        if ctrl and alt and shift:
+            active_set = {"func_pull"}
+        elif ctrl and alt:
+            active_set = {"func_push"}
+        elif alt and not ctrl and not win:
+            active_set = {"func_select"}
+        elif win and not alt and not ctrl:
+            active_set = {"func_selcon"}
+        elif ctrl and not alt and not win:
+            active_set = {"func_align", "func_distrib", "func_arrange", "func_scale"}
+
+        self._func_active = None if len(active_set) != 1 else next(iter(active_set))
+        for fid in (
+            "func_push",
+            "func_pull",
+            "func_select",
+            "func_selcon",
+            "func_align",
+            "func_distrib",
+            "func_arrange",
+            "func_scale",
+        ):
+            btn = self._buttons.get(fid)
+            if btn:
+                btn.set_active(fid in active_set)
 
     def _flash_button(self, key_id: str) -> None:
         btn = self._buttons.get(key_id)

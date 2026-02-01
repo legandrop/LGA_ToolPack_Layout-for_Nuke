@@ -23,6 +23,9 @@ UI
 - Flechas siempre se renderizan con ARROW_ACTIVE_SCALE (0.8)
 - Texto de flechas izquierda/derecha se desplaza 5px hacia arriba
 - Botones de función debajo de modificadores: Push/Pull/Select/Sel Con y Align/Distrib/Arrange/Scale (toggle exclusivo)
+- Al activar un modificador manual, se sincronizan los botones de función
+- Con Ctrl manual se encienden Align/Distrib/Arrange/Scale en bloque
+- Labels de acciones sin sufijos L/T/R/B; el texto es blanco (#cccccc)
 
 Idea
 - Panel estilo numpad para el Layout ToolPack.
