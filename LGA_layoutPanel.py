@@ -127,9 +127,10 @@ LAYOUT_SCALE = 1.2
 FONT_SCALE = 1 + (LAYOUT_SCALE - 1) * 0.5
 FONT_SIZE = max(12, int(round(12 * FONT_SCALE)))
 FONT_WEIGHT = 700 if LAYOUT_SCALE >= 1.2 else 500
+ARROW_STROKE = 10
 
 
-class NumpadButton(QtWidgets.QPushButton):
+class NumpadButton(QtWidgets.QToolButton):
     def __init__(
         self,
         label: str,
@@ -138,12 +139,16 @@ class NumpadButton(QtWidgets.QPushButton):
         sub_label: Optional[str] = None,
     ) -> None:
         text = label if not sub_label else f"{label}\n{sub_label}"
-        super().__init__(text, parent)
+        super().__init__(parent)
+        self.setText(text)
         self.key_id = key_id
         self._base_label = label
         self._base_sub_label = sub_label
         self.setProperty("active", False)
         self.setFocusPolicy(Qt.NoFocus)
+        self.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        self._has_icon = False
+        self._icon_only = False
 
     def set_active(self, active: bool) -> None:
         if self.property("active") == active:
@@ -158,6 +163,24 @@ class NumpadButton(QtWidgets.QPushButton):
         self._base_sub_label = sub_label
         text = label if not sub_label else f"{label}\n{sub_label}"
         self.setText(text)
+
+    def set_icon(self, icon: QtGui.QIcon, size: QtCore.QSize) -> None:
+        self.setIcon(icon)
+        self.setIconSize(size)
+        self._has_icon = True
+
+    def set_icon_only(self, icon_only: bool) -> None:
+        self._icon_only = icon_only
+        if self._has_icon and icon_only:
+            self.setToolButtonStyle(Qt.ToolButtonIconOnly)
+        else:
+            self.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+
+
+def _get_svg_icon(name: str) -> QtGui.QIcon:
+    icons_root = os.path.join(os.path.dirname(__file__), "icons_layoutpanel")
+    path = os.path.join(icons_root, name) + ".svg"
+    return QtGui.QIcon(path)
 
 
 class LayoutPanel(QtWidgets.QDialog):
@@ -204,6 +227,13 @@ class LayoutPanel(QtWidgets.QDialog):
         grid.setVerticalSpacing(spacing)
 
         base = int(round(52 * scale))
+        arrow_size = int(round(base * 0.55))
+        arrow_icon = {
+            "up": _get_svg_icon("arrow_up"),
+            "down": _get_svg_icon("arrow_down"),
+            "left": _get_svg_icon("arrow_left"),
+            "right": _get_svg_icon("arrow_right"),
+        }
 
         def add_btn(
             label: str,
@@ -232,16 +262,24 @@ class LayoutPanel(QtWidgets.QDialog):
         add_btn("-", 0, 3, key_id="-")
 
         add_btn("Home", 1, 0, key_id="7")
-        add_btn("⬆", 1, 1, key_id="8")
+        add_btn("", 1, 1, key_id="8")
+        self._buttons["8"].set_icon(arrow_icon["up"], QtCore.QSize(arrow_size, arrow_size))
+        self._buttons["8"].set_icon_only(True)
         add_btn("PgUp", 1, 2, key_id="9")
         add_btn("+", 1, 3, row_span=2, key_id="+")
 
-        add_btn("⬅", 2, 0, key_id="4")
+        add_btn("", 2, 0, key_id="4")
+        self._buttons["4"].set_icon(arrow_icon["left"], QtCore.QSize(arrow_size, arrow_size))
+        self._buttons["4"].set_icon_only(True)
         add_btn("", 2, 1, key_id="5", sub_label=None)
-        add_btn("➡", 2, 2, key_id="6")
+        add_btn("", 2, 2, key_id="6")
+        self._buttons["6"].set_icon(arrow_icon["right"], QtCore.QSize(arrow_size, arrow_size))
+        self._buttons["6"].set_icon_only(True)
 
         add_btn("End", 3, 0, key_id="1")
-        add_btn("⬇", 3, 1, key_id="2")
+        add_btn("", 3, 1, key_id="2")
+        self._buttons["2"].set_icon(arrow_icon["down"], QtCore.QSize(arrow_size, arrow_size))
+        self._buttons["2"].set_icon_only(True)
         add_btn("PgDn", 3, 2, key_id="3")
         add_btn("enter", 3, 3, row_span=2, key_id="enter")
 
@@ -284,7 +322,7 @@ class LayoutPanel(QtWidgets.QDialog):
                 border: 0px solid #a9a9a9;
                 border-radius: 12px;
             }
-            QPushButton {
+            QToolButton {
                 background-color: #161616;
                 color: #a9a9a9;
                 border: 2px solid #929292;
@@ -292,21 +330,21 @@ class LayoutPanel(QtWidgets.QDialog):
                 font: __FONT_WEIGHT__ __FONT_SIZE__px "Segoe UI";
                 text-transform: lowercase;
             }
-            QPushButton[active="true"] {
+            QToolButton[active="true"] {
                 background-color: #4f377e;
                 color: #cccccc;
                 border: 2px solid #774dcb;
             }
-            QPushButton[dimmed="true"] {
+            QToolButton[dimmed="true"] {
                 color: #5a5959;
                 border: 2px solid #5a5959;
             }
-            QPushButton[modeChanged="true"] {
+            QToolButton[modeChanged="true"] {
                 background-color: #1d1d1d;
                 color: #8455e2;
                 border: 2px solid #8455e2;
             }
-            QPushButton[modeChanged="true"]:hover {
+            QToolButton[modeChanged="true"]:hover {
                 color: #b48cff;
                 border: 2px solid #b48cff;
             }
@@ -352,13 +390,13 @@ class LayoutPanel(QtWidgets.QDialog):
     def _build_mode_labels(self) -> None:
         base = {
             "7": ("Home", None),
-            "8": ("⬆", None),
+            "8": ("", None),
             "9": ("PgUp", None),
-            "4": ("⬅", None),
+            "4": ("", None),
             "5": ("", None),
-            "6": ("➡", None),
+            "6": ("", None),
             "1": ("End", None),
-            "2": ("⬇", None),
+            "2": ("", None),
             "3": ("PgDn", None),
             "0": ("Ins", None),
             "del": ("del", None),
@@ -375,26 +413,26 @@ class LayoutPanel(QtWidgets.QDialog):
 
         self._mode_labels[(False, False, True, False)] = {
             **base,
-            "4": ("⬅", "Select L"),
-            "6": ("➡", "Select R"),
-            "8": ("⬆", "Select T"),
-            "2": ("⬇", "Select B"),
+            "4": ("", "Select L"),
+            "6": ("", "Select R"),
+            "8": ("", "Select T"),
+            "2": ("", "Select B"),
         }
 
         self._mode_labels[(False, False, False, True)] = {
             **base,
-            "4": ("⬅", "Conn L"),
-            "6": ("➡", "Conn R"),
-            "8": ("⬆", "Conn T"),
-            "2": ("⬇", "Conn B"),
+            "4": ("", "Conn L"),
+            "6": ("", "Conn R"),
+            "8": ("", "Conn T"),
+            "2": ("", "Conn B"),
         }
 
         self._mode_labels[(False, True, False, False)] = {
             **base,
-            "4": ("⬅", "Align L"),
-            "6": ("➡", "Align R"),
-            "8": ("⬆", "Align T"),
-            "2": ("⬇", "Align B"),
+            "4": ("", "Align L"),
+            "6": ("", "Align R"),
+            "8": ("", "Align T"),
+            "2": ("", "Align B"),
             "0": ("Ins", "Dist H"),
             "del": ("del", "Dist V"),
             "5": ("", "Arrange"),
@@ -403,18 +441,18 @@ class LayoutPanel(QtWidgets.QDialog):
 
         self._mode_labels[(False, True, True, False)] = {
             **base,
-            "4": ("⬅", "Push L"),
-            "6": ("➡", "Push R"),
-            "8": ("⬆", "Push U"),
-            "2": ("⬇", "Push D"),
+            "4": ("", "Push L"),
+            "6": ("", "Push R"),
+            "8": ("", "Push U"),
+            "2": ("", "Push D"),
         }
 
         self._mode_labels[(True, True, True, False)] = {
             **base,
-            "4": ("⬅", "Pull L"),
-            "6": ("➡", "Pull R"),
-            "8": ("⬆", "Pull U"),
-            "2": ("⬇", "Pull D"),
+            "4": ("", "Pull L"),
+            "6": ("", "Pull R"),
+            "8": ("", "Pull U"),
+            "2": ("", "Pull D"),
         }
         self._numpad_keys = set(base.keys())
 
@@ -449,6 +487,8 @@ class LayoutPanel(QtWidgets.QDialog):
             if is_changed:
                 changed_keys.add(key_id)
             btn.setProperty("modeChanged", is_changed)
+            if key_id in ("2", "4", "6", "8"):
+                btn.set_icon_only(not is_changed)
             btn.style().unpolish(btn)
             btn.style().polish(btn)
             btn.update()
