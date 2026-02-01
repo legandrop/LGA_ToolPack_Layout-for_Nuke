@@ -2,6 +2,13 @@
 
 Nota: Priorizar código modular siempre que sea posible.
 
+UI
+- Fondo panel/teclas: #161616
+- Texto/íconos base: #a9a9a9
+- Hover: #cccccc
+- Mod activado (toggle): fondo #2a2a2a, texto #774dcb
+- Teclas con función cambiada: fondo #1d1d1d, texto #443a91
+
 Idea
 - Panel estilo numpad para el Layout ToolPack.
 - Muestra los atajos y permite ejecutar herramientas desde el panel.

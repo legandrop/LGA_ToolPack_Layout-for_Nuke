@@ -48,9 +48,7 @@ def setup_debug_logging(script_name="LGA_layoutPanel"):
     global debug_log_listener
 
     log_filename = f"debugPy_{script_name}.log"
-    log_file_path = os.path.join(
-        os.path.dirname(__file__), "..", "logs", log_filename
-    )
+    log_file_path = os.path.join(os.path.dirname(__file__), "..", "logs", log_filename)
 
     os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
 
@@ -123,6 +121,7 @@ def debug_print(*message, level="info"):
         timestamped_msg = f"[{relative_time:.3f}s] {msg}"
         print(timestamped_msg)
 
+
 _panel_instance = None
 
 
@@ -170,7 +169,9 @@ class LayoutPanel(QtWidgets.QDialog):
         self._drag_offset = QtCore.QPoint(0, 0)
         self._mod_pressed = {"shift": False, "ctrl": False, "alt": False, "win": False}
         self._mod_locked = {"shift": False, "ctrl": False, "alt": False, "win": False}
-        self._mode_labels: Dict[Tuple[bool, bool, bool, bool], Dict[str, Tuple[str, Optional[str]]]] = {}
+        self._mode_labels: Dict[
+            Tuple[bool, bool, bool, bool], Dict[str, Tuple[str, Optional[str]]]
+        ] = {}
         self._build_ui()
         self._build_key_map()
         self._build_mode_labels()
@@ -223,7 +224,7 @@ class LayoutPanel(QtWidgets.QDialog):
         add_btn("+", 1, 3, row_span=2, key_id="+")
 
         add_btn("4", 2, 0, key_id="4", sub_label="←")
-        add_btn("5", 2, 1, key_id="5", sub_label="Clear")
+        add_btn("5", 2, 1, key_id="5", sub_label=None)
         add_btn("6", 2, 2, key_id="6", sub_label="→")
 
         add_btn("1", 3, 0, key_id="1", sub_label="End")
@@ -262,30 +263,35 @@ class LayoutPanel(QtWidgets.QDialog):
         self.setStyleSheet(
             """
             #panel {
-                background-color: #121417;
-                border: 2px solid #2a2d31;
+                background-color: #161616;
+                border: 0px solid #a9a9a9;
                 border-radius: 12px;
             }
             #mods {
-                background-color: #121417;
-                border: 2px solid #2a2d31;
+                background-color: #161616;
+                border: 0px solid #a9a9a9;
                 border-radius: 12px;
             }
             QPushButton {
-                background-color: #1b1d20;
-                color: #e6e6e6;
-                border: 2px solid #8c9097;
+                background-color: #161616;
+                color: #a9a9a9;
+                border: 2px solid #929292;
                 border-radius: 10px;
                 font: 12px "Segoe UI";
                 text-transform: lowercase;
             }
             QPushButton[active="true"] {
-                background-color: #2a2f36;
-                color: #ffffff;
-                border: 2px solid #ffffff;
+                background-color: #4f377e;
+                color: #cccccc;
+                border: 2px solid #774dcb;
+            }
+            QPushButton[modeChanged="true"] {
+                background-color: #1d1d1d;
+                color: #8455e2;
             }
             QPushButton:hover {
-                border: 2px solid #d7d7d7;
+                color: #cccccc;
+                border: 2px solid #cccccc;
             }
             """
         )
@@ -329,7 +335,7 @@ class LayoutPanel(QtWidgets.QDialog):
             "8": ("8", "↑"),
             "9": ("9", "PgUp"),
             "4": ("4", "←"),
-            "5": ("5", "Clear"),
+            "5": ("5", None),
             "6": ("6", "→"),
             "1": ("1", "End"),
             "2": ("2", "↓"),
@@ -400,20 +406,32 @@ class LayoutPanel(QtWidgets.QDialog):
 
     def _update_mode_labels(self) -> None:
         mode = self._effective_mod_state()
-        mapping = self._mode_labels.get(mode) or self._mode_labels[
-            (False, False, False, False)
-        ]
+        mapping = (
+            self._mode_labels.get(mode)
+            or self._mode_labels[(False, False, False, False)]
+        )
         for key_id, labels in mapping.items():
             btn = self._buttons.get(key_id)
             if not btn:
                 continue
             label, sub = labels
             btn.set_labels(label, sub)
+            base_label, base_sub = self._mode_labels[(False, False, False, False)].get(
+                key_id, (label, sub)
+            )
+            is_changed = (label, sub) != (base_label, base_sub)
+            btn.setProperty("modeChanged", is_changed)
+            btn.style().unpolish(btn)
+            btn.style().polish(btn)
+            btn.update()
 
         for mod_key in ("shift", "ctrl", "alt", "win"):
-            self._set_modifier_state(mod_key, self._effective_mod_state()[
-                ("shift", "ctrl", "alt", "win").index(mod_key)
-            ])
+            self._set_modifier_state(
+                mod_key,
+                self._effective_mod_state()[
+                    ("shift", "ctrl", "alt", "win").index(mod_key)
+                ],
+            )
 
     def _on_button_click(self, key_id: str) -> None:
         if key_id == "esc":
@@ -469,7 +487,9 @@ class LayoutPanel(QtWidgets.QDialog):
             child = self.childAt(event.pos())
             if child is None or isinstance(child, QtWidgets.QFrame):
                 self._drag_active = True
-                self._drag_offset = self._global_pos(event) - self.frameGeometry().topLeft()
+                self._drag_offset = (
+                    self._global_pos(event) - self.frameGeometry().topLeft()
+                )
                 event.accept()
                 return
         super().mousePressEvent(event)
@@ -493,6 +513,7 @@ class LayoutPanel(QtWidgets.QDialog):
         if hasattr(event, "globalPosition"):
             return event.globalPosition().toPoint()
         return event.globalPos()
+
 
 def _place_near_cursor(widget: QtWidgets.QWidget) -> None:
     pos = QtGui.QCursor.pos()
