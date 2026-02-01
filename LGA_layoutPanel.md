@@ -15,11 +15,12 @@ UI
 - Hover solo aplica a teclas con función (no a greyed out)
 - Esc siempre activo y muestra una X, con look de tecla con función
 - Escala general del panel/botones: LAYOUT_SCALE = 1.2 (no cambia la tipografía)
-- Tipografía escala levemente con LAYOUT_SCALE (FONT_SIZE y FONT_WEIGHT)
+- Tipografía escala levemente con LAYOUT_SCALE (FONT_SIZE y FONT_WEIGHT; >=1.1 usa peso 600)
 - Sin números en el numpad: se muestran flechas/Home/PgUp/PgDn/End/Ins centrados
 - En modo con función: arriba símbolo y abajo el nombre de la función
 - Flechas usan arrow_down.svg con variantes de color (base/active/dimmed/mode/hover) y se rotan por código
 - Tecla 5 muestra "5" en modo base y "5 + Arrange" cuando corresponde
+- Flechas siempre se renderizan con ARROW_ACTIVE_SCALE (0.8)
 
 Idea
 - Panel estilo numpad para el Layout ToolPack.

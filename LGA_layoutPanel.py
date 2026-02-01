@@ -23,6 +23,7 @@ from LGA_QtAdapter_ToolPack_Layout import (
     Qt,
     primary_screen_geometry,
 )
+
 try:
     from PySide6 import QtSvg
 except Exception:
@@ -133,13 +134,14 @@ _panel_instance = None
 LAYOUT_SCALE = 1.2
 FONT_SCALE = 1 + (LAYOUT_SCALE - 1) * 0.5
 FONT_SIZE = max(12, int(round(12 * FONT_SCALE)))
-FONT_WEIGHT = 700 if LAYOUT_SCALE >= 1.2 else 500
+FONT_WEIGHT = 600 if LAYOUT_SCALE >= 1.1 else 500
 ARROW_STROKE = 10
 COLOR_BASE = "#a9a9a9"
 COLOR_ACTIVE = "#cccccc"
 COLOR_DIMMED = "#5a5959"
 COLOR_MODE = "#8455e2"
 COLOR_HOVER = "#b48cff"
+ARROW_ACTIVE_SCALE = 0.8
 
 _ARROW_SVG_CACHE: Dict[str, Optional[str]] = {}
 
@@ -168,7 +170,9 @@ def _arrow_rotation(direction: str) -> int:
     return 0
 
 
-def _render_arrow_pixmap(variant: str, size: int, direction: str) -> Optional[QtGui.QPixmap]:
+def _render_arrow_pixmap(
+    variant: str, size: int, direction: str
+) -> Optional[QtGui.QPixmap]:
     if QtSvg is None:
         return None
     svg_data = _load_arrow_svg(variant)
@@ -254,12 +258,13 @@ class NumpadButton(QtWidgets.QToolButton):
     def update_arrow_icon(self) -> None:
         if not self._arrow_dir or self._arrow_size <= 0:
             return
+        size = int(round(self._arrow_size * ARROW_ACTIVE_SCALE))
         variant = self._resolve_arrow_variant()
-        pixmap = _render_arrow_pixmap(variant, self._arrow_size, self._arrow_dir)
+        pixmap = _render_arrow_pixmap(variant, size, self._arrow_dir)
         if pixmap is None:
             return
         self.setIcon(QtGui.QIcon(pixmap))
-        self.setIconSize(QtCore.QSize(self._arrow_size, self._arrow_size))
+        self.setIconSize(QtCore.QSize(size, size))
         self._has_icon = True
 
     def _resolve_arrow_variant(self) -> str:
