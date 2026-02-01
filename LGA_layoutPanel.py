@@ -162,9 +162,9 @@ def _arrow_rotation(direction: str) -> int:
     if direction == "up":
         return 180
     if direction == "left":
-        return -90
-    if direction == "right":
         return 90
+    if direction == "right":
+        return -90
     return 0
 
 
@@ -213,6 +213,7 @@ class NumpadButton(QtWidgets.QToolButton):
         self._arrow_dir = None
         self._arrow_size = 0
         self._hovered = False
+        self._logged_paint = False
 
     def set_active(self, active: bool) -> None:
         if self.property("active") == active:
@@ -225,7 +226,12 @@ class NumpadButton(QtWidgets.QToolButton):
     def set_labels(self, label: str, sub_label: Optional[str] = None) -> None:
         self._base_label = label
         self._base_sub_label = sub_label
-        text = label if not sub_label else f"{label}\n{sub_label}"
+        if sub_label and label:
+            text = f"{label}\n{sub_label}"
+        elif sub_label and not label:
+            text = sub_label
+        else:
+            text = label
         self.setText(text)
 
     def set_icon(self, icon: QtGui.QIcon, size: QtCore.QSize) -> None:
@@ -296,7 +302,20 @@ class NumpadButton(QtWidgets.QToolButton):
         text = self.text() or ""
         has_icon = self._has_icon and not self.icon().isNull()
         icon_size = self.iconSize()
-        gap = int(round(4 * LAYOUT_SCALE))
+        gap = int(round(2 * LAYOUT_SCALE))
+        if not self._logged_paint:
+            debug_print(
+                "paint",
+                self.key_id,
+                "icon_only",
+                self._icon_only,
+                "gap",
+                gap,
+                "content",
+                content.width(),
+                content.height(),
+            )
+            self._logged_paint = True
         painter.setPen(opt.palette.buttonText().color())
 
         if has_icon and self._icon_only:
