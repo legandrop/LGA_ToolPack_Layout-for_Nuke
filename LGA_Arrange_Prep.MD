@@ -30,6 +30,8 @@ Key files:
   graph JSON → Graphviz DOT.
 - `LGA_Arrange_Prep/prep_cli.py`  
   End‑to‑end pipeline: `.nk` → graph JSON + DOTs.
+- `LGA_Arrange_Prep/apply_layout.py`  
+  Apply layout to a graph JSON and export DOT.
 - `LGA_Arrange_Prep/out/`  
   Output folder for generated files.
 
@@ -104,6 +106,11 @@ This is a **best‑effort approximation**; in Nuke, real height comes from `scre
 Run end‑to‑end pipeline:
 ```bash
 python3 LGA_Arrange_Prep/prep_cli.py testGraph_v01.nk
+```
+
+Apply layout to a graph JSON:
+```bash
+python3 LGA_Arrange_Prep/apply_layout.py LGA_Arrange_Prep/out/testGraph_v02.graph.json LGA_Arrange_Prep/out/testGraph_v02.after_layout.dot
 ```
 
 Outputs:

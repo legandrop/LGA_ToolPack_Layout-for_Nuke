@@ -5,6 +5,9 @@ Last updated: 2026-02-04
 ## Goal
 Define the **arrange behavior** (rules and priorities) that will be implemented in Nuke.
 
+## Status (2026-02-04)
+- `LGA_arrangeNodes.py` rewritten as **v2.0**, using the validated graph layout core and a Nuke adapter.
+
 ## Rules / Discoveries (confirmed)
 1. **Vertical order is preserved** within each column (original order never changes).
 2. **Connection alignment rule:** if a node is connected across columns, it must share the same Y as the connected node.
