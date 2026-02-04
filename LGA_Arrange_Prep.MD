@@ -63,6 +63,9 @@ Output is a single JSON file:
   each node with inputs consumes the previous node on the stack.
 - `inputs 1+1` is treated as **mandatory 1 + optional mask 1**.  
   If no extra stack item exists, mask is ignored.
+ - If a node has a **mask input** but no explicit stack link exists, we infer
+   a mask connection to the **closest node by Y** in a **different column**
+   (preferring Dot nodes).
 
 ### Position / Scale
 - Nuke Y grows **downwards**.  
@@ -70,6 +73,16 @@ Output is a single JSON file:
 - Default scale = `0.05`.  
   This makes Nuke X/Y values comparable to the test graphs.
 - Column grouping uses `tolerance_x = 2.5` (in **scaled units**).
+
+### Centering (critical)
+`.nk` stores **top‑left** positions (`xpos`, `ypos`).  
+We convert to **center positions** using approximate UI sizes:
+- box nodes: width `80px`, height `20px`
+- dot nodes: width/height `12px`
+- blur/roto/copy: height `24px`
+- merge: height `28px`
+
+This makes dots center‑align under their source columns (as in Nuke).
 
 ### Height Estimation
 `.nk` does not store `screenHeight`, so we approximate:
@@ -104,6 +117,7 @@ https://dreampuf.github.io/GraphvizOnline
   - `LGA_Arrange_Prep/out/testGraph_v01.from_nk.dot`
   - `LGA_Arrange_Prep/out/testGraph_v01.from_graph.dot`
 - Diff check: DOTs are identical (byte‑for‑byte).
+- Update: dot is now **centered under Roto** and **mask input is inferred**.
 
 ## Next
 - Validate that `.nk` connections are correctly recovered in more complex scripts.

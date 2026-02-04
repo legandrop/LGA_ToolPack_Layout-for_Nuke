@@ -10,7 +10,7 @@ sys.path.append(str(Path(__file__).resolve().parent))
 from typing import Dict, List
 
 from layout_core import Graph, Node, Edge
-from nk_parser import parse_nk, NkNode
+from nk_parser import parse_nk, NkNode, _parse_inputs_spec
 from graph_io import save_graph_json
 
 
@@ -21,6 +21,21 @@ CLASS_BASE_HEIGHTS = {
     "Roto": 0.6,
     "Copy": 0.6,
 }
+
+# Approximate Nuke UI sizes (pixels) for center conversion
+CLASS_WIDTH_PX = {
+    "Dot": 12,
+}
+CLASS_HEIGHT_PX = {
+    "Dot": 12,
+    "Blur": 24,
+    "Roto": 24,
+    "Copy": 24,
+    "Merge": 28,
+    "Merge2": 28,
+}
+DEFAULT_WIDTH_PX = 80
+DEFAULT_HEIGHT_PX = 20
 
 
 def _estimate_height(node: NkNode) -> float:
@@ -82,25 +97,66 @@ def nk_to_graph(
     nk_graph = parse_nk(nk_path)
     graph = Graph()
 
+    name_to_inputs = {}
     for nk_node in nk_graph.nodes:
-        x = nk_node.x * scale
-        y = -nk_node.y * scale  # invert Y so up is positive
+        width_px = CLASS_WIDTH_PX.get(nk_node.klass, DEFAULT_WIDTH_PX)
+        height_px = CLASS_HEIGHT_PX.get(nk_node.klass, DEFAULT_HEIGHT_PX)
+        center_x = (nk_node.x + width_px / 2) * scale
+        center_y = -(nk_node.y + height_px / 2) * scale  # invert Y so up is positive
         height = _estimate_height(nk_node)
         node = Node(
             name=nk_node.name,
             klass=nk_node.klass,
             column="C0",
             order=0,
-            x=x,
-            y=y,
+            x=center_x,
+            y=center_y,
             height=height,
         )
         graph.add_node(node)
+        name_to_inputs[nk_node.name] = nk_node.inputs_spec
 
     for edge in nk_graph.edges:
         graph.add_edge(Edge(edge.src, edge.dst, kind=edge.kind, align=edge.align))
 
     _group_columns(list(graph.nodes.values()), tolerance_x=tolerance_x)
+
+    # Heuristic: if a node has mask inputs but no explicit mask edge,
+    # connect the closest node (by Y) from a different column.
+    for nk_node in nk_graph.nodes:
+        inputs_spec = nk_node.inputs_spec
+        if not inputs_spec or "+" not in inputs_spec:
+            continue
+        mandatory, mask = _parse_inputs_spec(inputs_spec, nk_node.klass)
+        if mask <= 0:
+            continue
+        # Check existing mask edges
+        has_mask = any(e.dst == nk_node.name and e.kind == "mask" for e in graph.edges)
+        if has_mask:
+            continue
+
+        target = graph.nodes.get(nk_node.name)
+        if not target:
+            continue
+
+        best = None
+        best_score = None
+        for candidate in graph.nodes.values():
+            if candidate.name == target.name:
+                continue
+            # Must be in a different column (x distance beyond tolerance)
+            if abs(candidate.x - target.x) <= tolerance_x:
+                continue
+            y_dist = abs(candidate.y - target.y)
+            x_dist = abs(candidate.x - target.x)
+            penalty = 0.0 if candidate.klass.startswith("Dot") else 1.0
+            score = y_dist + 0.1 * x_dist + penalty
+            if best_score is None or score < best_score:
+                best = candidate
+                best_score = score
+
+        if best is not None:
+            graph.add_edge(Edge(best.name, target.name, kind="mask", align=True))
 
     if return_meta:
         meta = {
@@ -108,6 +164,7 @@ def nk_to_graph(
             "root_name": nk_graph.root_name,
             "scale": scale,
             "tolerance_x": tolerance_x,
+            "centered_positions": True,
         }
         return graph, meta
     return graph
