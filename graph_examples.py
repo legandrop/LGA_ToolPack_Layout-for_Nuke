@@ -84,8 +84,8 @@ def example_merge_graph() -> Graph:
         ("Grade14", -5.0),
     ]
     for idx, (name, y) in enumerate(main):
-        color = "#6b78d6" if name.startswith("Merge") else "#cbd6ee"
-        g.add_node(Node(name=name, column="A", order=idx, x=0.0, y=y, height=0.5))
+        height = 0.8 if name.startswith("Merge") else (0.6 if name in ("Grade3", "Grade11") else 0.5)
+        g.add_node(Node(name=name, column="A", order=idx, x=0.0, y=y, height=height))
 
     # Right column (upper)
     right_upper = [
@@ -99,14 +99,14 @@ def example_merge_graph() -> Graph:
     for idx, (name, y, h) in enumerate(right_upper):
         g.add_node(Node(name=name, column="B", order=idx, x=6.0, y=y, height=h))
 
-    # Right column (lower)
+    # Right column (lower) - same column name to form two subgroups
     right_lower = [
         ("Roto3", 3.0, 0.5),
         ("Blur3", 1.5, 0.5),
-        ("Dot2", 1.0, 0.2),
+        ("Dot2", 1.0, 0.28),
     ]
     for idx, (name, y, h) in enumerate(right_lower):
-        g.add_node(Node(name=name, column="C", order=idx, x=6.0, y=y, height=h))
+        g.add_node(Node(name=name, column="B", order=len(right_upper) + idx, x=6.0, y=y, height=h))
 
     # Left column (upper) - same column name to form two subgroups
     left_upper = [
@@ -211,7 +211,7 @@ def example_complex_graph() -> Graph:
     ]
     for idx, (name, y) in enumerate(right):
         x = 7.1 + (0.1 if idx % 2 == 0 else -0.12)
-        h = 0.2 if name.startswith("Dot") else (0.9 if name.startswith("Copy") else 0.6)
+        h = 0.3 if name.startswith("Dot") else (0.9 if name.startswith("Copy") else 0.6)
         g.add_node(Node(name=name, column="R", order=idx, x=x, y=y, height=h))
 
     # Extra far-right column (RR)
@@ -222,7 +222,7 @@ def example_complex_graph() -> Graph:
     ]
     for idx, (name, y) in enumerate(far_right):
         x = 10.5 + (0.2 if idx % 2 == 0 else -0.15)
-        h = 0.2 if name.startswith("Dot") else 0.7
+        h = 0.25 if name.startswith("Dot") else 0.7
         g.add_node(Node(name=name, column="RR", order=idx, x=x, y=y, height=h))
 
     # Flow edges main column

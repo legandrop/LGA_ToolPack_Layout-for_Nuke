@@ -34,6 +34,13 @@ Then translate the validated logic into the Nuke script.
 - No overlap conflicts detected with `min_gap=0.2`.
 - Principal column did **not** need extra re-accommodation to fit secondary columns in this case.
 
+### Latest run (2026-02-04, after segment + next‑columns fix)
+- Command: `python3 layout_cli.py`
+- Result:
+  - No runaway shifts in principal column.
+  - Alignment holds in Example2/Example3 (anchors remain aligned).
+  - Variable heights (merges/dots) are preserved in DOT output.
+
 ### Update (2026-02-04)
 - Fixed: left column now modeled as a **single column** with **two subgroups** (no fake columns).
 - Added principal-column distribution with **fixed anchors** (nodes connected by alignment).
@@ -56,6 +63,62 @@ Then translate the validated logic into the Nuke script.
   - Uses bounding boxes (center ± height/2).
   - Equal gaps between node boxes, not just between centers.
   - Graphviz export now sets per-node height (so tall nodes are visible).
+
+### Update (2026-02-04)
+- SubSubgroup alignment reworked to **segment** a subgroup by each connected node:
+  - Each connected node controls itself + nodes above until the next connected node.
+  - Nodes below the lowest connected node stay as a separate unanchored segment.
+  - Overlaps between segments push the lower segment down; if it is anchored, the conflict is propagated to the principal column.
+- Potential/Next columns constraint is now **per-anchor** and only considers potential nodes **above** the anchor (matching Nuke’s Y direction).
+- Dot sizes are now respected in DOT export (dot height/width come from `Node.height`).
+- Example2 right side is now modeled as **one column** with **two subgroups** (same X), matching the Nuke setup.
+
+## Review of Original Scripts (Missing in Core)
+After re-reading `LGA_arrangeNodes.py` and `LGA_arrangeNodes_NU.py`, there are behaviors not yet ported to the pure-Python core:
+
+1. **Column discovery by X tolerance + principal selection by max subgroup height**  
+   The original groups nodes into columns using `toleranciaX` and picks the principal column via the tallest connected subgroup.  
+   Our core currently assumes explicit columns.
+
+2. **SubSubgroup alignment (partial subgroup shifts)**  
+   The original only shifts the *portion* of a subgroup above the connected node (`subSubgroup`), not the entire subgroup.  
+   ✅ Implemented via **segmented subgroups** (each connected node controls its own segment).
+
+3. **Potential/Next columns logic**  
+   Original detects connections through columns between current and principal, and checks if nodes connect to *further* columns to prevent conflicts.  
+   ✅ Implemented with per-anchor filtering (only potential nodes above the anchor are considered).
+
+4. **SubSubgroupOld handling and re‑distribution**  
+   Original re-distributes prior subSubgroups (with “trim” logic) to prevent overlaps before applying a new alignment offset.  
+   ✅ Approximated via segment overlap resolution + anchor conflict propagation.
+
+5. **Top constraint for unconnected nodes**  
+   `distribute_lastSubSubgroupOld()` prevents unconnected nodes from rising above the principal top.  
+   ✅ Implemented (unconnected subgroups are pushed below principal top).
+
+6. **Connection-order based distribution** (NU)  
+   NU version determines first/last connected nodes (by inputs/outputs) and distributes based on *connection order*, not just vertical order.
+
+7. **Recursive conflict propagation to parents** (NU)  
+   NU version can move parent columns/nodes when overlaps are detected (`align_parent_to_moved_node`, `sort_parent_overlapping_nodes`, etc.).  
+   Core only adjusts principal when conflicts appear.
+
+8. **Most-common X alignment heuristic** (NU)  
+   NU aligns to the most common X center if repeated, otherwise average; core uses only average.
+
+9. **Nuke-specific filtering**  
+   Original explicitly ignores `BackdropNode` and `Viewer` nodes; core does not include this.
+
+## Decisions from User (2026-02-04)
+1. Apply column discovery + principal selection (done in core via `auto_columns`).
+2. SubSubgroup behavior: **apply**. Clarified rule: if a non‑principal column has nodes connected to different principal nodes, each connected node pulls **its own segment** (itself + nodes above) together.
+3. Potential/next columns logic: **apply**.
+4. SubSubgroupOld handling: **apply**.
+5. Top constraint for unconnected nodes: applied (core shifts subgroups down below principal top).
+6. Connectivity-based distribution: pending explanation/decision.
+7. Recursive conflict propagation: user asked if already done — clarified it’s only partially handled.
+8. X alignment heuristic (most common X first): applied.
+9. Nuke-specific filtering: will apply when translating to Nuke.
 
 ### Phase 1 tasks
 1. Define data structures and a minimal layout engine (no Nuke).

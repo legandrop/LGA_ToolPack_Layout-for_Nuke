@@ -16,7 +16,7 @@ def _node_style(name: str) -> str:
     if name.startswith("Copy"):
         return 'shape=box, style="rounded,filled", fillcolor="#d95da8"'
     if name.startswith("Dot"):
-        return 'shape=circle, style=filled, fillcolor="#bdbdbd", width=0.2, height=0.2, label=""'
+        return 'shape=circle, style=filled, fillcolor="#bdbdbd", label=""'
     return 'shape=box, style="rounded,filled", fillcolor="#dddddd"'
 
 
@@ -30,7 +30,10 @@ def to_dot(graph: Graph, title: str = "G") -> str:
         style = _node_style(node.name)
         attrs = [style, f'pos="{node.x},{node.y}!"']
         # Only set per-node height for non-dot nodes
-        if not node.name.startswith("Dot"):
+        if node.name.startswith("Dot"):
+            attrs.append(f'height="{node.height}"')
+            attrs.append(f'width="{node.height}"')
+        else:
             attrs.append(f'height="{node.height}"')
             attrs.append('width="1.6"')
         lines.append(f'  {node.name} [{", ".join(attrs)} ];')
