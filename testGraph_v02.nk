@@ -1,0 +1,315 @@
+#! /Applications/Nuke15.1v6/Nuke15.1v6.app/Contents/MacOS/libnuke-15.1.6.dylib -nx
+version 15.1 v6
+define_window_layout_xml {<?xml version="1.0" encoding="UTF-8"?>
+<layout version="1.0">
+    <window x="50" y="33" w="1678" h="1056" maximized="1" screen="0">
+        <splitter orientation="1">
+            <split size="40"/>
+            <dock id="" hideTitles="1" activePageId="Toolbar.1">
+                <page id="Toolbar.1"/>
+            </dock>
+            <split size="1076" stretch="1"/>
+            <splitter orientation="2">
+                <split size="101"/>
+                <dock id="" activePageId="Viewer.1">
+                    <page id="Viewer.1"/>
+                </dock>
+                <split size="935"/>
+                <dock id="" activePageId="DAG.1" focus="true">
+                    <page id="DAG.1"/>
+                    <page id="Curve Editor.1"/>
+                    <page id="DopeSheet.1"/>
+                </dock>
+            </splitter>
+            <split size="554"/>
+            <dock id="" activePageId="Properties.1">
+                <page id="Properties.1"/>
+                <page id="uk.co.thefoundry.backgroundrenderview.1"/>
+                <page id="Scenegraph.1"/>
+                <page id="uk.co.thefoundry.scripteditor.1"/>
+            </dock>
+        </splitter>
+    </window>
+</layout>
+}
+Root {
+ inputs 0
+ name /Users/leg4/Desktop/testGraph_v01.nk
+ format "4096 2160 0 0 4096 2160 1 4K_DCP"
+ proxy_type scale
+ proxy_format "1024 778 0 0 1024 778 1 1K_Super_35(full-ap)"
+ colorManagement OCIO
+ OCIO_config aces_1.2
+ defaultViewerLUT "OCIO LUTs"
+ workingSpaceLUT "ACES - ACES2065-1"
+ monitorLut "sRGB (ACES)"
+ monitorOutLUT "sRGB (ACES)"
+ int8Lut "Output - Rec.709"
+ int16Lut texture_paint
+ logLut compositing_log
+ floatLut "ACES - ACES2065-1"
+}
+Grade {
+ inputs 0
+ name Grade18
+ xpos -272
+ ypos 396
+}
+Grade {
+ name Grade19
+ xpos -272
+ ypos 420
+}
+Grade {
+ name Grade20
+ xpos -272
+ ypos 444
+}
+Grade {
+ name Grade21
+ xpos -272
+ ypos 476
+}
+Roto {
+ inputs 0
+ curves {{{v x3f99999a}
+  {f 0}
+  {n
+   {layer Root
+    {f 0}
+    {t x45000000 x44870000}
+    {a pt1x 0 pt1y 0 pt2x 0 pt2y 0 pt3x 0 pt3y 0 pt4x 0 pt4y 0 ptex00 0 ptex01 0 ptex02 0 ptex03 0 ptex10 0 ptex11 0 ptex12 0 ptex13 0 ptex20 0 ptex21 0 ptex22 0 ptex23 0 ptex30 0 ptex31 0 ptex32 0 ptex33 0 ptof1x 0 ptof1y 0 ptof2x 0 ptof2y 0 ptof3x 0 ptof3y 0 ptof4x 0 ptof4y 0 pterr 0 ptrefset 0 ptmot x40800000 ptref 0}}}}}
+ toolbox {createBezier {
+  { createBezier str 1 ssx 1 ssy 1 sf 1 sb 1 tt 4 }
+  { createBezierCusped str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createBSpline str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createEllipse str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createRectangle str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createRectangleCusped str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { brush str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { eraser src 2 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { clone src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { reveal src 3 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { dodge src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { burn src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { blur src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { sharpen src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { smear src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+} }
+ toolbar_brush_hardness 0.200000003
+ toolbar_source_transform_scale {1 1}
+ toolbar_source_transform_center {2048 1080}
+ name Roto3
+ xpos 64
+ ypos 297
+}
+Blur {
+ channels alpha
+ size 7
+ name Blur3
+ label "\[value size]"
+ xpos 64
+ ypos 329
+}
+Dot {
+ name Dot2
+ xpos 98
+ ypos 371
+}
+Grade {
+ inputs 0
+ name Grade15
+ xpos -267
+ ypos 220
+}
+Grade {
+ name Grade16
+ xpos -283
+ ypos 244
+}
+Grade {
+ name Grade17
+ xpos -283
+ ypos 268
+}
+Roto {
+ inputs 0
+ curves {{{v x3f99999a}
+  {f 0}
+  {n
+   {layer Root
+    {f 0}
+    {t x45000000 x44870000}
+    {a pt1x 0 pt1y 0 pt2x 0 pt2y 0 pt3x 0 pt3y 0 pt4x 0 pt4y 0 ptex00 0 ptex01 0 ptex02 0 ptex03 0 ptex10 0 ptex11 0 ptex12 0 ptex13 0 ptex20 0 ptex21 0 ptex22 0 ptex23 0 ptex30 0 ptex31 0 ptex32 0 ptex33 0 ptof1x 0 ptof1y 0 ptof2x 0 ptof2y 0 ptof3x 0 ptof3y 0 ptof4x 0 ptof4y 0 pterr 0 ptrefset 0 ptmot x40800000 ptref 0}}}}}
+ toolbox {createBezier {
+  { createBezier str 1 ssx 1 ssy 1 sf 1 sb 1 tt 4 }
+  { createBezierCusped str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createBSpline str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createEllipse str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createRectangle str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createRectangleCusped str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { brush str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { eraser src 2 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { clone src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { reveal src 3 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { dodge src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { burn src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { blur src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { sharpen src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { smear src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+} }
+ toolbar_brush_hardness 0.200000003
+ toolbar_source_transform_scale {1 1}
+ toolbar_source_transform_center {2048 1080}
+ name Roto1
+ xpos 64
+ ypos 124
+}
+Blur {
+ channels alpha
+ size 7
+ name Blur1
+ label "\[value size]"
+ xpos 64
+ ypos 172
+}
+Dot {
+ name Dot1
+ xpos 98
+ ypos 228
+}
+Roto {
+ inputs 0
+ curves {{{v x3f99999a}
+  {f 0}
+  {n
+   {layer Root
+    {f 0}
+    {t x45000000 x44870000}
+    {a pt1x 0 pt1y 0 pt2x 0 pt2y 0 pt3x 0 pt3y 0 pt4x 0 pt4y 0 ptex00 0 ptex01 0 ptex02 0 ptex03 0 ptex10 0 ptex11 0 ptex12 0 ptex13 0 ptex20 0 ptex21 0 ptex22 0 ptex23 0 ptex30 0 ptex31 0 ptex32 0 ptex33 0 ptof1x 0 ptof1y 0 ptof2x 0 ptof2y 0 ptof3x 0 ptof3y 0 ptof4x 0 ptof4y 0 pterr 0 ptrefset 0 ptmot x40800000 ptref 0}}}}}
+ toolbox {createBezier {
+  { createBezier str 1 ssx 1 ssy 1 sf 1 sb 1 tt 4 }
+  { createBezierCusped str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createBSpline str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createEllipse str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createRectangle str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createRectangleCusped str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { brush str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { eraser src 2 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { clone src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { reveal src 3 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { dodge src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { burn src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { blur src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { sharpen src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { smear src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+} }
+ toolbar_brush_hardness 0.200000003
+ toolbar_source_transform_scale {1 1}
+ toolbar_source_transform_center {2048 1080}
+ name Roto2
+ xpos 64
+ ypos -5
+}
+Blur {
+ channels alpha
+ size 7
+ name Blur2
+ label "\[value size]"
+ xpos 64
+ ypos 43
+}
+Copy {
+ from0 rgba.alpha
+ to0 rgba.alpha
+ name Copy1
+ xpos 64
+ ypos 92
+}
+Grade {
+ inputs 0
+ name Grade1
+ xpos -66
+ ypos 48
+}
+Grade {
+ name Grade2
+ xpos -66
+ ypos 72
+}
+Grade {
+ inputs 1+1
+ name Grade3
+ xpos -66
+ ypos 96
+}
+Grade {
+ name Grade4
+ xpos -66
+ ypos 120
+}
+Grade {
+ name Grade5
+ xpos -78
+ ypos 153
+}
+Grade {
+ inputs 1+1
+ name Grade6
+ xpos -66
+ ypos 225
+}
+Grade {
+ name Grade7
+ xpos -66
+ ypos 284
+}
+Grade {
+ name Grade8
+ xpos -66
+ ypos 308
+}
+Grade {
+ name Grade9
+ xpos -66
+ ypos 332
+}
+Grade {
+ name Grade10
+ xpos -56
+ ypos 353
+}
+Merge2 {
+ inputs 2+1
+ bbox B
+ name Merge1
+ xpos -66
+ ypos 382
+}
+Grade {
+ name Grade11
+ xpos -66
+ ypos 406
+}
+Merge2 {
+ inputs 2
+ bbox B
+ name Merge2
+ xpos -66
+ ypos 464
+}
+Grade {
+ name Grade12
+ xpos -66
+ ypos 486
+}
+Grade {
+ name Grade13
+ xpos -66
+ ypos 510
+}
+Grade {
+ name Grade14
+ xpos -66
+ ypos 534
+}

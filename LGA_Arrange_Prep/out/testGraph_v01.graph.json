@@ -1,0 +1,75 @@
+{
+  "nodes": [
+    {
+      "name": "Roto1",
+      "klass": "Roto",
+      "column": "C1",
+      "order": 0,
+      "x": 3.2,
+      "y": 0.4,
+      "height": 0.6
+    },
+    {
+      "name": "Dot1",
+      "klass": "Dot",
+      "column": "C1",
+      "order": 1,
+      "x": 4.9,
+      "y": -3.75,
+      "height": 0.2
+    },
+    {
+      "name": "Grade1",
+      "klass": "Grade",
+      "column": "C0",
+      "order": 0,
+      "x": -3.3000000000000003,
+      "y": 0.6000000000000001,
+      "height": 0.5
+    },
+    {
+      "name": "Blur1",
+      "klass": "Blur",
+      "column": "C0",
+      "order": 1,
+      "x": -3.3000000000000003,
+      "y": -1.4000000000000001,
+      "height": 0.6
+    },
+    {
+      "name": "Grade2",
+      "klass": "Grade",
+      "column": "C0",
+      "order": 2,
+      "x": -3.3000000000000003,
+      "y": -3.6,
+      "height": 0.5
+    }
+  ],
+  "edges": [
+    {
+      "src": "Roto1",
+      "dst": "Dot1",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Grade1",
+      "dst": "Blur1",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Blur1",
+      "dst": "Grade2",
+      "kind": "flow",
+      "align": false
+    }
+  ],
+  "meta": {
+    "source_nk": "/Users/leg4/.nuke/LGA_ToolPack-Layout/testGraph_v01.nk",
+    "root_name": "/Users/leg4/Desktop/testGraph_v01.nk",
+    "scale": 0.05,
+    "tolerance_x": 2.5
+  }
+}

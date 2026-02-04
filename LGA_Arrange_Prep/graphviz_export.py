@@ -3,19 +3,21 @@ Graphviz DOT export helpers.
 """
 
 from typing import List
-from layout_core import Graph
+from layout_core import Graph, Node
 
 
-def _node_style(name: str) -> str:
-    if name.startswith("Grade"):
+def _node_style(node: Node) -> str:
+    name = node.name
+    klass = node.klass or name
+    if klass.startswith("Grade"):
         return 'shape=box, style="rounded,filled", fillcolor="#cbd6ee"'
-    if name.startswith("Roto"):
+    if klass.startswith("Roto"):
         return 'shape=box, style="rounded,filled", fillcolor="#8fd18f"'
-    if name.startswith("Blur"):
+    if klass.startswith("Blur"):
         return 'shape=box, style="rounded,filled", fillcolor="#f4a460"'
-    if name.startswith("Copy"):
+    if klass.startswith("Copy"):
         return 'shape=box, style="rounded,filled", fillcolor="#d95da8"'
-    if name.startswith("Dot"):
+    if klass.startswith("Dot"):
         return 'shape=circle, style=filled, fillcolor="#bdbdbd", label=""'
     return 'shape=box, style="rounded,filled", fillcolor="#dddddd"'
 
@@ -27,10 +29,10 @@ def to_dot(graph: Graph, title: str = "G") -> str:
     lines.append('  node [fontname="Helvetica", fontsize=10, fixedsize=true, width=1.6, height=0.5];')
 
     for node in graph.nodes.values():
-        style = _node_style(node.name)
+        style = _node_style(node)
         attrs = [style, f'pos="{node.x},{node.y}!"']
         # Only set per-node height for non-dot nodes
-        if node.name.startswith("Dot"):
+        if (node.klass or node.name).startswith("Dot"):
             attrs.append(f'height="{node.height}"')
             attrs.append(f'width="{node.height}"')
         else:

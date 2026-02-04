@@ -12,6 +12,7 @@ class Node:
     name: str
     column: str
     order: int
+    klass: str = ""
     height: float = 0.5
     x: float = 0.0
     y: float = 0.0

@@ -3,6 +3,11 @@ Simple CLI to export example graphs before/after layout.
 Usage: python layout_cli.py
 """
 
+from pathlib import Path
+import sys
+
+sys.path.append(str(Path(__file__).resolve().parent))
+
 from graph_examples import example_roto_graph, example_merge_graph, example_complex_graph
 from graphviz_export import to_dot
 from layout_core import layout
