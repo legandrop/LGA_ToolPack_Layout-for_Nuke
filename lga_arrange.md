@@ -11,6 +11,7 @@ Define the **arrange behavior** (rules and priorities) that will be implemented 
 
 ## Rules / Discoveries (confirmed)
 1. **Vertical order is preserved** within each column (original order never changes).
+   - Nuke adapter **inverts Y** for layout so “higher” matches the core (larger Y).
 2. **Connection alignment rule:** if a node is connected across columns, it must share the same Y as the connected node.
 3. **Priority for conflicting connections:** the connection to the **principal column** wins; otherwise, the connection to the **closest‑to‑principal column** wins.
 4. **Baseline distribution:** nodes are distributed vertically as equidistant as possible based on the current column/subgroup height.
@@ -24,6 +25,7 @@ Define the **arrange behavior** (rules and priorities) that will be implemented 
 10. **SubSubgroup segmentation:** in non‑principal columns, each connected node controls **its own segment** (itself + nodes above).
 11. **Top constraint:** unconnected nodes must not rise above the top of the principal column.
 12. **Principal inference (when missing):** choose the column with **max subgroup height** as principal.
+13. **Flow adjacency inside a column:** any non‑mask connection (including A/B) keeps nodes in the same subgroup.
 
 ## Decisions from User (2026-02-04)
 1. Apply column discovery + principal selection (done in core via `auto_columns`).

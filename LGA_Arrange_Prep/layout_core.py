@@ -174,7 +174,8 @@ def _flow_adjacency(graph: Graph, column: str) -> Dict[str, Set[str]]:
     names = {n.name for n in nodes}
     adj: Dict[str, Set[str]] = {n.name: set() for n in nodes}
     for edge in graph.edges:
-        if edge.kind != "flow":
+        # Treat any non-mask connection inside a column as flow adjacency
+        if edge.kind == "mask":
             continue
         if edge.src in names and edge.dst in names:
             adj[edge.src].add(edge.dst)

@@ -324,7 +324,8 @@ def _flow_adjacency(graph: Graph, column: str) -> Dict[str, Set[str]]:
     names = {n.name for n in nodes}
     adj: Dict[str, Set[str]] = {n.name: set() for n in nodes}
     for edge in graph.edges:
-        if edge.kind != "flow":
+        # Treat any non-mask connection inside a column as flow adjacency
+        if edge.kind == "mask":
             continue
         if edge.src in names and edge.dst in names:
             adj[edge.src].add(edge.dst)
@@ -849,7 +850,7 @@ def _build_graph_from_nuke(nodes: List[object]) -> Graph:
             column="C0",
             order=0,
             x=cx,
-            y=cy,
+            y=-cy,
             height=float(n.screenHeight()),
             ref=n,
         )
@@ -869,6 +870,7 @@ def _build_graph_from_nuke(nodes: List[object]) -> Graph:
     _auto_columns(graph)
     _infer_principal_if_missing(graph)
     debug_print(f"Principal detectada (auto-columns): {graph.principal_column}")
+    debug_print("Adapter Nuke: usando Y invertida para layout")
 
     # Mark align edges only for cross-column mask/A connections
     for e in graph.edges:
@@ -893,7 +895,8 @@ def _apply_graph_to_nuke(graph: Graph) -> None:
             continue
         ref = node.ref
         new_x = node.x - ref.screenWidth() / 2.0
-        new_y = node.y - ref.screenHeight() / 2.0
+        # Convert back from inverted Y
+        new_y = (-node.y) - ref.screenHeight() / 2.0
         ref.setXpos(int(round(new_x)))
         ref.setYpos(int(round(new_y)))
 
