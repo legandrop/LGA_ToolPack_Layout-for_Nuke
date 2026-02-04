@@ -15,12 +15,142 @@ Notes:
 import nuke
 from dataclasses import dataclass, field
 from typing import Dict, List, Tuple, Optional, Set
+import logging
+import queue
+from logging.handlers import QueueHandler, QueueListener
+import os
+import time
 
 # -------------------------
 # Config
 # -------------------------
 TOLERANCE_X = 55  # pixels for column grouping
 MIN_GAP = 10      # pixels minimum gap between node boxes
+
+# -------------------------
+# Logging config
+# -------------------------
+DEBUG = True
+DEBUG_CONSOLE = True
+DEBUG_LOG = True
+
+script_start_time = None
+debug_log_listener = None
+debug_logger = None
+
+
+class RelativeTimeFormatter(logging.Formatter):
+    """Formatter that includes relative time since script start."""
+    def format(self, record):
+        global script_start_time
+        if script_start_time is None:
+            script_start_time = record.created
+        relative_time = record.created - script_start_time
+        record.relative_time = f"{relative_time:.3f}s"
+        return super().format(record)
+
+
+def setup_debug_logging(script_name="arrangeNodes"):
+    """Configure logging to write ONLY to file (no console)."""
+    global debug_log_listener
+
+    log_filename = f"debugPy_{script_name}.log"
+    log_file_path = os.path.join(
+        os.path.dirname(__file__), "..", "logs", log_filename
+    )
+
+    os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
+
+    if os.path.exists(log_file_path):
+        try:
+            with open(log_file_path, "w", encoding="utf-8") as f:
+                f.write("")
+        except Exception as exc:
+            print(f"Warning: could not clear log: {exc}")
+
+    logger_name = f"{script_name.lower()}_logger"
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False
+
+    if logger.handlers:
+        logger.handlers.clear()
+
+    file_handler = logging.FileHandler(log_file_path, encoding="utf-8")
+    file_handler.setLevel(logging.DEBUG)
+    formatter = RelativeTimeFormatter("[%(relative_time)s] %(message)s")
+    file_handler.setFormatter(formatter)
+
+    log_queue = queue.Queue()
+    queue_handler = QueueHandler(log_queue)
+    queue_handler.setLevel(logging.DEBUG)
+    logger.addHandler(queue_handler)
+
+    if debug_log_listener:
+        try:
+            debug_log_listener.stop()
+        except Exception:
+            pass
+
+    debug_log_listener = QueueListener(
+        log_queue, file_handler, respect_handler_level=True
+    )
+    debug_log_listener.daemon = True
+    debug_log_listener.start()
+
+    return logger
+
+
+def _init_logging() -> None:
+    global debug_logger
+    if DEBUG and DEBUG_LOG:
+        debug_logger = setup_debug_logging(script_name="arrangeNodes")
+
+
+def debug_print(*message, level="info"):
+    """Logging helper with console/file switches."""
+    global script_start_time
+    msg = " ".join(str(arg) for arg in message)
+
+    if DEBUG and DEBUG_LOG:
+        if debug_logger is None:
+            _init_logging()
+        if script_start_time is None:
+            script_start_time = time.time()
+        if level == "debug":
+            debug_logger.debug(msg)
+        elif level == "warning":
+            debug_logger.warning(msg)
+        elif level == "error":
+            debug_logger.error(msg)
+        else:
+            debug_logger.info(msg)
+
+    if DEBUG and DEBUG_CONSOLE:
+        if script_start_time is None:
+            script_start_time = time.time()
+        relative_time = time.time() - script_start_time
+        timestamped_msg = f"[{relative_time:.3f}s] {msg}"
+        print(timestamped_msg)
+
+
+def cleanup_logging():
+    """Stop the logging listener on exit."""
+    global debug_log_listener
+    if debug_log_listener:
+        try:
+            debug_print("Deteniendo listener de logging...")
+            debug_log_listener.stop()
+            debug_print("Listener detenido")
+        except Exception as exc:
+            debug_print(f"Error en cleanup: {exc}", level="error")
+
+
+try:
+    import atexit
+    atexit.register(cleanup_logging)
+except Exception:
+    pass
 
 # Classes to ignore
 IGNORED_CLASSES = {"BackdropNode", "Viewer"}
@@ -155,6 +285,20 @@ def _auto_columns(graph: Graph) -> None:
     graph.principal_column = principal
 
 
+def _infer_principal_if_missing(graph: Graph) -> None:
+    if graph.principal_column is not None:
+        return
+    max_height = None
+    principal = None
+    for col in graph.columns().keys():
+        for subgroup in _column_subgroups(graph, col):
+            h = _subgroup_height(subgroup)
+            if max_height is None or h > max_height:
+                max_height = h
+                principal = col
+    graph.principal_column = principal
+
+
 def _choose_anchor(graph: Graph, edge: Edge) -> Tuple[NodeModel, NodeModel]:
     src = graph.nodes[edge.src]
     dst = graph.nodes[edge.dst]
@@ -245,6 +389,25 @@ def _subgroup_bounds(subgroup: List[NodeModel]) -> Tuple[float, float]:
     tops = [n.y + n.height / 2 for n in subgroup]
     bottoms = [n.y - n.height / 2 for n in subgroup]
     return max(tops), min(bottoms)
+
+
+def _format_subgroup(subgroup: List[NodeModel]) -> str:
+    if not subgroup:
+        return "[]"
+    if len(subgroup) == 1:
+        return subgroup[0].name
+    return f"{subgroup[0].name}..{subgroup[-1].name}"
+
+
+def _log_column_overview(graph: Graph) -> None:
+    cols = graph.columns()
+    debug_print(f"Columnas detectadas: {len(cols)} | principal={graph.principal_column}")
+    for col, nodes in cols.items():
+        if not nodes:
+            continue
+        top_name = nodes[0].name
+        bottom_name = nodes[-1].name
+        debug_print(f"Columna {col}: {len(nodes)} nodos, top={top_name}, bottom={bottom_name}")
 
 
 def _find_anchor_for_node(graph: Graph, node: NodeModel, potential_cols: Set[str]) -> Optional[NodeModel]:
@@ -454,6 +617,9 @@ def _adjust_principal_for_conflicts(
         if upper_anchor.y < lower_anchor.y:
             upper_anchor, lower_anchor = lower_anchor, upper_anchor
 
+        debug_print(
+            f"Ajuste principal por solapamiento: columna {col}, ancla {lower_anchor.name}, shift={needed:.2f}"
+        )
         for node in principal:
             if node.order >= lower_anchor.order:
                 node.original_y = (node.original_y if node.original_y is not None else node.y) - needed
@@ -478,6 +644,9 @@ def _adjust_principal_for_anchor_conflicts(
         anchor = anchor_map.get(anchor_name)
         if not anchor:
             continue
+        debug_print(
+            f"Ajuste principal por conflicto de anclaje: {anchor.name}, shift={needed:.2f}"
+        )
         for node in principal:
             if node.order >= anchor.order:
                 node.original_y = (node.original_y if node.original_y is not None else node.y) - needed
@@ -490,13 +659,24 @@ def layout(graph: Graph, min_gap: float = MIN_GAP, max_iters: int = 3) -> None:
     conflicts_all: List[Tuple[str, Tuple[int, int, float]]] = []
     anchor_conflicts_all: List[Tuple[str, float]] = []
 
+    debug_print(f"=== LAYOUT START (min_gap={min_gap}, max_iters={max_iters}) ===")
+    debug_print(f"Nodos: {len(graph.nodes)} | Conexiones: {len(graph.edges)}")
+
     for node in graph.nodes.values():
         node.original_y = node.original_y if node.original_y is not None else node.y
         node.original_x = node.original_x if node.original_x is not None else node.x
 
     _auto_columns(graph)
+    _infer_principal_if_missing(graph)
+    _log_column_overview(graph)
+    principal_nodes = _principal_nodes(graph)
+    if principal_nodes:
+        debug_print(
+            f"Fila principal detectada: {principal_nodes[0].name} -> {principal_nodes[-1].name} (max subgroup height)"
+        )
 
     for _iter in range(max_iters):
+        debug_print(f"--- Iteracion {_iter + 1} ---")
         conflicts_all = []
         anchor_conflicts_all = []
 
@@ -557,6 +737,20 @@ def layout(graph: Graph, min_gap: float = MIN_GAP, max_iters: int = 3) -> None:
                             if graph.principal_column and a.column == graph.principal_column:
                                 principal_fixed_nodes.add(a.name)
 
+        # Log subgroup summary per column (non-principal)
+        for col, subgroups in subgroup_lists.items():
+            if graph.principal_column and col == graph.principal_column:
+                continue
+            if not subgroups:
+                continue
+            subgroup_desc = ", ".join(_format_subgroup(sg) for sg in subgroups)
+            anchor_desc = ", ".join(
+                f"{idx}:{anchor.name}" for idx, anchor in subgroup_anchor[col].items()
+            )
+            if not anchor_desc:
+                anchor_desc = "none"
+            debug_print(f"Columna {col} subgrupos: {subgroup_desc} | anchors: {anchor_desc}")
+
         principal_nodes = _principal_nodes(graph)
         if principal_nodes and principal_fixed_nodes:
             _distribute_column_with_fixed(principal_nodes, principal_fixed_nodes, min_gap=min_gap)
@@ -595,14 +789,23 @@ def layout(graph: Graph, min_gap: float = MIN_GAP, max_iters: int = 3) -> None:
 
         adjusted = False
         if anchor_conflicts_all:
+            formatted = ", ".join(f"{name} (+{needed:.2f})" for name, needed in anchor_conflicts_all)
+            debug_print(f"Conflictos de anclaje detectados: {formatted}")
             adjusted |= _adjust_principal_for_anchor_conflicts(graph, anchor_conflicts_all)
         if conflicts_all:
+            formatted = ", ".join(
+                f"{col}({upper_idx}->{lower_idx}, +{needed:.2f})"
+                for col, (upper_idx, lower_idx, needed) in conflicts_all
+            )
+            debug_print(f"Conflictos de solapamiento detectados: {formatted}")
             adjusted |= _adjust_principal_for_conflicts(graph, conflicts_all, subgroup_anchor)
         if adjusted:
+            debug_print("Principal ajustada por conflictos, re-iterando...")
             continue
         break
 
     _align_columns_x(graph)
+    debug_print("=== LAYOUT END ===")
 
 
 # -------------------------
@@ -663,6 +866,8 @@ def _build_graph_from_nuke(nodes: List[object]) -> Graph:
 
     # Assign columns/principal
     _auto_columns(graph)
+    _infer_principal_if_missing(graph)
+    debug_print(f"Principal detectada (auto-columns): {graph.principal_column}")
 
     # Mark align edges only for cross-column mask/A connections
     for e in graph.edges:
@@ -674,6 +879,9 @@ def _build_graph_from_nuke(nodes: List[object]) -> Graph:
             continue
         if e.kind in ("mask", "A"):
             e.align = True
+
+    align_count = sum(1 for e in graph.edges if e.align)
+    debug_print(f"Grafo construido: nodos={len(graph.nodes)}, edges={len(graph.edges)}, align={align_count}")
 
     return graph
 
@@ -694,6 +902,8 @@ def _apply_graph_to_nuke(graph: Graph) -> None:
 # -------------------------
 
 def main() -> None:
+    _init_logging()
+    debug_print("=== Arrange Nodes v2 START ===")
     selected_nodes = nuke.selectedNodes()
     if len(selected_nodes) < 2:
         nuke.message("Select at least 2 nodes to arrange")
@@ -704,12 +914,15 @@ def main() -> None:
         nuke.message("Select at least 2 non-backdrop nodes")
         return
 
+    debug_print(f"Seleccionados: {len(selected_nodes)} | regulares: {len(regular_nodes)}")
+
     undo = nuke.Undo()
     undo.begin("Arrange Nodes v2")
     try:
         graph = _build_graph_from_nuke(regular_nodes)
         layout(graph, min_gap=MIN_GAP)
         _apply_graph_to_nuke(graph)
+        debug_print("=== Arrange Nodes v2 END ===")
     finally:
         undo.end()
 

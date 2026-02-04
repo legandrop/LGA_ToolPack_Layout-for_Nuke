@@ -119,6 +119,20 @@ def _auto_columns(graph: Graph) -> None:
     graph.principal_column = principal
 
 
+def _infer_principal_if_missing(graph: Graph) -> None:
+    if graph.principal_column is not None:
+        return
+    max_height = None
+    principal = None
+    for col in graph.columns().keys():
+        for subgroup in _column_subgroups(graph, col):
+            h = _subgroup_height(subgroup)
+            if max_height is None or h > max_height:
+                max_height = h
+                principal = col
+    graph.principal_column = principal
+
+
 def _choose_anchor(graph: Graph, edge: Edge) -> Tuple[Node, Node]:
     src = graph.nodes[edge.src]
     dst = graph.nodes[edge.dst]
@@ -546,6 +560,7 @@ def layout(
 
     # Auto-detect columns/principal if enabled
     _auto_columns(graph)
+    _infer_principal_if_missing(graph)
 
     for _iter in range(max_iters):
         conflicts_all = []

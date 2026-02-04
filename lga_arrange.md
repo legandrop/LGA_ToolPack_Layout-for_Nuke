@@ -7,6 +7,7 @@ Define the **arrange behavior** (rules and priorities) that will be implemented 
 
 ## Status (2026-02-04)
 - `LGA_arrangeNodes.py` rewritten as **v2.0**, using the validated graph layout core and a Nuke adapter.
+- Logging system (Docu_Logging_System) integrated into `LGA_arrangeNodes.py` with key decision logs.
 
 ## Rules / Discoveries (confirmed)
 1. **Vertical order is preserved** within each column (original order never changes).
@@ -22,6 +23,7 @@ Define the **arrange behavior** (rules and priorities) that will be implemented 
 9. **Dot size matters:** dots can be smaller/larger depending on settings and must be respected.
 10. **SubSubgroup segmentation:** in non‑principal columns, each connected node controls **its own segment** (itself + nodes above).
 11. **Top constraint:** unconnected nodes must not rise above the top of the principal column.
+12. **Principal inference (when missing):** choose the column with **max subgroup height** as principal.
 
 ## Decisions from User (2026-02-04)
 1. Apply column discovery + principal selection (done in core via `auto_columns`).
@@ -33,6 +35,7 @@ Define the **arrange behavior** (rules and priorities) that will be implemented 
 7. Recursive conflict propagation: **pending** (only partially handled so far).
 8. X alignment heuristic (most common X first): **apply**.
 9. Nuke‑specific filtering (Backdrop/Viewer): **apply in Nuke** implementation.
+10. Logging: **apply** (debugPy_arrangeNodes.log, key decisions only).
 
 ## Pending / Open
 - **Connection‑order based distribution (NU):** decide whether to derive ordering from connectivity instead of vertical order when conflicts exist.

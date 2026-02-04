@@ -138,6 +138,13 @@ https://dreampuf.github.io/GraphvizOnline
   - `LGA_Arrange_Prep/out/testGraph_v02.from_graph.dot`
 - Diff check: DOTs are identical (byte‑for‑byte).
 
+## Layout Check (2026-02-04)
+- Update: `layout_core` now **infers principal column** when missing (needed for JSON layouts).
+- Command:  
+  `python3 LGA_Arrange_Prep/apply_layout.py LGA_Arrange_Prep/out/testGraph_v02.graph.json LGA_Arrange_Prep/out/testGraph_v02.after_layout.dot`
+- Output:
+  - `LGA_Arrange_Prep/out/testGraph_v02.after_layout.dot`
+
 ## Next
 - Validate that `.nk` connections are correctly recovered in more complex scripts.
 - If needed, enhance parsing of optional mask inputs and explicit input knobs.
