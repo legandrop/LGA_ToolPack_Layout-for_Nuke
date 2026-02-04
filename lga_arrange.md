@@ -25,6 +25,20 @@ Then translate the validated logic into the Nuke script.
 - No overlap conflicts detected with `min_gap=0.2`.
 - Open question: should baseline distribution be applied by default (removing original gaps) or only when resolving conflicts?
 
+### Latest run (2026-02-04, Example2)
+- Command: `python3 layout_cli.py`
+- Result: layout keeps equal spacing and aligns:
+  - `Grade3 -> Copy1`
+  - `Dot1 -> Grade6`
+  - `Dot2 -> Merge1`
+- No overlap conflicts detected with `min_gap=0.2`.
+- Principal column did **not** need extra re-accommodation to fit secondary columns in this case.
+
+### Update (2026-02-04)
+- Fixed: left column now modeled as a **single column** with **two subgroups** (no fake columns).
+- Added principal-column distribution with **fixed anchors** (nodes connected by alignment).
+- Principal column is **not baseline-distributed**; it is distributed **after alignment** using fixed anchors.
+
 ### Phase 1 tasks
 1. Define data structures and a minimal layout engine (no Nuke).
 2. Create a readable graph description format (DSL) and DOT export.
@@ -42,6 +56,7 @@ Then translate the validated logic into the Nuke script.
    - If there is insufficient space, then adjust the **principal** column.
 6. **No overlaps are acceptable** (avoid at all cost).
 7. **Graphviz export** must be provided so the user can compare before/after at https://dreampuf.github.io/GraphvizOnline.
+8. **Baseline distribution is always applied** (equal spacing ideal), then corrective moves happen only if needed.
 
 ## Example Graph (target)
 The user validated the following DOT as closest to the original:

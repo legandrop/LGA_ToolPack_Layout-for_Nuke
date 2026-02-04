@@ -4,7 +4,7 @@ Phase 1: no Nuke dependencies.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Set
 
 
 @dataclass
@@ -92,97 +92,228 @@ def _baseline_distribute_column(nodes: List[Node]) -> None:
         node.y = top - step * i
 
 
-def _distribute_segment(nodes: List[Node], start_idx: int, end_idx: int, min_gap: float) -> Optional[float]:
-    """
-    Distribute nodes [start_idx..end_idx] (inclusive) between fixed endpoints.
-    Returns required extra space if conflict, else None.
-    """
-    segment = nodes[start_idx : end_idx + 1]
-    if len(segment) <= 1:
-        return None
-
-    top = segment[0]
-    bottom = segment[-1]
-    y_start = top.y
-    y_end = bottom.y
-    available = y_start - y_end
-
-    heights = [n.height for n in segment]
-    total_heights = sum(heights)
-    required_available = (total_heights - (heights[0] / 2 + heights[-1] / 2)) + min_gap * (len(segment) - 1)
-
-    if available < required_available:
-        return required_available - available
-
-    # Equal gap between bounding boxes
-    g = (available - (total_heights - (heights[0] / 2 + heights[-1] / 2))) / (len(segment) - 1)
-    if g < min_gap:
-        return (min_gap - g) * (len(segment) - 1)
-
-    # Place nodes from top to bottom
-    current_y = y_start
-    for i in range(1, len(segment)):
-        prev = segment[i - 1]
-        curr = segment[i]
-        current_y -= (prev.height / 2 + g + curr.height / 2)
-        if not curr.fixed_y:
-            curr.y = current_y
-    return None
-
-
-def _resolve_column_segments(nodes: List[Node], min_gap: float) -> List[Tuple[int, int, float]]:
-    """
-    Resolve overlaps by distributing nodes between fixed points.
-    Returns list of conflicts as (start_idx, end_idx, extra_space_needed).
-    """
-    conflicts: List[Tuple[int, int, float]] = []
-    if not nodes:
-        return conflicts
-
-    fixed_indices = [i for i, n in enumerate(nodes) if n.fixed_y]
-    # Add boundaries as segment limits
-    boundaries = [0] + fixed_indices + [len(nodes) - 1]
-    # Deduplicate and sort
-    boundaries = sorted(set(boundaries))
-
-    for i in range(len(boundaries) - 1):
-        start_idx = boundaries[i]
-        end_idx = boundaries[i + 1]
-        if start_idx == end_idx:
+def _flow_adjacency(graph: Graph, column: str) -> Dict[str, Set[str]]:
+    nodes = [n for n in graph.nodes.values() if n.column == column]
+    names = {n.name for n in nodes}
+    adj: Dict[str, Set[str]] = {n.name: set() for n in nodes}
+    for edge in graph.edges:
+        if edge.kind != "flow":
             continue
-        extra = _distribute_segment(nodes, start_idx, end_idx, min_gap)
-        if extra is not None:
-            conflicts.append((start_idx, end_idx, extra))
+        if edge.src in names and edge.dst in names:
+            adj[edge.src].add(edge.dst)
+            adj[edge.dst].add(edge.src)
+    return adj
 
-    return conflicts
+
+def _column_subgroups(graph: Graph, column: str) -> List[List[Node]]:
+    nodes = [n for n in graph.nodes.values() if n.column == column]
+    if not nodes:
+        return []
+    adj = _flow_adjacency(graph, column)
+    visited: Set[str] = set()
+    subgroups: List[List[Node]] = []
+    for node in nodes:
+        if node.name in visited:
+            continue
+        stack = [node.name]
+        comp: List[str] = []
+        visited.add(node.name)
+        while stack:
+            current = stack.pop()
+            comp.append(current)
+            for nb in adj.get(current, set()):
+                if nb not in visited:
+                    visited.add(nb)
+                    stack.append(nb)
+        comp_nodes = [graph.nodes[name] for name in comp]
+        comp_nodes.sort(key=lambda n: n.order)
+        subgroups.append(comp_nodes)
+
+    subgroups.sort(key=lambda grp: min(n.order for n in grp))
+    return subgroups
 
 
-def layout(graph: Graph, min_gap: float = 0.2) -> List[Tuple[str, Tuple[int, int, float]]]:
+def _baseline_distribute_subgroup(subgroup: List[Node]) -> None:
+    if not subgroup:
+        return
+    # Use original positions to define subgroup bounds
+    top = max(n.original_y if n.original_y is not None else n.y for n in subgroup)
+    bottom = min(n.original_y if n.original_y is not None else n.y for n in subgroup)
+    if len(subgroup) == 1:
+        subgroup[0].y = top
+        return
+    step = (top - bottom) / (len(subgroup) - 1)
+    for i, node in enumerate(subgroup):
+        node.y = top - step * i
+
+
+def _shift_subgroup(subgroup: List[Node], delta: float) -> None:
+    for node in subgroup:
+        node.y += delta
+
+
+def _subgroup_bounds(subgroup: List[Node]) -> Tuple[float, float]:
+    tops = [n.y + n.height / 2 for n in subgroup]
+    bottoms = [n.y - n.height / 2 for n in subgroup]
+    return max(tops), min(bottoms)
+
+
+def _distribute_column_with_fixed(nodes: List[Node], fixed: Set[str]) -> None:
+    if not nodes:
+        return
+    # Ensure we always have boundaries
+    fixed_indices = [i for i, n in enumerate(nodes) if n.name in fixed]
+    if 0 not in fixed_indices:
+        fixed_indices.append(0)
+    if len(nodes) - 1 not in fixed_indices:
+        fixed_indices.append(len(nodes) - 1)
+    fixed_indices = sorted(set(fixed_indices))
+
+    for i in range(len(fixed_indices) - 1):
+        start = fixed_indices[i]
+        end = fixed_indices[i + 1]
+        if start == end:
+            continue
+        top = nodes[start].y
+        bottom = nodes[end].y
+        count = end - start + 1
+        if count <= 2:
+            continue
+        step = (top - bottom) / (count - 1)
+        for j in range(1, count - 1):
+            idx = start + j
+            if nodes[idx].name in fixed:
+                continue
+            nodes[idx].y = top - step * j
+
+
+def _principal_nodes(graph: Graph) -> List[Node]:
+    if graph.principal_column is None:
+        return []
+    nodes = [n for n in graph.nodes.values() if n.column == graph.principal_column]
+    nodes.sort(key=lambda n: n.order)
+    return nodes
+
+
+def _adjust_principal_for_conflicts(
+    graph: Graph,
+    conflicts: List[Tuple[str, Tuple[int, int, float]]],
+    subgroup_anchor: Dict[str, Dict[int, Node]],
+) -> bool:
+    if graph.principal_column is None:
+        return False
+    principal = _principal_nodes(graph)
+    if not principal:
+        return False
+
+    adjusted = False
+    for col, (upper_idx, lower_idx, needed) in conflicts:
+        anchors = subgroup_anchor.get(col, {})
+        upper_anchor = anchors.get(upper_idx)
+        lower_anchor = anchors.get(lower_idx)
+        if not upper_anchor or not lower_anchor:
+            continue
+
+        # Determine which anchor is lower (smaller y)
+        if upper_anchor.y < lower_anchor.y:
+            upper_anchor, lower_anchor = lower_anchor, upper_anchor
+
+        # Push lower anchor (and everything below it) down
+        for node in principal:
+            if node.order >= lower_anchor.order:
+                node.original_y = (node.original_y if node.original_y is not None else node.y) - needed
+        adjusted = True
+
+    return adjusted
+
+
+def layout(graph: Graph, min_gap: float = 0.2, max_iters: int = 3) -> List[Tuple[str, Tuple[int, int, float]]]:
     """
     Apply baseline distribution, alignment constraints, and resolve overlaps.
     Returns a list of conflicts per column.
     """
     conflicts_all: List[Tuple[str, Tuple[int, int, float]]] = []
 
-    # Baseline distribution per column
-    for col_nodes in graph.columns().values():
-        _baseline_distribute_column(col_nodes)
-        for n in col_nodes:
-            n.original_y = n.original_y if n.original_y is not None else n.y
+    # Initialize original positions once
+    for node in graph.nodes.values():
+        node.original_y = node.original_y if node.original_y is not None else node.y
 
-    # Apply alignment constraints
-    for edge in graph.edges:
-        if not edge.align:
-            continue
-        anchor, follower = _choose_anchor(graph, edge)
-        follower.y = anchor.y
-        follower.fixed_y = True
+    for _iter in range(max_iters):
+        conflicts_all = []
 
-    # Resolve per-column overlaps by segment distribution
-    for col, col_nodes in graph.columns().items():
-        conflicts = _resolve_column_segments(col_nodes, min_gap=min_gap)
-        for conflict in conflicts:
-            conflicts_all.append((col, conflict))
+        # Reset to original positions each iteration
+        for node in graph.nodes.values():
+            node.y = node.original_y
+            node.fixed_y = False
+
+        # Baseline distribution per subgroup (skip principal column)
+        for col in graph.columns().keys():
+            if graph.principal_column and col == graph.principal_column:
+                continue
+            for subgroup in _column_subgroups(graph, col):
+                _baseline_distribute_subgroup(subgroup)
+
+        # Apply alignment constraints (shift entire subgroup)
+        fixed_subgroups: Dict[str, Set[int]] = {}
+        subgroup_map: Dict[str, Dict[str, int]] = {}
+        subgroup_lists: Dict[str, List[List[Node]]] = {}
+        subgroup_anchor: Dict[str, Dict[int, Node]] = {}
+        principal_fixed_nodes: Set[str] = set()
+
+        for col in graph.columns().keys():
+            subgroup_lists[col] = _column_subgroups(graph, col)
+            subgroup_map[col] = {}
+            subgroup_anchor[col] = {}
+            for idx, subgroup in enumerate(subgroup_lists[col]):
+                for node in subgroup:
+                    subgroup_map[col][node.name] = idx
+            fixed_subgroups[col] = set()
+
+        for edge in graph.edges:
+            if not edge.align:
+                continue
+            anchor, follower = _choose_anchor(graph, edge)
+            col = follower.column
+            idx = subgroup_map[col][follower.name]
+            subgroup = subgroup_lists[col][idx]
+            delta = anchor.y - follower.y
+            _shift_subgroup(subgroup, delta)
+            fixed_subgroups[col].add(idx)
+            subgroup_anchor[col][idx] = anchor
+            follower.fixed_y = True
+            if graph.principal_column and anchor.column == graph.principal_column:
+                principal_fixed_nodes.add(anchor.name)
+
+        # Re-distribute principal column keeping anchor nodes fixed
+        principal_nodes = _principal_nodes(graph)
+        if principal_nodes and principal_fixed_nodes:
+            _distribute_column_with_fixed(principal_nodes, principal_fixed_nodes)
+
+        # Resolve overlaps between subgroups (top-to-bottom)
+        for col, subgroups in subgroup_lists.items():
+            if not subgroups:
+                continue
+            ordered = subgroups
+            for i in range(1, len(ordered)):
+                prev = ordered[i - 1]
+                curr = ordered[i]
+                prev_top, prev_bottom = _subgroup_bounds(prev)
+                curr_top, curr_bottom = _subgroup_bounds(curr)
+                gap = prev_bottom - curr_top
+                if gap >= min_gap:
+                    continue
+                needed = min_gap - gap
+                curr_idx = subgroups.index(curr)
+                if curr_idx in fixed_subgroups[col]:
+                    conflicts_all.append((col, (i - 1, i, needed)))
+                    continue
+                _shift_subgroup(curr, -needed)
+
+        if conflicts_all:
+            adjusted = _adjust_principal_for_conflicts(graph, conflicts_all, subgroup_anchor)
+            if adjusted:
+                # Re-run after adjusting principal anchors
+                continue
+        break
 
     return conflicts_all
-
