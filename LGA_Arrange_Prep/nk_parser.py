@@ -34,6 +34,7 @@ class NkGraph:
     nodes: List[NkNode] = field(default_factory=list)
     edges: List[NkEdge] = field(default_factory=list)
     root_name: Optional[str] = None
+    has_stack: bool = False
 
 
 _NODE_START_RE = re.compile(r"^([A-Za-z0-9_]+)\s*\{\s*$")
@@ -41,21 +42,21 @@ _SET_STACK_RE = re.compile(r"^set\s+([A-Za-z0-9_]+)\s+\[stack\s+0\]")
 _PUSH_RE = re.compile(r"^push\s+(.+)$")
 
 
-DEFAULT_INPUTS: Dict[str, int] = {
-    "Root": 0,
-    "Roto": 0,
-    "Dot": 1,
-    "Grade": 1,
-    "Blur": 1,
-    "Merge": 2,
-    "Merge2": 2,
-    "Copy": 2,
+DEFAULT_INPUTS: Dict[str, Tuple[int, int]] = {
+    "Root": (0, 0),
+    "Roto": (0, 0),
+    "Dot": (1, 0),
+    "Grade": (1, 0),
+    "Blur": (1, 0),
+    "Merge": (2, 0),
+    "Merge2": (2, 0),
+    "Copy": (1, 1),  # Copy typically has 1 input + optional mask
 }
 
 
 def _parse_inputs_spec(inputs_spec: Optional[str], klass: str) -> Tuple[int, int]:
     if inputs_spec is None:
-        return DEFAULT_INPUTS.get(klass, 1), 0
+        return DEFAULT_INPUTS.get(klass, (1, 0))
     spec = inputs_spec.strip()
     if "+" in spec:
         parts = spec.split("+", 1)
@@ -71,7 +72,7 @@ def _parse_inputs_spec(inputs_spec: Optional[str], klass: str) -> Tuple[int, int
     try:
         return int(spec), 0
     except ValueError:
-        return DEFAULT_INPUTS.get(klass, 1), 0
+        return DEFAULT_INPUTS.get(klass, (1, 0))
 
 
 def _classify_input(klass: str, input_index: int, mandatory: int, mask: int) -> Tuple[str, bool]:
@@ -116,6 +117,7 @@ def parse_nk(path: str) -> NkGraph:
         if m_set:
             var = m_set.group(1)
             variables[var] = stack[-1] if stack else None
+            graph.has_stack = True
             i += 1
             continue
 
@@ -130,12 +132,14 @@ def parse_nk(path: str) -> NkGraph:
                 val = token
             stack.append(val)
             explicit_push = True
+            graph.has_stack = True
             i += 1
             continue
 
         if stripped == "pop":
             if stack:
                 stack.pop()
+            graph.has_stack = True
             i += 1
             continue
 

@@ -17,6 +17,8 @@ def _node_style(node: Node) -> str:
         return 'shape=box, style="rounded,filled", fillcolor="#f4a460"'
     if klass.startswith("Copy"):
         return 'shape=box, style="rounded,filled", fillcolor="#d95da8"'
+    if klass.startswith("Merge"):
+        return 'shape=box, style="rounded,filled", fillcolor="#4f5fbf"'
     if klass.startswith("Dot"):
         return 'shape=circle, style=filled, fillcolor="#bdbdbd", label=""'
     return 'shape=box, style="rounded,filled", fillcolor="#dddddd"'

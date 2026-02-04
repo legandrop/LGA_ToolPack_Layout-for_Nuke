@@ -116,47 +116,118 @@ def nk_to_graph(
         graph.add_node(node)
         name_to_inputs[nk_node.name] = nk_node.inputs_spec
 
-    for edge in nk_graph.edges:
-        graph.add_edge(Edge(edge.src, edge.dst, kind=edge.kind, align=edge.align))
+    if nk_graph.has_stack:
+        for edge in nk_graph.edges:
+            graph.add_edge(Edge(edge.src, edge.dst, kind=edge.kind, align=edge.align))
 
     _group_columns(list(graph.nodes.values()), tolerance_x=tolerance_x)
 
-    # Heuristic: if a node has mask inputs but no explicit mask edge,
-    # connect the closest node (by Y) from a different column.
-    for nk_node in nk_graph.nodes:
-        inputs_spec = nk_node.inputs_spec
-        if not inputs_spec or "+" not in inputs_spec:
-            continue
-        mandatory, mask = _parse_inputs_spec(inputs_spec, nk_node.klass)
-        if mask <= 0:
-            continue
-        # Check existing mask edges
-        has_mask = any(e.dst == nk_node.name and e.kind == "mask" for e in graph.edges)
-        if has_mask:
-            continue
+    if not nk_graph.has_stack:
+        # Rebuild edges from spatial + inputs heuristics
+        graph.edges = []
 
-        target = graph.nodes.get(nk_node.name)
-        if not target:
-            continue
+        inputs_map = {n.name: n.inputs_spec for n in nk_graph.nodes}
 
-        best = None
-        best_score = None
-        for candidate in graph.nodes.values():
-            if candidate.name == target.name:
+        # Flow edges per column (respect inputs==0 to break chains)
+        for col, nodes in graph.columns().items():
+            ordered = sorted(nodes, key=lambda n: n.y, reverse=True)
+            prev = None
+            for node in ordered:
+                inputs_spec = inputs_map.get(node.name)
+                mandatory, _mask = _parse_inputs_spec(inputs_spec, node.klass)
+                if mandatory == 0:
+                    prev = node
+                    continue
+                if prev is not None:
+                    graph.add_edge(Edge(prev.name, node.name, kind="flow", align=False))
+                prev = node
+
+        # Helper: column subgroups (split where inputs==0)
+        def column_subgroups(nodes):
+            groups = []
+            current = []
+            for n in nodes:
+                inputs_spec = inputs_map.get(n.name)
+                mandatory, _mask = _parse_inputs_spec(inputs_spec, n.klass)
+                if mandatory == 0:
+                    if current:
+                        groups.append(current)
+                    current = [n]
+                else:
+                    current.append(n)
+            if current:
+                groups.append(current)
+            return groups
+
+        # Precompute columns by X
+        cols_sorted = sorted(graph.columns().items(), key=lambda kv: kv[1][0].x)
+        col_names = [c for c, _ in cols_sorted]
+        col_x = {c: sum(n.x for n in graph.columns()[c]) / len(graph.columns()[c]) for c in col_names}
+
+        # Mask inputs
+        for nk_node in nk_graph.nodes:
+            inputs_spec = nk_node.inputs_spec
+            mandatory, mask = _parse_inputs_spec(inputs_spec, nk_node.klass)
+            if mask <= 0:
                 continue
-            # Must be in a different column (x distance beyond tolerance)
-            if abs(candidate.x - target.x) <= tolerance_x:
+            # If this node is already used as a mask source, skip adding a mask input
+            if any(e.kind == "mask" and e.src == nk_node.name for e in graph.edges):
                 continue
-            y_dist = abs(candidate.y - target.y)
-            x_dist = abs(candidate.x - target.x)
-            penalty = 0.0 if candidate.klass.startswith("Dot") else 1.0
-            score = y_dist + 0.1 * x_dist + penalty
-            if best_score is None or score < best_score:
-                best = candidate
-                best_score = score
+            # Check existing mask edges
+            has_mask = any(e.dst == nk_node.name and e.kind == "mask" for e in graph.edges)
+            if has_mask:
+                continue
+            target = graph.nodes.get(nk_node.name)
+            if not target:
+                continue
+            def has_any_edge(a: str, b: str) -> bool:
+                for e in graph.edges:
+                    if (e.src == a and e.dst == b) or (e.src == b and e.dst == a):
+                        return True
+                return False
+            best = None
+            best_score = None
+            for candidate in graph.nodes.values():
+                if candidate.name == target.name:
+                    continue
+                if has_any_edge(candidate.name, target.name):
+                    continue
+                if candidate.column == target.column:
+                    continue
+                y_dist = abs(candidate.y - target.y)
+                x_dist = abs(candidate.x - target.x)
+                penalty = 0.0 if candidate.klass.startswith("Dot") else 1.0
+                score = y_dist + 0.1 * x_dist + penalty
+                if best_score is None or score < best_score:
+                    best = candidate
+                    best_score = score
+            if best is not None:
+                graph.add_edge(Edge(best.name, target.name, kind="mask", align=True))
 
-        if best is not None:
-            graph.add_edge(Edge(best.name, target.name, kind="mask", align=True))
+        # Merge A inputs: map merges to left-column subgroups (top-to-bottom)
+        merge_nodes = [n for n in graph.nodes.values() if n.klass.startswith("Merge")]
+        if merge_nodes:
+            # Pick the leftmost column that is not the merge's column
+            for merge in sorted(merge_nodes, key=lambda n: n.y, reverse=True):
+                # Find leftmost column different from merge column
+                left_cols = [c for c in col_names if col_x[c] < merge.x - 0.1]
+                if not left_cols:
+                    continue
+                left_col = left_cols[0]
+                left_nodes = sorted(graph.columns()[left_col], key=lambda n: n.y, reverse=True)
+                subgroups = column_subgroups(left_nodes)
+                if not subgroups:
+                    continue
+                # Map merges (top->bottom) to subgroup bottoms (top->bottom)
+                bottoms = [grp[-1] for grp in subgroups]
+                bottoms_sorted = sorted(bottoms, key=lambda n: n.y, reverse=True)
+                merges_sorted = sorted(merge_nodes, key=lambda n: n.y, reverse=True)
+                idx = merges_sorted.index(merge)
+                if idx < len(bottoms_sorted):
+                    a_node = bottoms_sorted[idx]
+                else:
+                    a_node = bottoms_sorted[-1]
+                graph.add_edge(Edge(a_node.name, merge.name, kind="A", align=True))
 
     if return_meta:
         meta = {
@@ -165,6 +236,7 @@ def nk_to_graph(
             "scale": scale,
             "tolerance_x": tolerance_x,
             "centered_positions": True,
+            "used_stack": nk_graph.has_stack,
         }
         return graph, meta
     return graph

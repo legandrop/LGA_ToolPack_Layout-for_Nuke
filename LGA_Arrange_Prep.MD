@@ -63,9 +63,13 @@ Output is a single JSON file:
   each node with inputs consumes the previous node on the stack.
 - `inputs 1+1` is treated as **mandatory 1 + optional mask 1**.  
   If no extra stack item exists, mask is ignored.
- - If a node has a **mask input** but no explicit stack link exists, we infer
-   a mask connection to the **closest node by Y** in a **different column**
-   (preferring Dot nodes).
+- If a node has a **mask input** but no explicit stack link exists, we infer
+  a mask connection to the **closest node by Y** in a **different column**
+  (preferring Dot nodes).
+ - For files **without stack directives**, we switch to **spatial inference**:
+   - Flow edges are created top‑to‑bottom **within each column**, breaking at nodes with `inputs 0`.
+   - Merge **A** inputs are assigned by pairing merges (top‑to‑bottom) with the **bottom node of each left‑column subgroup** (top‑to‑bottom).
+   - Mask inputs are inferred only if the node is **not already used as a mask source**.
 
 ### Position / Scale
 - Nuke Y grows **downwards**.  
@@ -118,6 +122,14 @@ https://dreampuf.github.io/GraphvizOnline
   - `LGA_Arrange_Prep/out/testGraph_v01.from_graph.dot`
 - Diff check: DOTs are identical (byte‑for‑byte).
 - Update: dot is now **centered under Roto** and **mask input is inferred**.
+
+## Latest Run (2026-02-04, v02)
+- Command: `python3 LGA_Arrange_Prep/prep_cli.py testGraph_v02.nk`
+- Outputs (generated):
+  - `LGA_Arrange_Prep/out/testGraph_v02.graph.json`
+  - `LGA_Arrange_Prep/out/testGraph_v02.from_nk.dot`
+  - `LGA_Arrange_Prep/out/testGraph_v02.from_graph.dot`
+- Diff check: DOTs are identical (byte‑for‑byte).
 
 ## Next
 - Validate that `.nk` connections are correctly recovered in more complex scripts.
