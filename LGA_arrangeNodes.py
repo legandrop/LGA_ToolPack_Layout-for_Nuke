@@ -822,10 +822,11 @@ def _node_center(node) -> Tuple[float, float]:
 def _classify_input(node, idx: int) -> str:
     klass = node.Class()
     if klass in ("Merge", "Merge2"):
+        # Nuke: input 0 = B, input 1 = A, input 2+ = mask
         if idx == 0:
-            return "A"
-        if idx == 1:
             return "B"
+        if idx == 1:
+            return "A"
         return "mask"
     if klass == "Copy":
         if node.inputs() > 1 and idx == node.inputs() - 1:
