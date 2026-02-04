@@ -28,7 +28,12 @@ def to_dot(graph: Graph, title: str = "G") -> str:
 
     for node in graph.nodes.values():
         style = _node_style(node.name)
-        lines.append(f'  {node.name} [{style}, pos="{node.x},{node.y}!" ];')
+        attrs = [style, f'pos="{node.x},{node.y}!"']
+        # Only set per-node height for non-dot nodes
+        if not node.name.startswith("Dot"):
+            attrs.append(f'height="{node.height}"')
+            attrs.append('width="1.6"')
+        lines.append(f'  {node.name} [{", ".join(attrs)} ];')
 
     for edge in graph.edges:
         if edge.kind == "mask":
@@ -38,4 +43,3 @@ def to_dot(graph: Graph, title: str = "G") -> str:
 
     lines.append('}')
     return "\n".join(lines)
-

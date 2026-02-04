@@ -39,6 +39,24 @@ Then translate the validated logic into the Nuke script.
 - Added principal-column distribution with **fixed anchors** (nodes connected by alignment).
 - Principal column is **not baseline-distributed**; it is distributed **after alignment** using fixed anchors.
 
+### New Example (2026-02-04) — Example3
+- Added a more complex graph with:
+  - Extra far-right column
+  - Multiple subgroups on the left and right
+  - Misaligned X positions (jittered)
+  - Multiple alignment constraints to principal column
+- Generated via `example_complex_graph()` and exported through `layout_cli.py`.
+
+### Update (2026-02-04)
+- Added X-alignment pass per column (align to average original X).
+- Columns now render aligned in DOT output even if input X is jittered.
+
+### Update (2026-02-04)
+- Height-aware distribution implemented:
+  - Uses bounding boxes (center ± height/2).
+  - Equal gaps between node boxes, not just between centers.
+  - Graphviz export now sets per-node height (so tall nodes are visible).
+
 ### Phase 1 tasks
 1. Define data structures and a minimal layout engine (no Nuke).
 2. Create a readable graph description format (DSL) and DOT export.

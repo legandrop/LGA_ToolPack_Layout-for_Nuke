@@ -3,7 +3,7 @@ Simple CLI to export example graphs before/after layout.
 Usage: python layout_cli.py
 """
 
-from graph_examples import example_roto_graph, example_merge_graph
+from graph_examples import example_roto_graph, example_merge_graph, example_complex_graph
 from graphviz_export import to_dot
 from layout_core import layout
 
@@ -12,6 +12,7 @@ def main() -> None:
     for label, graph in [
         ("Example1", example_roto_graph()),
         ("Example2", example_merge_graph()),
+        ("Example3", example_complex_graph()),
     ]:
         print(f"### {label} BEFORE")
         print(to_dot(graph, title=f"{label}_Before"))

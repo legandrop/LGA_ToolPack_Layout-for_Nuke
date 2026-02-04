@@ -17,6 +17,7 @@ class Node:
     y: float = 0.0
     fixed_y: bool = False
     original_y: Optional[float] = None
+    original_x: Optional[float] = None
 
 
 @dataclass
@@ -133,18 +134,31 @@ def _column_subgroups(graph: Graph, column: str) -> List[List[Node]]:
     return subgroups
 
 
-def _baseline_distribute_subgroup(subgroup: List[Node]) -> None:
+def _baseline_distribute_subgroup(subgroup: List[Node], min_gap: float) -> None:
     if not subgroup:
         return
-    # Use original positions to define subgroup bounds
-    top = max(n.original_y if n.original_y is not None else n.y for n in subgroup)
-    bottom = min(n.original_y if n.original_y is not None else n.y for n in subgroup)
+    # Use original positions and heights to define subgroup bounds
+    top = max(
+        (n.original_y if n.original_y is not None else n.y) + n.height / 2
+        for n in subgroup
+    )
+    bottom = min(
+        (n.original_y if n.original_y is not None else n.y) - n.height / 2
+        for n in subgroup
+    )
     if len(subgroup) == 1:
-        subgroup[0].y = top
+        subgroup[0].y = (top + bottom) / 2
         return
-    step = (top - bottom) / (len(subgroup) - 1)
-    for i, node in enumerate(subgroup):
-        node.y = top - step * i
+    available = top - bottom
+    total_heights = sum(n.height for n in subgroup)
+    gap = (available - total_heights) / (len(subgroup) - 1)
+    if gap < min_gap:
+        gap = min_gap
+
+    current_top = top
+    for node in subgroup:
+        node.y = current_top - node.height / 2
+        current_top -= node.height + gap
 
 
 def _shift_subgroup(subgroup: List[Node], delta: float) -> None:
@@ -158,7 +172,7 @@ def _subgroup_bounds(subgroup: List[Node]) -> Tuple[float, float]:
     return max(tops), min(bottoms)
 
 
-def _distribute_column_with_fixed(nodes: List[Node], fixed: Set[str]) -> None:
+def _distribute_column_with_fixed(nodes: List[Node], fixed: Set[str], min_gap: float) -> None:
     if not nodes:
         return
     # Ensure we always have boundaries
@@ -174,17 +188,23 @@ def _distribute_column_with_fixed(nodes: List[Node], fixed: Set[str]) -> None:
         end = fixed_indices[i + 1]
         if start == end:
             continue
-        top = nodes[start].y
-        bottom = nodes[end].y
+        top = nodes[start].y + nodes[start].height / 2
+        bottom = nodes[end].y - nodes[end].height / 2
         count = end - start + 1
         if count <= 2:
             continue
-        step = (top - bottom) / (count - 1)
-        for j in range(1, count - 1):
-            idx = start + j
-            if nodes[idx].name in fixed:
-                continue
-            nodes[idx].y = top - step * j
+        segment = nodes[start : end + 1]
+        total_heights = sum(n.height for n in segment)
+        available = top - bottom
+        gap = (available - total_heights) / (count - 1)
+        if gap < min_gap:
+            gap = min_gap
+
+        current_top = top
+        for node in segment:
+            if node.name not in fixed:
+                node.y = current_top - node.height / 2
+            current_top -= node.height + gap
 
 
 def _principal_nodes(graph: Graph) -> List[Node]:
@@ -193,6 +213,17 @@ def _principal_nodes(graph: Graph) -> List[Node]:
     nodes = [n for n in graph.nodes.values() if n.column == graph.principal_column]
     nodes.sort(key=lambda n: n.order)
     return nodes
+
+
+def _align_columns_x(graph: Graph) -> None:
+    for col, nodes in graph.columns().items():
+        if not nodes:
+            continue
+        # Use average original X as column alignment target
+        xs = [n.original_x if n.original_x is not None else n.x for n in nodes]
+        target_x = sum(xs) / len(xs)
+        for n in nodes:
+            n.x = target_x
 
 
 def _adjust_principal_for_conflicts(
@@ -237,6 +268,7 @@ def layout(graph: Graph, min_gap: float = 0.2, max_iters: int = 3) -> List[Tuple
     # Initialize original positions once
     for node in graph.nodes.values():
         node.original_y = node.original_y if node.original_y is not None else node.y
+        node.original_x = node.original_x if node.original_x is not None else node.x
 
     for _iter in range(max_iters):
         conflicts_all = []
@@ -251,7 +283,7 @@ def layout(graph: Graph, min_gap: float = 0.2, max_iters: int = 3) -> List[Tuple
             if graph.principal_column and col == graph.principal_column:
                 continue
             for subgroup in _column_subgroups(graph, col):
-                _baseline_distribute_subgroup(subgroup)
+                _baseline_distribute_subgroup(subgroup, min_gap=min_gap)
 
         # Apply alignment constraints (shift entire subgroup)
         fixed_subgroups: Dict[str, Set[int]] = {}
@@ -287,7 +319,7 @@ def layout(graph: Graph, min_gap: float = 0.2, max_iters: int = 3) -> List[Tuple
         # Re-distribute principal column keeping anchor nodes fixed
         principal_nodes = _principal_nodes(graph)
         if principal_nodes and principal_fixed_nodes:
-            _distribute_column_with_fixed(principal_nodes, principal_fixed_nodes)
+            _distribute_column_with_fixed(principal_nodes, principal_fixed_nodes, min_gap=min_gap)
 
         # Resolve overlaps between subgroups (top-to-bottom)
         for col, subgroups in subgroup_lists.items():
@@ -315,5 +347,8 @@ def layout(graph: Graph, min_gap: float = 0.2, max_iters: int = 3) -> List[Tuple
                 # Re-run after adjusting principal anchors
                 continue
         break
+
+    # Align columns in X at the end
+    _align_columns_x(graph)
 
     return conflicts_all

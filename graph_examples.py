@@ -156,3 +156,99 @@ def example_merge_graph() -> Graph:
     g.add_edge(Edge("Grade21", "Merge2", kind="A", align=True))
 
     return g
+
+
+def example_complex_graph() -> Graph:
+    g = Graph()
+    g.principal_column = "A"
+
+    # Principal column (A)
+    main = [
+        ("GradeA1", 18.0),
+        ("GradeA2", 16.5),
+        ("GradeA3", 15.0),
+        ("GradeA4", 13.6),
+        ("GradeA5", 12.2),
+        ("GradeA6", 10.8),
+        ("GradeA7", 9.2),
+        ("GradeA8", 7.7),
+        ("MergeA", 6.0),
+        ("GradeA9", 4.2),
+        ("GradeA10", 3.1),
+        ("GradeA11", 1.8),
+        ("MergeB", 0.6),
+        ("GradeA12", -1.0),
+        ("GradeA13", -2.2),
+        ("GradeA14", -3.5),
+        ("GradeA15", -5.0),
+    ]
+    for idx, (name, y) in enumerate(main):
+        x = 0.0 + (0.2 if idx % 2 == 0 else -0.15)  # slight x jitter
+        height = 0.8 if name.startswith("Merge") else (0.7 if name in ("GradeA4", "GradeA9") else 0.5)
+        g.add_node(Node(name=name, column="A", order=idx, x=x, y=y, height=height))
+
+    # Left column (L) with two subgroups
+    left = [
+        ("GradeL1", 14.8),
+        ("GradeL2", 13.4),
+        ("GradeL3", 6.0),   # aligns to MergeA
+        ("GradeL4", -0.4),
+        ("GradeL5", -1.6),  # aligns to MergeB
+    ]
+    for idx, (name, y) in enumerate(left):
+        x = -7.2 + (0.15 if idx % 2 == 0 else -0.1)
+        height = 0.6 if name == "GradeL2" else 0.5
+        g.add_node(Node(name=name, column="L", order=idx, x=x, y=y, height=height))
+
+    # Right column (R) with two subgroups
+    right = [
+        ("RotoR1", 17.2),
+        ("BlurR1", 15.6),
+        ("CopyR1", 13.6),   # aligns to GradeA4
+        ("RotoR2", 11.0),
+        ("BlurR2", 9.6),
+        ("DotR1", 4.2),     # aligns to GradeA9
+    ]
+    for idx, (name, y) in enumerate(right):
+        x = 7.1 + (0.1 if idx % 2 == 0 else -0.12)
+        h = 0.2 if name.startswith("Dot") else (0.9 if name.startswith("Copy") else 0.6)
+        g.add_node(Node(name=name, column="R", order=idx, x=x, y=y, height=h))
+
+    # Extra far-right column (RR)
+    far_right = [
+        ("RotoRR1", 12.8),
+        ("BlurRR1", 11.2),
+        ("DotRR1", 0.6),    # aligns to MergeB
+    ]
+    for idx, (name, y) in enumerate(far_right):
+        x = 10.5 + (0.2 if idx % 2 == 0 else -0.15)
+        h = 0.2 if name.startswith("Dot") else 0.7
+        g.add_node(Node(name=name, column="RR", order=idx, x=x, y=y, height=h))
+
+    # Flow edges main column
+    for a, b in zip(main[:-1], main[1:]):
+        g.add_edge(Edge(a[0], b[0]))
+
+    # Flow edges left column (two subgroups, no link between L3 and L4)
+    g.add_edge(Edge("GradeL1", "GradeL2"))
+    g.add_edge(Edge("GradeL2", "GradeL3"))
+    g.add_edge(Edge("GradeL4", "GradeL5"))
+
+    # Flow edges right column (two subgroups, no link between CopyR1 and RotoR2)
+    g.add_edge(Edge("RotoR1", "BlurR1"))
+    g.add_edge(Edge("BlurR1", "CopyR1"))
+    g.add_edge(Edge("RotoR2", "BlurR2"))
+    g.add_edge(Edge("BlurR2", "DotR1"))
+
+    # Flow edges far-right column
+    g.add_edge(Edge("RotoRR1", "BlurRR1"))
+    g.add_edge(Edge("BlurRR1", "DotRR1"))
+
+    # Alignment constraints
+    g.add_edge(Edge("GradeA4", "CopyR1", kind="mask", align=True))
+    g.add_edge(Edge("DotR1", "GradeA9", kind="mask", align=True))
+    g.add_edge(Edge("GradeL3", "MergeA", kind="A", align=True))
+    g.add_edge(Edge("GradeL5", "MergeB", kind="A", align=True))
+    g.add_edge(Edge("DotRR1", "MergeB", kind="mask", align=True))
+
+    return g
