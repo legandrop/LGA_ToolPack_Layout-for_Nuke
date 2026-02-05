@@ -26,6 +26,7 @@ Define the **arrange behavior** (rules and priorities) that will be implemented 
 11. **Top constraint:** unconnected nodes must not rise above the top of the principal column.
 12. **Principal inference (when missing):** choose the column with **max subgroup height** as principal.
 13. **Flow adjacency inside a column:** any non‑mask connection (including A/B) keeps nodes in the same subgroup.
+14. **Single-column selection:** the principal column is distributed like any other (no special skip).
 
 ## Decisions from User (2026-02-04)
 1. Apply column discovery + principal selection (done in core via `auto_columns`).

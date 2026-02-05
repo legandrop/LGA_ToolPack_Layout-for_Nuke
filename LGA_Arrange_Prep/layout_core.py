@@ -563,6 +563,8 @@ def layout(
     _auto_columns(graph)
     _infer_principal_if_missing(graph)
 
+    only_one_column = len(graph.columns()) <= 1
+
     for _iter in range(max_iters):
         conflicts_all = []
         anchor_conflicts_all = []
@@ -574,7 +576,7 @@ def layout(
 
         # Baseline distribution per subgroup (skip principal column)
         for col in graph.columns().keys():
-            if graph.principal_column and col == graph.principal_column:
+            if graph.principal_column and col == graph.principal_column and not only_one_column:
                 continue
             for subgroup in _column_subgroups(graph, col):
                 _baseline_distribute_subgroup(subgroup, min_gap=min_gap)

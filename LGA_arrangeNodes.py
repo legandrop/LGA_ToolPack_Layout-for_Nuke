@@ -676,6 +676,10 @@ def layout(graph: Graph, min_gap: float = MIN_GAP, max_iters: int = 3) -> None:
             f"Fila principal detectada: {principal_nodes[0].name} -> {principal_nodes[-1].name} (max subgroup height)"
         )
 
+    only_one_column = len(graph.columns()) <= 1
+    if only_one_column:
+        debug_print("Solo una columna: se distribuye la principal como cualquier columna")
+
     for _iter in range(max_iters):
         debug_print(f"--- Iteracion {_iter + 1} ---")
         conflicts_all = []
@@ -686,7 +690,7 @@ def layout(graph: Graph, min_gap: float = MIN_GAP, max_iters: int = 3) -> None:
             node.fixed_y = False
 
         for col in graph.columns().keys():
-            if graph.principal_column and col == graph.principal_column:
+            if graph.principal_column and col == graph.principal_column and not only_one_column:
                 continue
             for subgroup in _column_subgroups(graph, col):
                 _baseline_distribute_subgroup(subgroup, min_gap=min_gap)
