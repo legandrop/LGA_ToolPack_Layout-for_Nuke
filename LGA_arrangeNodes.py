@@ -876,7 +876,7 @@ def _build_graph_from_nuke(nodes: List[object]) -> Graph:
     debug_print(f"Principal detectada (auto-columns): {graph.principal_column}")
     debug_print("Adapter Nuke: usando Y invertida para layout")
 
-    # Mark align edges only for cross-column mask/A connections
+    # Mark align edges for any cross-column connection
     for e in graph.edges:
         src = graph.nodes.get(e.src)
         dst = graph.nodes.get(e.dst)
@@ -884,8 +884,7 @@ def _build_graph_from_nuke(nodes: List[object]) -> Graph:
             continue
         if src.column == dst.column:
             continue
-        if e.kind in ("mask", "A"):
-            e.align = True
+        e.align = True
 
     align_count = sum(1 for e in graph.edges if e.align)
     debug_print(f"Grafo construido: nodos={len(graph.nodes)}, edges={len(graph.edges)}, align={align_count}")
