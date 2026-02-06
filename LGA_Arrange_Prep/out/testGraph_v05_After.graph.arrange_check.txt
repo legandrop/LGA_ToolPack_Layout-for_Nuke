@@ -1,0 +1,2 @@
+FALLA: 1 problemas detectados
+- ALIGN_Y: VectorDistort1 (9.450000000000001) -> Dilate1 (7.2), columns C2->C1, h=(0.5,0.5)
