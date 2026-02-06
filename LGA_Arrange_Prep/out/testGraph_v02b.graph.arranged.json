@@ -1,0 +1,273 @@
+{
+  "nodes": [
+    {
+      "name": "Grade18",
+      "klass": "Grade",
+      "column": "C0",
+      "order": 3,
+      "x": -11.6,
+      "y": -17.61500000000001,
+      "height": 0.5
+    },
+    {
+      "name": "Grade19",
+      "klass": "Grade",
+      "column": "C0",
+      "order": 4,
+      "x": -11.6,
+      "y": -18.94833333333334,
+      "height": 0.5
+    },
+    {
+      "name": "Grade20",
+      "klass": "Grade",
+      "column": "C0",
+      "order": 5,
+      "x": -11.6,
+      "y": -20.281666666666673,
+      "height": 0.5
+    },
+    {
+      "name": "Grade21",
+      "klass": "Grade",
+      "column": "C0",
+      "order": 6,
+      "x": -11.6,
+      "y": -21.615000000000006,
+      "height": 0.5
+    },
+    {
+      "name": "Roto3",
+      "klass": "Roto",
+      "column": "C2",
+      "order": 0,
+      "x": 5.2,
+      "y": -13.515000000000006,
+      "height": 0.6
+    },
+    {
+      "name": "Blur3",
+      "klass": "Blur",
+      "column": "C2",
+      "order": 1,
+      "x": 5.2,
+      "y": -15.315000000000008,
+      "height": 0.6
+    },
+    {
+      "name": "Dot2",
+      "klass": "Dot",
+      "column": "C2",
+      "order": 2,
+      "x": 5.2,
+      "y": -16.91500000000001,
+      "height": 0.2
+    },
+    {
+      "name": "Grade15",
+      "klass": "Grade",
+      "column": "C0",
+      "order": 0,
+      "x": -11.6,
+      "y": -14.515000000000011,
+      "height": 0.5
+    },
+    {
+      "name": "Grade16",
+      "klass": "Grade",
+      "column": "C0",
+      "order": 1,
+      "x": -11.6,
+      "y": -15.71500000000001,
+      "height": 0.5
+    },
+    {
+      "name": "Grade17",
+      "klass": "Grade",
+      "column": "C0",
+      "order": 2,
+      "x": -11.6,
+      "y": -16.91500000000001,
+      "height": 0.5
+    },
+    {
+      "name": "Grade7",
+      "klass": "Grade",
+      "column": "C1",
+      "order": 0,
+      "x": -1.3,
+      "y": -15.032500000000008,
+      "height": 0.5
+    },
+    {
+      "name": "Grade10",
+      "klass": "Grade",
+      "column": "C1",
+      "order": 1,
+      "x": -1.3,
+      "y": -16.065000000000012,
+      "height": 0.5
+    },
+    {
+      "name": "Merge1",
+      "klass": "Merge2",
+      "column": "C1",
+      "order": 2,
+      "x": -1.3,
+      "y": -16.91500000000001,
+      "height": 0.8
+    },
+    {
+      "name": "Grade11",
+      "klass": "Grade",
+      "column": "C1",
+      "order": 3,
+      "x": -1.3,
+      "y": -19.265000000000008,
+      "height": 0.5
+    },
+    {
+      "name": "Merge2",
+      "klass": "Merge2",
+      "column": "C1",
+      "order": 4,
+      "x": -1.3,
+      "y": -21.615000000000006,
+      "height": 0.8
+    },
+    {
+      "name": "Grade12",
+      "klass": "Grade",
+      "column": "C1",
+      "order": 5,
+      "x": -1.3,
+      "y": -23.57666666666667,
+      "height": 0.5
+    },
+    {
+      "name": "Grade13",
+      "klass": "Grade",
+      "column": "C1",
+      "order": 6,
+      "x": -1.3,
+      "y": -25.388333333333335,
+      "height": 0.5
+    },
+    {
+      "name": "Grade14",
+      "klass": "Grade",
+      "column": "C1",
+      "order": 7,
+      "x": -1.3,
+      "y": -27.200000000000003,
+      "height": 0.5
+    }
+  ],
+  "edges": [
+    {
+      "src": "Grade18",
+      "dst": "Grade19",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Grade19",
+      "dst": "Grade20",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Grade20",
+      "dst": "Grade21",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Roto3",
+      "dst": "Blur3",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Blur3",
+      "dst": "Dot2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Grade15",
+      "dst": "Grade16",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Grade16",
+      "dst": "Grade17",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Grade7",
+      "dst": "Grade10",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Dot2",
+      "dst": "Merge1",
+      "kind": "B",
+      "align": true
+    },
+    {
+      "src": "Grade17",
+      "dst": "Merge1",
+      "kind": "A",
+      "align": true
+    },
+    {
+      "src": "Grade10",
+      "dst": "Merge1",
+      "kind": "mask",
+      "align": false
+    },
+    {
+      "src": "Merge1",
+      "dst": "Grade11",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Grade21",
+      "dst": "Merge2",
+      "kind": "B",
+      "align": true
+    },
+    {
+      "src": "Grade11",
+      "dst": "Merge2",
+      "kind": "A",
+      "align": false
+    },
+    {
+      "src": "Merge2",
+      "dst": "Grade12",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Grade12",
+      "dst": "Grade13",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Grade13",
+      "dst": "Grade14",
+      "kind": "flow",
+      "align": false
+    }
+  ],
+  "meta": {
+    "arranged": true
+  }
+}

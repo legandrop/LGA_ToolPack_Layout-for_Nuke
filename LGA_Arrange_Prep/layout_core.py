@@ -676,10 +676,50 @@ def _redistribute_principal_with_fixed_bounds(
     return True
 
 
+def _anchor_shift_slack(
+    principal: List[Node],
+    fixed_indices: Set[int],
+    idx: int,
+    direction: str,
+    min_gap: float,
+) -> float:
+    if idx <= 0 or idx >= len(principal) - 1:
+        return 0.0
+    if direction == "up":
+        upper_idx = None
+        for j in reversed(sorted(fixed_indices)):
+            if j < idx:
+                upper_idx = j
+                break
+        if upper_idx is None:
+            return 0.0
+        top = principal[upper_idx].y + principal[upper_idx].height / 2
+        bottom = principal[idx].y - principal[idx].height / 2
+        segment = principal[upper_idx : idx + 1]
+    else:
+        lower_idx = None
+        for j in sorted(fixed_indices):
+            if j > idx:
+                lower_idx = j
+                break
+        if lower_idx is None:
+            return 0.0
+        top = principal[idx].y + principal[idx].height / 2
+        bottom = principal[lower_idx].y - principal[lower_idx].height / 2
+        segment = principal[idx : lower_idx + 1]
+
+    required = sum(n.height for n in segment) + min_gap * (len(segment) - 1)
+    available = top - bottom
+    slack = available - required
+    if slack < 0:
+        slack = 0.0
+    return slack
+
+
 def layout(
     graph: Graph,
     min_gap: float = 0.2,
-    max_iters: int = 3,
+    max_iters: int = 4,
 ) -> List[Tuple[str, Tuple[int, int, float]]]:
     """
     Apply baseline distribution, alignment constraints, and resolve overlaps.
@@ -847,20 +887,79 @@ def layout(
             for name, needed in anchor_conflicts_all:
                 anchor_shifts[name] = max(anchor_shifts.get(name, 0.0), needed)
         if conflicts_all:
+            principal = _principal_nodes(graph)
+            index_by_name = {n.name: i for i, n in enumerate(principal)}
+            fixed_indices: Set[int] = {0, len(principal) - 1} if principal else set()
+            for name in anchor_shifts.keys():
+                idx = index_by_name.get(name)
+                if idx is not None:
+                    fixed_indices.add(idx)
+
+            def _apply_shift(name: str, shift: float) -> None:
+                current = anchor_shifts.get(name)
+                if current is None:
+                    anchor_shifts[name] = shift
+                else:
+                    if shift < 0:
+                        anchor_shifts[name] = min(current, shift) if current < 0 else shift
+                    elif shift > 0:
+                        anchor_shifts[name] = max(current, shift) if current > 0 else shift
+
             for col, (upper_idx, lower_idx, delta) in conflicts_all:
                 anchors = subgroup_anchor.get(col, {})
                 upper_anchor = anchors.get(upper_idx)
                 lower_anchor = anchors.get(lower_idx)
-                # Prefer moving the upper anchor UP (negative shift) to avoid overlap.
-                if upper_anchor:
-                    current = anchor_shifts.get(upper_anchor.name, 0.0)
-                    shift = -delta
-                    anchor_shifts[upper_anchor.name] = min(current, shift) if current < 0 else shift
-                elif lower_anchor:
-                    # Fallback: move lower anchor down if upper missing
-                    anchor_shifts[lower_anchor.name] = max(
-                        anchor_shifts.get(lower_anchor.name, 0.0), delta
-                    )
+                if not upper_anchor and not lower_anchor:
+                    continue
+
+                if delta > 0:
+                    remaining = delta
+                    if upper_anchor:
+                        idx = index_by_name.get(upper_anchor.name)
+                        if idx is not None:
+                            slack_up = _anchor_shift_slack(
+                                principal, fixed_indices, idx, "up", min_gap
+                            )
+                            move_up = min(remaining, slack_up)
+                            if move_up > 0:
+                                _apply_shift(upper_anchor.name, -move_up)
+                                fixed_indices.add(idx)
+                                remaining -= move_up
+                    if remaining > 0 and lower_anchor:
+                        idx = index_by_name.get(lower_anchor.name)
+                        if idx is not None:
+                            slack_down = _anchor_shift_slack(
+                                principal, fixed_indices, idx, "down", min_gap
+                            )
+                            move_down = min(remaining, slack_down)
+                            if move_down > 0:
+                                _apply_shift(lower_anchor.name, move_down)
+                                fixed_indices.add(idx)
+                                remaining -= move_down
+                elif delta < 0:
+                    remaining = -delta
+                    if upper_anchor:
+                        idx = index_by_name.get(upper_anchor.name)
+                        if idx is not None:
+                            slack_down = _anchor_shift_slack(
+                                principal, fixed_indices, idx, "down", min_gap
+                            )
+                            move_down = min(remaining, slack_down)
+                            if move_down > 0:
+                                _apply_shift(upper_anchor.name, move_down)
+                                fixed_indices.add(idx)
+                                remaining -= move_down
+                    if remaining > 0 and lower_anchor:
+                        idx = index_by_name.get(lower_anchor.name)
+                        if idx is not None:
+                            slack_up = _anchor_shift_slack(
+                                principal, fixed_indices, idx, "up", min_gap
+                            )
+                            move_up = min(remaining, slack_up)
+                            if move_up > 0:
+                                _apply_shift(lower_anchor.name, -move_up)
+                                fixed_indices.add(idx)
+                                remaining -= move_up
         if anchor_shifts:
             adjusted |= _redistribute_principal_with_fixed_bounds(
                 graph,

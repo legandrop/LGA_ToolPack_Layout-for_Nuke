@@ -20,20 +20,21 @@ Recién después se porta la lógica a `LGA_arrangeNodes.py` (Nuke).
 4. **Distribución base:** los nodos se distribuyen verticalmente lo más equidistante posible según la altura del subgrupo/columna. La **columna principal se redistribuye en cada iteración** con top/bottom fijos.
 5. **Resolución de solapes:** primero se resuelve el solape entre subgrupos. La **principal no crece**; si hace falta, se redistribuye dentro de sus límites.
 6. **Regla v08 de solapes entre subgrupos:** se impone un **gap fijo entre bordes**: borde inferior del subgrupo superior vs borde superior del subgrupo inferior. Fórmula: `delta = OVERLAP_EDGE_GAP - (upper_bottom_edge - lower_top_edge)`. Se mueve el subgrupo superior por `delta` (puede subir o bajar). Si ese subgrupo está anclado a la principal, se aplica el mismo `delta` a su ancla y se redistribuye la principal dentro de sus límites.
-7. **No se permiten solapes** (evitar a toda costa).
-8. **Alineación X por columna:** se alinea al X más común (si se repite), si no, al promedio.
-9. **Alturas importan:** la distribución se calcula con **bounding boxes** (centro ± alto/2).
-10. **Tamaño de Dot importa:** puede variar y debe respetarse.
-11. **Alineación de subgrupos (una ancla):** en columnas no principales, un subgrupo conectado se mueve **como bloque** hacia **una sola ancla** (la más cercana a la principal). Se conserva el spacing interno; no hay segmentación dentro del subgrupo.
-12. **Alineación de subgrupos (múltiples anclas):** si un subgrupo tiene **más de un nodo conectado** a la misma columna, **cada nodo anclado se alinea** a su respectiva ancla.  
+7. **Solape con anclas distintas en la principal:** si los dos subgrupos están anclados a **dos nodos distintos** de la principal, se intenta mover el **ancla superior**. Si el movimiento queda **capado**, el **restante** se aplica al **ancla inferior** en el sentido opuesto. Luego se redistribuye la principal dentro de top/bottom.
+8. **No se permiten solapes** (evitar a toda costa).
+9. **Alineación X por columna:** se alinea al X más común (si se repite), si no, al promedio.
+10. **Alturas importan:** la distribución se calcula con **bounding boxes** (centro ± alto/2).
+11. **Tamaño de Dot importa:** puede variar y debe respetarse.
+12. **Alineación de subgrupos (una ancla):** en columnas no principales, un subgrupo conectado se mueve **como bloque** hacia **una sola ancla** (la más cercana a la principal). Se conserva el spacing interno; no hay segmentación dentro del subgrupo.
+13. **Alineación de subgrupos (múltiples anclas):** si un subgrupo tiene **más de un nodo conectado** a la misma columna, **cada nodo anclado se alinea** a su respectiva ancla.  
    - Los nodos **entre anclas** se redistribuyen **entre esos dos puntos**.  
    - Los nodos **por encima** de la primera ancla y **por debajo** de la última se desplazan con la **ancla más cercana**.  
    - Si no hay espacio suficiente, se **comprime** el spacing interno sin romper las anclas.
-13. **Restricción de tope:** nodos no conectados no deben quedar por encima del tope de la principal.
-14. **Inferencia de principal:** si falta, se elige la columna con **mayor altura de subgrupo**.
-15. **Adyacencia de flujo en columna:** cualquier conexión no‑mask (incluye A/B) mantiene los nodos en el mismo subgrupo.
-16. **Selección de una sola columna:** la principal se distribuye como cualquier columna (sin excepción).
-17. **Anclas en principal no se fijan:** columnas externas se realinean a la principal tras su redistribución.
+14. **Restricción de tope:** nodos no conectados no deben quedar por encima del tope de la principal.
+15. **Inferencia de principal:** si falta, se elige la columna con **mayor altura de subgrupo**.
+16. **Adyacencia de flujo en columna:** cualquier conexión no‑mask (incluye A/B) mantiene los nodos en el mismo subgrupo.
+17. **Selección de una sola columna:** la principal se distribuye como cualquier columna (sin excepción).
+18. **Anclas en principal no se fijan:** columnas externas se realinean a la principal tras su redistribución.
 
 ## Decisiones del usuario (2026-02-06)
 1. Descubrimiento de columnas + selección de principal: **aplicar** (via `auto_columns`).
