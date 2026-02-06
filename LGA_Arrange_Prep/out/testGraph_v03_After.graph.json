@@ -37,6 +37,15 @@
       "height": 0.2
     },
     {
+      "name": "Keylight3",
+      "klass": "OFXuk.co.thefoundry.keylight.keylight_v201",
+      "column": "C1",
+      "order": 0,
+      "x": -22.3,
+      "y": 0.30000000000000004,
+      "height": 0.5
+    },
+    {
       "name": "Grade2",
       "klass": "Grade",
       "column": "C0",
@@ -112,7 +121,7 @@
       "name": "Shuffle5",
       "klass": "Shuffle2",
       "column": "C1",
-      "order": 0,
+      "order": 1,
       "x": -22.3,
       "y": -1.9000000000000001,
       "height": 0.5
@@ -121,7 +130,7 @@
       "name": "Invert3",
       "klass": "Invert",
       "column": "C1",
-      "order": 1,
+      "order": 2,
       "x": -22.3,
       "y": -4.05,
       "height": 0.5
@@ -130,7 +139,7 @@
       "name": "Clamp5",
       "klass": "Clamp",
       "column": "C1",
-      "order": 2,
+      "order": 3,
       "x": -22.3,
       "y": -6.65,
       "height": 0.5
@@ -228,7 +237,7 @@
       "align": false
     },
     {
-      "src": "Dot4",
+      "src": "Keylight3",
       "dst": "Grade2",
       "kind": "flow",
       "align": false
@@ -270,7 +279,7 @@
       "align": false
     },
     {
-      "src": "Dot4",
+      "src": "Keylight3",
       "dst": "Shuffle5",
       "kind": "flow",
       "align": false
@@ -288,16 +297,10 @@
       "align": false
     },
     {
-      "src": "Clamp5",
+      "src": "Constant1",
       "dst": "Merge1",
       "kind": "B",
       "align": false
-    },
-    {
-      "src": "Constant1",
-      "dst": "Merge1",
-      "kind": "A",
-      "align": true
     },
     {
       "src": "Merge1",
@@ -306,28 +309,16 @@
       "align": false
     },
     {
-      "src": "Transform_MatchMove2",
-      "dst": "Merge17",
-      "kind": "B",
-      "align": false
-    },
-    {
       "src": "Crop2",
       "dst": "Merge17",
-      "kind": "A",
-      "align": true
-    },
-    {
-      "src": "Clamp3",
-      "dst": "Merge18",
       "kind": "B",
       "align": false
     },
     {
       "src": "Merge17",
       "dst": "Merge18",
-      "kind": "A",
-      "align": true
+      "kind": "B",
+      "align": false
     },
     {
       "src": "Merge18",
@@ -336,16 +327,40 @@
       "align": false
     },
     {
-      "src": "Shuffle2",
+      "src": "Transform_MatchMove2",
       "dst": "Merge11",
       "kind": "B",
       "align": false
     },
     {
-      "src": "Merge11",
+      "src": "Clamp5",
+      "dst": "Merge11",
+      "kind": "A",
+      "align": true
+    },
+    {
+      "src": "Shuffle2",
+      "dst": "Merge11",
+      "kind": "mask",
+      "align": true
+    },
+    {
+      "src": "Dot4",
       "dst": "Merge10",
       "kind": "B",
       "align": false
+    },
+    {
+      "src": "Clamp3",
+      "dst": "Merge10",
+      "kind": "A",
+      "align": true
+    },
+    {
+      "src": "Merge11",
+      "dst": "Merge10",
+      "kind": "mask",
+      "align": true
     }
   ],
   "meta": {

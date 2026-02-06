@@ -38,7 +38,7 @@ class NkGraph:
     explicit_stack_ops: bool = False
 
 
-_NODE_START_RE = re.compile(r"^([A-Za-z0-9_]+)\s*\{\s*$")
+_NODE_START_RE = re.compile(r"^([A-Za-z0-9_.]+)\s*\{\s*$")
 _SET_STACK_RE = re.compile(r"^set\s+([A-Za-z0-9_]+)\s+\[stack\s+0\]")
 _PUSH_RE = re.compile(r"^push\s+(.+)$")
 
@@ -57,7 +57,11 @@ DEFAULT_INPUTS: Dict[str, Tuple[int, int]] = {
 
 def _parse_inputs_spec(inputs_spec: Optional[str], klass: str) -> Tuple[int, int]:
     if inputs_spec is None:
-        return DEFAULT_INPUTS.get(klass, (1, 0))
+        # If 'inputs' is omitted, Nuke treats it as only the main input connected.
+        # Root is always 0.
+        if klass == "Root":
+            return 0, 0
+        return 1, 0
     spec = inputs_spec.strip()
     if "+" in spec:
         parts = spec.split("+", 1)
@@ -224,16 +228,10 @@ def parse_nk(path: str) -> NkGraph:
 
         # Build edges based on stack and inputs
         mandatory, mask = _parse_inputs_spec(inputs_spec, klass)
-        if mask and not explicit_push:
-            mask = 0
         total_inputs = mandatory + mask
-        if len(stack) >= total_inputs:
-            consume = total_inputs
-        else:
-            consume = min(len(stack), mandatory)
         inputs: List[Optional[str]] = []
-        for _ in range(consume):
-            inputs.append(stack.pop())
+        for _ in range(total_inputs):
+            inputs.append(stack.pop() if stack else None)
         inputs.reverse()
 
         for idx, src in enumerate(inputs):

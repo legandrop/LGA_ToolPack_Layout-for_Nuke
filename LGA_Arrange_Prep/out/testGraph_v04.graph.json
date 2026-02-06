@@ -81,7 +81,7 @@
       "align": false
     },
     {
-      "src": "Shuffle2",
+      "src": "Blur11",
       "dst": "Merge11",
       "kind": "B",
       "align": false
@@ -93,13 +93,13 @@
       "align": true
     },
     {
-      "src": "Blur11",
+      "src": "Shuffle2",
       "dst": "Merge11",
       "kind": "mask",
       "align": true
     },
     {
-      "src": "Merge11",
+      "src": "Dot4",
       "dst": "Merge10",
       "kind": "B",
       "align": false
@@ -111,7 +111,7 @@
       "align": true
     },
     {
-      "src": "Dot4",
+      "src": "Merge11",
       "dst": "Merge10",
       "kind": "mask",
       "align": true
@@ -123,6 +123,6 @@
     "scale": 0.05,
     "tolerance_x": 2.5,
     "centered_positions": true,
-    "used_stack": false
+    "used_stack": true
   }
 }

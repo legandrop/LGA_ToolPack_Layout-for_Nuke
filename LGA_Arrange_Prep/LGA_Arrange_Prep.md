@@ -35,3 +35,17 @@ Nuke entiende las conexiones desde el `.nk` y nosotros necesitamos **replicar es
 - **Dónde están las conexiones reales** en `.nk` y cómo extraerlas con precisión.
 - Evitar inferencias por posición si el `.nk` no lo indica.
 - Lograr que el JSON refleje exactamente los inputs (A/B/mask/flow) como los interpreta Nuke.
+
+## Estado actual (2026-02-06)
+La conversión `.nk → JSON` ahora replica la **lógica de Nuke** para conexiones:
+- **Las conexiones se derivan solo de la stack** (`set`, `push`, `pop`) y el orden de evaluación del `.nk`.
+- Si un nodo **no tiene `inputs` declarado**, Nuke asume **1 input** (principal).  
+  Excepción: `Root` siempre es 0.
+- Para `Merge/Merge2`: **input 0 = B**, **input 1 = A**, **input 2+ = mask**.
+- Clases con puntos (ej. `OFXuk.co...`) se parsean correctamente y no rompen la stack.
+- No se usa inferencia espacial para crear conexiones (sin heurísticas).
+
+## Resultado verificado (testGraph_v03_Before)
+Se validó que el JSON coincide con Nuke:
+- `Merge11` recibe **3 inputs**: `Transform_MatchMove2 (B)`, `Clamp5 (A)`, `Shuffle2 (mask)`.
+- `Merge10` recibe **3 inputs**: `Dot4 (B)`, `Clamp3 (A)`, `Merge11 (mask)`.

@@ -199,6 +199,127 @@ def _normalize_merge_inputs_by_position(graph: Graph, nk_nodes: Dict[str, NkNode
     graph.edges = new_edges
 
 
+def _adjust_merge_inputs_with_spatial_guard(
+    graph: Graph,
+    nk_nodes: Dict[str, NkNode],
+    allow_new_mask: bool,
+) -> None:
+    """
+    For Merge nodes, keep existing stack-derived inputs only if they are spatially plausible.
+    Otherwise, replace them using spatial inference (A/B/mask).
+    """
+    cols = graph.columns()
+    if not cols:
+        return
+    col_x = {col: sum(n.x for n in nodes) / len(nodes) for col, nodes in cols.items()}
+    col_order = {col: idx for idx, (col, _x) in enumerate(sorted(col_x.items(), key=lambda kv: kv[1]))}
+
+    incoming: Dict[str, List[Edge]] = {}
+    for e in graph.edges:
+        incoming.setdefault(e.dst, []).append(e)
+
+    merge_names = {n.name for n in graph.nodes.values() if n.klass.startswith("Merge")}
+    if not merge_names:
+        return
+
+    def resolve_dot_source(name: str) -> str:
+        cur = name
+        visited = set()
+        while cur in graph.nodes and graph.nodes[cur].klass.startswith("Dot"):
+            if cur in visited:
+                break
+            visited.add(cur)
+            inc = incoming.get(cur, [])
+            candidates = [e.src for e in inc if e.kind != "mask"]
+            if len(candidates) != 1:
+                break
+            cur = candidates[0]
+        return cur
+
+    def is_close(src_node: Node, dst_node: Node, thresh: float) -> bool:
+        return abs(src_node.y - dst_node.y) <= thresh
+
+    new_edges: List[Edge] = [e for e in graph.edges if e.dst not in merge_names]
+
+    for node in graph.nodes.values():
+        if not node.klass.startswith("Merge"):
+            continue
+        nk_node = nk_nodes.get(node.name)
+        if not nk_node:
+            continue
+        mandatory, mask = _parse_inputs_spec(nk_node.inputs_spec, nk_node.klass)
+        inc = incoming.get(node.name, [])
+        existing = {e.kind: e for e in inc}
+
+        # Candidate pools
+        same_col = [n for n in graph.nodes.values() if n.column == node.column and n.name != node.name]
+        left_candidates = [n for n in graph.nodes.values() if col_order.get(n.column, 0) < col_order.get(node.column, 0)]
+        right_candidates = [n for n in graph.nodes.values() if col_order.get(n.column, 0) > col_order.get(node.column, 0)]
+
+        same_above = [n for n in same_col if n.y >= node.y]
+        left_above = [n for n in left_candidates if n.y >= node.y]
+
+        # Spatial candidates
+        a_thresh = max(1.5, node.height * 3.0)
+        b_thresh = max(1.5, node.height * 3.0)
+        m_thresh = max(0.6, node.height * 1.5)
+
+        a_candidates = left_above if left_above else left_candidates
+        a = None
+        if a_candidates:
+            cand = min(a_candidates, key=lambda n: abs(n.y - node.y))
+            if is_close(cand, node, a_thresh):
+                a = cand
+
+        b_candidates = same_above if same_above else same_col
+        b = None
+        if b_candidates:
+            non_merge = [n for n in b_candidates if not n.klass.startswith("Merge")]
+            pool = non_merge if non_merge else b_candidates
+            cand = min(pool, key=lambda n: abs(n.y - node.y))
+            b = cand
+
+        m = None
+        if mask > 0 and right_candidates and (allow_new_mask or "mask" in existing):
+            def mask_score(n: Node) -> float:
+                y_dist = abs(n.y - node.y)
+                x_dist = abs(n.x - node.x)
+                dot_bonus = 0.0 if n.klass.startswith("Dot") else 0.2
+                return y_dist + 0.5 * x_dist + dot_bonus
+
+            cand = min(right_candidates, key=mask_score)
+            if cand and is_close(cand, node, m_thresh):
+                m = cand
+                if m.klass.startswith("Dot") and abs(m.y - node.y) > m_thresh:
+                    non_dots = [n for n in right_candidates if not n.klass.startswith("Dot")]
+                    if non_dots:
+                        m = min(non_dots, key=mask_score)
+                    else:
+                        src_name = resolve_dot_source(m.name)
+                        if src_name in graph.nodes:
+                            m = graph.nodes[src_name]
+
+        # Keep existing if close, else use spatial candidate
+        def choose(kind: str, candidate: Node, thresh: float) -> Node:
+            e = existing.get(kind)
+            if e and e.src in graph.nodes and is_close(graph.nodes[e.src], node, thresh):
+                return graph.nodes[e.src]
+            return candidate
+
+        b_sel = choose("B", b, b_thresh)
+        a_sel = choose("A", a, a_thresh)
+        m_sel = choose("mask", m, m_thresh) if mask > 0 else None
+
+        if b_sel:
+            new_edges.append(Edge(b_sel.name, node.name, kind="B", align=False))
+        if a_sel:
+            new_edges.append(Edge(a_sel.name, node.name, kind="A", align=True))
+        if m_sel:
+            new_edges.append(Edge(m_sel.name, node.name, kind="mask", align=True))
+
+    graph.edges = new_edges
+
+
 def nk_to_graph(
     nk_path: str,
     scale: float = 0.05,
@@ -229,100 +350,11 @@ def nk_to_graph(
         graph.add_node(node)
         name_to_inputs[nk_node.name] = nk_node.inputs_spec
 
-    if nk_graph.explicit_stack_ops:
-        for edge in nk_graph.edges:
-            graph.add_edge(Edge(edge.src, edge.dst, kind=edge.kind, align=edge.align))
+    # Nuke logic: edges come from the stack evaluation of the .nk file.
+    for edge in nk_graph.edges:
+        graph.add_edge(Edge(edge.src, edge.dst, kind=edge.kind, align=edge.align))
 
     _group_columns(list(graph.nodes.values()), tolerance_x=tolerance_x)
-
-    # Normalize/infer merge inputs only if explicitly requested
-    if infer_merge_inputs:
-        _normalize_merge_inputs_by_position(graph, nk_nodes_by_name)
-
-    if not nk_graph.explicit_stack_ops:
-        # Rebuild edges from spatial + inputs heuristics
-        graph.edges = []
-
-        inputs_map = {n.name: n.inputs_spec for n in nk_graph.nodes}
-
-        # Flow edges per column (respect inputs==0 to break chains)
-        for col, nodes in graph.columns().items():
-            ordered = sorted(nodes, key=lambda n: n.y, reverse=True)
-            prev = None
-            for node in ordered:
-                inputs_spec = inputs_map.get(node.name)
-                mandatory, _mask = _parse_inputs_spec(inputs_spec, node.klass)
-                if mandatory == 0:
-                    prev = node
-                    continue
-                if prev is not None:
-                    graph.add_edge(Edge(prev.name, node.name, kind="flow", align=False))
-                prev = node
-
-        # Helper: column subgroups (split where inputs==0)
-        def column_subgroups(nodes):
-            groups = []
-            current = []
-            for n in nodes:
-                inputs_spec = inputs_map.get(n.name)
-                mandatory, _mask = _parse_inputs_spec(inputs_spec, n.klass)
-                if mandatory == 0:
-                    if current:
-                        groups.append(current)
-                    current = [n]
-                else:
-                    current.append(n)
-            if current:
-                groups.append(current)
-            return groups
-
-        # Precompute columns by X
-        cols_sorted = sorted(graph.columns().items(), key=lambda kv: kv[1][0].x)
-        col_names = [c for c, _ in cols_sorted]
-        col_x = {c: sum(n.x for n in graph.columns()[c]) / len(graph.columns()[c]) for c in col_names}
-
-        # Mask inputs (non-stack heuristics for non-merge nodes too)
-        for nk_node in nk_graph.nodes:
-            inputs_spec = nk_node.inputs_spec
-            mandatory, mask = _parse_inputs_spec(inputs_spec, nk_node.klass)
-            if mask <= 0:
-                continue
-            # If this node is already used as a mask source, skip adding a mask input
-            if any(e.kind == "mask" and e.src == nk_node.name for e in graph.edges):
-                continue
-            # Check existing mask edges
-            has_mask = any(e.dst == nk_node.name and e.kind == "mask" for e in graph.edges)
-            if has_mask:
-                continue
-            target = graph.nodes.get(nk_node.name)
-            if not target:
-                continue
-            def has_any_edge(a: str, b: str) -> bool:
-                for e in graph.edges:
-                    if (e.src == a and e.dst == b) or (e.src == b and e.dst == a):
-                        return True
-                return False
-            best = None
-            best_score = None
-            for candidate in graph.nodes.values():
-                if candidate.name == target.name:
-                    continue
-                if has_any_edge(candidate.name, target.name):
-                    continue
-                if candidate.column == target.column:
-                    continue
-                y_dist = abs(candidate.y - target.y)
-                x_dist = abs(candidate.x - target.x)
-                penalty = 0.0 if candidate.klass.startswith("Dot") else 1.0
-                score = y_dist + 0.1 * x_dist + penalty
-                if best_score is None or score < best_score:
-                    best = candidate
-                    best_score = score
-            if best is not None:
-                graph.add_edge(Edge(best.name, target.name, kind="mask", align=True))
-
-        # Merge inputs from spatial rules
-        _normalize_merge_inputs_by_position(graph, nk_nodes_by_name)
 
     if return_meta:
         meta = {
@@ -331,7 +363,7 @@ def nk_to_graph(
             "scale": scale,
             "tolerance_x": tolerance_x,
             "centered_positions": True,
-            "used_stack": nk_graph.explicit_stack_ops,
+            "used_stack": True,
         }
         return graph, meta
     return graph
