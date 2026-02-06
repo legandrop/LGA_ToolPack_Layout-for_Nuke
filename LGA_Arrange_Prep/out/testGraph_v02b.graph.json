@@ -268,7 +268,7 @@
     }
   ],
   "meta": {
-    "source_nk": "testGraph_v02b.nk",
+    "source_nk": "./testGraph_v02b.nk",
     "root_name": "/Users/leg4/.nuke/LGA_ToolPack-Layout/testGraph_v02b.nk",
     "scale": 0.05,
     "tolerance_x": 2.5,

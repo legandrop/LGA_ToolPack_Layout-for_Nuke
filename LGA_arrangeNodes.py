@@ -26,6 +26,8 @@ import time
 # -------------------------
 TOLERANCE_X = 55  # pixels for column grouping
 MIN_GAP = 10      # pixels minimum gap between node boxes
+# Compresión mínima permitida cuando no hay espacio (en px).
+MIN_GAP_FLOOR = 3
 # Fixed gap between the bottom edge of the upper branch and
 # the top edge of the lower branch when resolving overlaps.
 OVERLAP_NODE_GAP = 30
@@ -374,7 +376,11 @@ def _baseline_distribute_subgroup(subgroup: List[NodeModel], min_gap: float) -> 
     total_heights = sum(n.height for n in subgroup)
     gap = (available - total_heights) / (len(subgroup) - 1)
     if gap < min_gap:
-        gap = min_gap
+        gap_floor = min(min_gap, MIN_GAP_FLOOR)
+        if gap < gap_floor:
+            gap = max(0.0, gap)
+        else:
+            gap = gap_floor
 
     current_top = top
     for node in subgroup:
@@ -599,9 +605,14 @@ def _distribute_column_with_fixed(nodes: List[NodeModel], fixed: Set[str], min_g
         segment = nodes[start : end + 1]
         total_heights = sum(n.height for n in segment)
         available = top - bottom
-        gap = (available - total_heights) / (count - 1)
-        if gap < min_gap:
-            gap = min_gap
+        desired = (available - total_heights) / (count - 1)
+        gap_floor = min(min_gap, MIN_GAP_FLOOR)
+        if desired >= min_gap:
+            gap = desired
+        elif desired >= gap_floor:
+            gap = gap_floor
+        else:
+            gap = max(0.0, desired)
 
         current_top = top
         for node in segment:
@@ -760,8 +771,14 @@ def _redistribute_principal_with_fixed_bounds(
                 top = anchor.y + anchor.height / 2
                 bottom = principal[lower_idx].y - principal[lower_idx].height / 2
                 segment = principal[idx : lower_idx + 1]
-                required = sum(n.height for n in segment) + min_gap * (len(segment) - 1)
                 available = top - bottom
+                gap_floor = min(min_gap, MIN_GAP_FLOOR)
+                total_heights = sum(n.height for n in segment)
+                required_floor = total_heights + gap_floor * (len(segment) - 1)
+                if available < required_floor:
+                    required = total_heights
+                else:
+                    required = required_floor
                 slack = available - required
                 if slack < 0:
                     slack = 0.0
@@ -780,8 +797,14 @@ def _redistribute_principal_with_fixed_bounds(
                 top = principal[upper_idx].y + principal[upper_idx].height / 2
                 bottom = anchor.y - anchor.height / 2
                 segment = principal[upper_idx : idx + 1]
-                required = sum(n.height for n in segment) + min_gap * (len(segment) - 1)
                 available = top - bottom
+                gap_floor = min(min_gap, MIN_GAP_FLOOR)
+                total_heights = sum(n.height for n in segment)
+                required_floor = total_heights + gap_floor * (len(segment) - 1)
+                if available < required_floor:
+                    required = total_heights
+                else:
+                    required = required_floor
                 slack = available - required
                 if slack < 0:
                     slack = 0.0
@@ -809,8 +832,14 @@ def _redistribute_principal_with_fixed_bounds(
         top = principal[start].y + principal[start].height / 2
         bottom = principal[end].y - principal[end].height / 2
         segment = principal[start : end + 1]
-        required = sum(n.height for n in segment) + min_gap * (len(segment) - 1)
         available = top - bottom
+        gap_floor = min(min_gap, MIN_GAP_FLOOR)
+        total_heights = sum(n.height for n in segment)
+        required_floor = total_heights + gap_floor * (len(segment) - 1)
+        if available < required_floor:
+            required = total_heights
+        else:
+            required = required_floor
         if required - available > 0.001:
             debug_print(
                 f"WARN tramo {principal[start].name}..{principal[end].name} sin espacio: "
@@ -860,15 +889,71 @@ def _anchor_shift_slack(
         bottom = principal[lower_idx].y - principal[lower_idx].height / 2
         segment = principal[idx : lower_idx + 1]
 
-    required = sum(n.height for n in segment) + min_gap * (len(segment) - 1)
     available = top - bottom
+    gap_floor = min(min_gap, MIN_GAP_FLOOR)
+    total_heights = sum(n.height for n in segment)
+    required_floor = total_heights + gap_floor * (len(segment) - 1)
+    if available < required_floor:
+        required = total_heights
+    else:
+        required = required_floor
     slack = available - required
     if slack < 0:
         slack = 0.0
     return slack
 
 
-def layout(graph: Graph, min_gap: float = MIN_GAP, max_iters: int = 4) -> None:
+def _anchor_alignment_shifts(
+    graph: Graph,
+    subgroup_lists: Dict[str, List[List[NodeModel]]],
+    subgroup_anchor: Dict[str, Dict[int, NodeModel]],
+) -> Dict[str, float]:
+    """
+    If a subgroup moved (or was distributed) and its anchor stayed behind,
+    return the exact shifts needed to align the anchor to the connected node.
+    """
+    shifts: Dict[str, float] = {}
+    for col, subgroups in subgroup_lists.items():
+        anchors = subgroup_anchor.get(col, {})
+        if not anchors:
+            continue
+        for idx, subgroup in enumerate(subgroups):
+            anchor = anchors.get(idx)
+            if not anchor:
+                continue
+            target_y = None
+            target_node = None
+            best_dist = None
+            for node in subgroup:
+                for edge in graph.edges:
+                    if (
+                        (edge.src == node.name and edge.dst == anchor.name)
+                        or (edge.dst == node.name and edge.src == anchor.name)
+                    ):
+                        dist = abs(anchor.y - node.y)
+                        if best_dist is None or dist < best_dist:
+                            best_dist = dist
+                            target_y = node.y
+                            target_node = node.name
+            if target_y is None:
+                debug_print(
+                    f"Alineacion ancla: {anchor.name} sin nodo conectado en subgrupo {col}[{idx}] (skip)"
+                )
+                continue
+            delta = anchor.y - target_y
+            if abs(delta) <= 1e-6:
+                debug_print(
+                    f"Alineacion ancla: {anchor.name} ya alineada con {target_node} (delta=0)"
+                )
+                continue
+            debug_print(
+                f"Alineacion ancla: {anchor.name} -> {target_node} delta={delta:.2f}"
+            )
+            shifts[anchor.name] = delta
+    return shifts
+
+
+def layout(graph: Graph, min_gap: float = MIN_GAP, max_iters: int = 5) -> None:
     conflicts_all: List[Tuple[str, Tuple[int, int, float]]] = []
     anchor_conflicts_all: List[Tuple[str, float]] = []
 
@@ -1066,8 +1151,48 @@ def layout(graph: Graph, min_gap: float = MIN_GAP, max_iters: int = 4) -> None:
                 if not upper_anchor and not lower_anchor:
                     continue
 
+                # Cap delta by available slack on anchors (allows smaller gap if no space).
+                delta_eff = delta
+                if principal and (upper_anchor or lower_anchor):
+                    if delta > 0:
+                        cap = 0.0
+                        if upper_anchor:
+                            idx = index_by_name.get(upper_anchor.name)
+                            if idx is not None:
+                                cap += _anchor_shift_slack(
+                                    principal, fixed_indices, idx, "up", min_gap
+                                )
+                        if lower_anchor:
+                            idx = index_by_name.get(lower_anchor.name)
+                            if idx is not None:
+                                cap += _anchor_shift_slack(
+                                    principal, fixed_indices, idx, "down", min_gap
+                                )
+                        if cap <= 0:
+                            continue
+                        if cap < delta_eff:
+                            delta_eff = cap
+                    elif delta < 0:
+                        cap = 0.0
+                        if upper_anchor:
+                            idx = index_by_name.get(upper_anchor.name)
+                            if idx is not None:
+                                cap += _anchor_shift_slack(
+                                    principal, fixed_indices, idx, "down", min_gap
+                                )
+                        if lower_anchor:
+                            idx = index_by_name.get(lower_anchor.name)
+                            if idx is not None:
+                                cap += _anchor_shift_slack(
+                                    principal, fixed_indices, idx, "up", min_gap
+                                )
+                        if cap <= 0:
+                            continue
+                        if cap < -delta_eff:
+                            delta_eff = -cap
+
                 if delta > 0:
-                    remaining = delta
+                    remaining = delta_eff
                     if upper_anchor:
                         idx = index_by_name.get(upper_anchor.name)
                         if idx is not None:
@@ -1091,7 +1216,7 @@ def layout(graph: Graph, min_gap: float = MIN_GAP, max_iters: int = 4) -> None:
                                 fixed_indices.add(idx)
                                 remaining -= move_down
                 elif delta < 0:
-                    remaining = -delta
+                    remaining = -delta_eff
                     if upper_anchor:
                         idx = index_by_name.get(upper_anchor.name)
                         if idx is not None:
@@ -1114,6 +1239,15 @@ def layout(graph: Graph, min_gap: float = MIN_GAP, max_iters: int = 4) -> None:
                                 _apply_shift(lower_anchor.name, -move_up)
                                 fixed_indices.add(idx)
                                 remaining -= move_up
+        # Si un subgrupo se movio, forzamos al ancla a alinearse con su nodo conectado.
+        anchor_align_shifts = _anchor_alignment_shifts(
+            graph,
+            subgroup_lists,
+            subgroup_anchor,
+        )
+        for name, delta in anchor_align_shifts.items():
+            if name not in anchor_shifts:
+                anchor_shifts[name] = delta
         if anchor_shifts:
             adjusted |= _redistribute_principal_with_fixed_bounds(
                 graph,
