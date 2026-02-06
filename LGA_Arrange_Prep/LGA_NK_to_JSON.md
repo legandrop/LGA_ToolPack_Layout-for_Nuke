@@ -1,4 +1,4 @@
-# LGA Arrange Prep — Estado y Archivos
+# LGA NK to JSON — Estado y Archivos
 
 ## Objetivo
 Construir una **traducción correcta de `.nk` a JSON** que represente las conexiones reales entre nodos, **igual que Nuke**.  
@@ -7,9 +7,8 @@ La meta es que el JSON sea una fuente confiable para:
 - validar reglas de alineación,
 - y luego traducir la lógica al script final de Nuke.
 
-## Problema actual
-La conversión `.nk → JSON` **no está interpretando bien las conexiones**.  
-Nuke entiende las conexiones desde el `.nk` y nosotros necesitamos **replicar esa lectura**:
+## Lógica actual
+La conversión `.nk → JSON` **replica la lectura de Nuke**:
 - detectar qué nodo alimenta cada input (A/B/mask/flow),
 - y no inferir por posiciones si no hay información real.
 
@@ -31,13 +30,8 @@ Nuke entiende las conexiones desde el `.nk` y nosotros necesitamos **replicar es
 - `/Users/leg4/.nuke/LGA_ToolPack-Layout/LGA_Arrange_Prep/out/testGraph_v04.graph.json`
 - `/Users/leg4/.nuke/LGA_ToolPack-Layout/LGA_Arrange_Prep/out/testGraph_v04.graph.dot`
 
-## Qué falta resolver
-- **Dónde están las conexiones reales** en `.nk` y cómo extraerlas con precisión.
-- Evitar inferencias por posición si el `.nk` no lo indica.
-- Lograr que el JSON refleje exactamente los inputs (A/B/mask/flow) como los interpreta Nuke.
-
 ## Estado actual (2026-02-06)
-La conversión `.nk → JSON` ahora replica la **lógica de Nuke** para conexiones:
+La conversión `.nk → JSON` replica la **lógica de Nuke** para conexiones:
 - **Las conexiones se derivan solo de la stack** (`set`, `push`, `pop`) y el orden de evaluación del `.nk`.
 - Si un nodo **no tiene `inputs` declarado**, Nuke asume **1 input** (principal).  
   Excepción: `Root` siempre es 0.

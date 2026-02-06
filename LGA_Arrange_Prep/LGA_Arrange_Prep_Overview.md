@@ -1,6 +1,6 @@
-# LGA Arrange — Prep Tooling Log
+# LGA Arrange — Prep Tooling Overview
 
-Last updated: 2026-02-04
+Last updated: 2026-02-06
 
 ## Purpose
 All **prep / translation / testing utilities** live here.  
@@ -20,8 +20,8 @@ Key files:
   Runs examples and prints BEFORE/AFTER DOT.
 - `LGA_Arrange_Prep/nk_parser.py`  
   Minimal `.nk` parser (nodes, positions, stack‑based connections).
-- `LGA_Arrange_Prep/nk_to_graph.py`  
-  `.nk` → graph JSON.
+- `LGA_Arrange_Prep/LGA_nk_to_json.py`  
+  `.nk` → graph JSON (Nuke stack logic).
 - `LGA_Arrange_Prep/graph_io.py`  
   Graph JSON load/save.
 - `LGA_Arrange_Prep/nk_to_dot.py`  
@@ -34,6 +34,10 @@ Key files:
   Apply layout to a graph JSON and export DOT.
 - `LGA_Arrange_Prep/out/`  
   Output folder for generated files.
+
+## Docs
+- `LGA_Arrange_Prep/LGA_NK_to_JSON.md`  
+  Estado y reglas específicas de la conversión `.nk → JSON`.
 
 ## Graph JSON Format
 Output is a single JSON file:
