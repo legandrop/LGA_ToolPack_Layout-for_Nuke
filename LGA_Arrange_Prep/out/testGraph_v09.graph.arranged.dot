@@ -1,0 +1,26 @@
+digraph testGraph_v09_graph_after {
+  graph [layout=neato, splines=ortho, overlap=false];
+  node [fontname="Helvetica", fontsize=10, fixedsize=true, width=1.6, height=0.5];
+  Transform2 [shape=box, style="rounded,filled", fillcolor="#a77bb7", pos="13.7,15.950000000000003!", height="0.5", width="1.6" ];
+  Transform1 [shape=box, style="rounded,filled", fillcolor="#a77bb7", pos="13.7,12.175000000000002!", height="0.5", width="1.6" ];
+  VectorDistort1 [shape=box, style="rounded,filled", fillcolor="#a77bb7", pos="13.7,8.400000000000002!", height="0.5", width="1.6" ];
+  Dilate1 [shape=box, style="rounded,filled", fillcolor="#dddddd", pos="4.85,8.400000000000002!", height="0.5", width="1.6" ];
+  Blur2 [shape=box, style="rounded,filled", fillcolor="#f4a460", pos="4.85,4.475000000000002!", height="0.6", width="1.6" ];
+  Premult1 [shape=box, style="rounded,filled", fillcolor="#dddddd", pos="4.85,0.550000000000002!", height="0.5", width="1.6" ];
+  Dot11 [shape=circle, style=filled, fillcolor="#bdbdbd", label="", pos="4.85,-3.174999999999999!", height="0.2", width="0.2" ];
+  Saturation1 [shape=box, style="rounded,filled", fillcolor="#cbd6ee", pos="13.7,4.625000000000002!", height="0.5", width="1.6" ];
+  Blur1 [shape=box, style="rounded,filled", fillcolor="#f4a460", pos="13.7,0.8000000000000014!", height="0.6", width="1.6" ];
+  Merge8 [shape=box, style="rounded,filled", fillcolor="#4f5fbf", pos="13.7,-3.174999999999999!", height="0.8", width="1.6" ];
+  Copy1 [shape=box, style="rounded,filled", fillcolor="#d95da8", pos="13.7,-7.1499999999999995!", height="0.6", width="1.6" ];
+  Transform2 -> Transform1;
+  Transform1 -> VectorDistort1;
+  VectorDistort1 -> Dilate1;
+  Dilate1 -> Blur2;
+  Blur2 -> Premult1;
+  Premult1 -> Dot11;
+  VectorDistort1 -> Saturation1;
+  Saturation1 -> Blur1;
+  Dot11 -> Merge8;
+  Blur1 -> Merge8;
+  Merge8 -> Copy1;
+}

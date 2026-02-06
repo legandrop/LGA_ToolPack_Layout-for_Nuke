@@ -510,6 +510,62 @@ def _align_subgroup_by_subsubgroups(
     if not candidates:
         return False, set(), []
 
+    anchors_by_node: List[Tuple[NodeModel, NodeModel]] = [(c[3], c[4]) for c in candidates]
+    unique_anchors = {(n.name, a.name) for n, a in anchors_by_node}
+    if len(unique_anchors) > 1:
+        index_by_name = {n.name: i for i, n in enumerate(subgroup)}
+        anchors_sorted = sorted(anchors_by_node, key=lambda t: index_by_name.get(t[0].name, t[0].order))
+
+        anchor_deltas = {node.name: (anchor.y - node.y) for node, anchor in anchors_sorted}
+        for node, anchor in anchors_sorted:
+            node.y = anchor.y
+
+        first_node, first_anchor = anchors_sorted[0]
+        last_node, last_anchor = anchors_sorted[-1]
+        first_idx = index_by_name[first_node.name]
+        last_idx = index_by_name[last_node.name]
+
+        delta_first = anchor_deltas.get(first_node.name, 0.0)
+        delta_last = anchor_deltas.get(last_node.name, 0.0)
+        if first_idx > 0:
+            for node in subgroup[:first_idx]:
+                node.y += delta_first
+        if last_idx < len(subgroup) - 1:
+            for node in subgroup[last_idx + 1 :]:
+                node.y += delta_last
+
+        for (node_a, anchor_a), (node_b, anchor_b) in zip(anchors_sorted, anchors_sorted[1:]):
+            idx_a = index_by_name[node_a.name]
+            idx_b = index_by_name[node_b.name]
+            if idx_a == idx_b:
+                continue
+            if idx_a > idx_b:
+                idx_a, idx_b = idx_b, idx_a
+                node_a, node_b = node_b, node_a
+                anchor_a, anchor_b = anchor_b, anchor_a
+
+            segment = subgroup[idx_a : idx_b + 1]
+            if len(segment) <= 2:
+                continue
+
+            top = node_a.y + node_a.height / 2
+            bottom = node_b.y - node_b.height / 2
+            total_heights = sum(n.height for n in segment)
+            available = top - bottom
+            gap = (available - total_heights) / (len(segment) - 1)
+            if gap < 0:
+                gap = 0.0
+
+            current_top = top
+            for i, node in enumerate(segment):
+                if i == 0 or i == len(segment) - 1:
+                    current_top -= node.height + gap
+                    continue
+                node.y = current_top - node.height / 2
+                current_top -= node.height + gap
+
+        return True, {anchor.name for _node, anchor in anchors_sorted}, []
+
     candidates.sort(key=lambda t: (t[0], t[1], t[2]))
     _dist, _order, _delta_abs, aligned_node, anchor = candidates[0]
     delta = anchor.y - aligned_node.y

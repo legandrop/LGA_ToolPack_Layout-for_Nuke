@@ -1,46 +1,53 @@
-# LGA Arrange — Prep Tooling Overview
+# LGA Arrange — Overview de Prep
 
-Last updated: 2026-02-06
+Última actualización: 2026-02-06
 
-## Purpose
-All **prep / translation / testing utilities** live here.  
-This file documents how to generate graph files from `.nk`, export Graphviz, and validate round‑trips.
+## Propósito
+Aquí viven todas las utilidades de **prep / traducción / testing**.  
+Este archivo documenta cómo generar archivos de grafo desde `.nk`, exportar Graphviz y validar round‑trips.
 
-## Folder Layout
-All prep scripts are under `LGA_Arrange_Prep/`.
+## Flujo obligatorio (regla de trabajo)
+Para cualquier regla nueva o cambio de lógica:
+1. Convertir `.nk → JSON`.
+2. Ejecutar **arrange en JSON** y validar con el **check de JSON**.
+3. Generar `.dot` y validar visualmente.
+4. Recién ahí portar la lógica a `LGA_arrangeNodes.py` (Nuke).
 
-Key files:
+## Estructura de carpeta
+Todos los scripts de prep están en `LGA_Arrange_Prep/`.
+
+Archivos clave:
 - `LGA_Arrange_Prep/layout_core.py`  
-  Pure‑Python layout logic (no Nuke). Used for graph tests.
+  Lógica de layout pura en Python (sin Nuke). Usada para tests.
 - `LGA_Arrange_Prep/graphviz_export.py`  
-  Graphviz DOT export.
+  Export de Graphviz DOT.
 - `LGA_Arrange_Prep/graph_examples.py`  
-  Hand‑built test graphs.
+  Grafos de prueba hechos a mano.
 - `LGA_Arrange_Prep/layout_cli.py`  
-  Runs examples and prints BEFORE/AFTER DOT.
+  Corre ejemplos y muestra BEFORE/AFTER en DOT.
 - `LGA_Arrange_Prep/nk_parser.py`  
-  Minimal `.nk` parser (nodes, positions, stack‑based connections).
+  Parser mínimo de `.nk` (nodos, posiciones, conexiones por stack).
 - `LGA_Arrange_Prep/LGA_nk_to_json.py`  
-  `.nk` → graph JSON (Nuke stack logic).
+  `.nk` → JSON (lógica de stack de Nuke).
 - `LGA_Arrange_Prep/graph_io.py`  
-  Graph JSON load/save.
+  Load/Save de JSON de grafo.
 - `LGA_Arrange_Prep/nk_to_dot.py`  
   `.nk` → Graphviz DOT.
 - `LGA_Arrange_Prep/graph_to_dot.py`  
-  graph JSON → Graphviz DOT.
+  JSON → Graphviz DOT.
 - `LGA_Arrange_Prep/prep_cli.py`  
-  End‑to‑end pipeline: `.nk` → graph JSON + DOTs.
+  Pipeline end‑to‑end: `.nk` → JSON + DOTs.
 - `LGA_Arrange_Prep/LGA_arrangeJSON.py`  
-  Apply layout to a graph JSON and export DOT.
+  Aplica layout a un JSON y exporta DOT.
 - `LGA_Arrange_Prep/out/`  
-  Output folder for generated files.
+  Carpeta de salida.
 
 ## Docs
 - `LGA_Arrange_Prep/LGA_NK_to_JSON.md`  
   Estado y reglas específicas de la conversión `.nk → JSON`.
 
-## Graph JSON Format
-Output is a single JSON file:
+## Formato JSON
+El output es un único JSON:
 ```json
 {
   "meta": { "source_nk": "...", "scale": 0.05, "tolerance_x": 2.5 },
@@ -61,60 +68,61 @@ Output is a single JSON file:
 }
 ```
 
-## Parsing Notes (NK → Graph)
-### Connections
-- The parser is **stack‑based** (Nuke script semantics).
-- Supports: `set var [stack 0]`, `push $var`, `push 0`, `pop`.
-- If the `.nk` has **no stack commands**, the parser infers a **linear chain**:
-  each node with inputs consumes the previous node on the stack.
-- `inputs 1+1` is treated as **mandatory 1 + optional mask 1**.  
-  If no extra stack item exists, mask is ignored.
-- If a node has a **mask input** but no explicit stack link exists, we infer
-  a mask connection to the **closest node by Y** in a **different column**
-  (preferring Dot nodes).
- - For files **without stack directives**, we switch to **spatial inference**:
-   - Flow edges are created top‑to‑bottom **within each column**, breaking at nodes with `inputs 0`.
-   - Merge **A** inputs are assigned by pairing merges (top‑to‑bottom) with the **bottom node of each left‑column subgroup** (top‑to‑bottom).
-   - Mask inputs are inferred only if the node is **not already used as a mask source**.
+## Notas de parsing (NK → Graph)
+### Conexiones
+- El parser es **stack‑based** (semántica de Nuke).
+- Soporta: `set var [stack 0]`, `push $var`, `push 0`, `pop`.
+- Si el `.nk` **no tiene comandos de stack**, se infiere una **cadena lineal**:
+  cada nodo con inputs consume el nodo anterior del stack.
+- `inputs 1+1` se trata como **1 obligatorio + 1 máscara opcional**.  
+  Si no hay item extra en el stack, se ignora la máscara.
+- Si un nodo tiene **mask input** pero no existe link explícito en el stack, se infiere
+  una máscara al **nodo más cercano por Y** en **otra columna** (priorizando Dot).
+- Para archivos **sin stack directives**, se habilita la inferencia espacial:
+  - Flow edges se crean top‑to‑bottom **dentro de cada columna**, cortando en nodos con `inputs 0`.
+  - Inputs **A** de Merge se asignan top‑to‑bottom con el **nodo inferior** de cada subgrupo izquierdo.
+  - Inputs de máscara se infieren solo si el nodo **no fue usado** como fuente de máscara.
 
-### Position / Scale
-- Nuke Y grows **downwards**.  
-  We **invert Y** (`y = -nk_y`) so Graphviz grows upwards.
-- Default scale = `0.05`.  
-  This makes Nuke X/Y values comparable to the test graphs.
-- Column grouping uses `tolerance_x = 2.5` (in **scaled units**).
+### Posición / Escala
+- En Nuke, Y crece **hacia abajo**.  
+  Se **invierte Y** (`y = -nk_y`) para que Graphviz crezca hacia arriba.
+- Escala por defecto = `0.05`.  
+  Esto hace que X/Y de Nuke sean comparables con los tests.
+- Agrupamiento de columnas usa `tolerance_x = 2.5` (en unidades escaladas).
 
-### Centering (critical)
-`.nk` stores **top‑left** positions (`xpos`, `ypos`).  
-We convert to **center positions** using approximate UI sizes:
-- box nodes: width `80px`, height `20px`
-- dot nodes: width/height `12px`
-- blur/roto/copy: height `24px`
-- merge: height `28px`
+### Centrado (crítico)
+`.nk` guarda posiciones **top‑left** (`xpos`, `ypos`).  
+Se convierten a **centro** usando tamaños UI aproximados:
+- box nodes: ancho `80px`, alto `20px`
+- dot nodes: ancho/alto `12px`
+- blur/roto/copy: alto `24px`
+- merge: alto `28px`
 
-This makes dots center‑align under their source columns (as in Nuke).
+Esto hace que los dots queden centrados bajo su columna, como en Nuke.
 
-### Height Estimation
-`.nk` does not store `screenHeight`, so we approximate:
-- Default node height = `0.5` (with **class overrides**):
+### Estimación de alturas
+`.nk` no guarda `screenHeight`, así que se aproxima:
+- Altura default = `0.5` (con **overrides** por clase):
   - `Blur`, `Roto`, `Copy` → `0.6`
   - `Merge`, `Merge2` → `0.8`
-- If label has multiple lines, +`0.15` per extra line.
+- Si el label tiene múltiples líneas, +`0.15` por línea extra.
 - Dot height:
   - Default `0.2`.
-  - If `size` knob exists, `height = max(0.1, 0.02 * size)`.
+  - Si existe knob `size`, `height = max(0.1, 0.02 * size)`.
 
-This is a **best‑effort approximation**; in Nuke, real height comes from `screenHeight()`.
+Esto es **best‑effort**; en Nuke la altura real viene de `screenHeight()`.
 
-## Usage
-Run end‑to‑end pipeline:
+## Uso
+Pipeline end‑to‑end:
 ```bash
 python3 LGA_Arrange_Prep/prep_cli.py testGraph_v01.nk
 ```
 
-Apply layout to a graph JSON:
+Aplicar layout a un JSON:
 ```bash
-python3 LGA_Arrange_Prep/apply_layout.py LGA_Arrange_Prep/out/testGraph_v02.graph.json LGA_Arrange_Prep/out/testGraph_v02.after_layout.dot
+python3 LGA_Arrange_Prep/LGA_arrangeJSON.py \
+  LGA_Arrange_Prep/out/testGraph_v02.graph.json \
+  LGA_Arrange_Prep/out/testGraph_v02.graph.arranged.dot
 ```
 
 Outputs:
@@ -122,33 +130,33 @@ Outputs:
 - `LGA_Arrange_Prep/out/testGraph_v01.from_nk.dot`
 - `LGA_Arrange_Prep/out/testGraph_v01.from_graph.dot`
 
-These DOT files can be pasted into:  
+Estos DOT se pueden pegar en:
 https://dreampuf.github.io/GraphvizOnline
 
-## Latest Run (2026-02-04)
-- Command: `python3 LGA_Arrange_Prep/prep_cli.py testGraph_v01.nk`
-- Outputs (generated):
+## Última corrida (2026-02-04)
+- Comando: `python3 LGA_Arrange_Prep/prep_cli.py testGraph_v01.nk`
+- Outputs:
   - `LGA_Arrange_Prep/out/testGraph_v01.graph.json`
   - `LGA_Arrange_Prep/out/testGraph_v01.from_nk.dot`
   - `LGA_Arrange_Prep/out/testGraph_v01.from_graph.dot`
-- Diff check: DOTs are identical (byte‑for‑byte).
-- Update: dot is now **centered under Roto** and **mask input is inferred**.
+- Diff: DOTs idénticos (byte‑for‑byte).
+- Update: dot ahora queda **centrado bajo Roto** y **mask input inferido**.
 
-## Latest Run (2026-02-04, v02)
-- Command: `python3 LGA_Arrange_Prep/prep_cli.py testGraph_v02.nk`
-- Outputs (generated):
+## Última corrida (2026-02-04, v02)
+- Comando: `python3 LGA_Arrange_Prep/prep_cli.py testGraph_v02.nk`
+- Outputs:
   - `LGA_Arrange_Prep/out/testGraph_v02.graph.json`
   - `LGA_Arrange_Prep/out/testGraph_v02.from_nk.dot`
   - `LGA_Arrange_Prep/out/testGraph_v02.from_graph.dot`
-- Diff check: DOTs are identical (byte‑for‑byte).
+- Diff: DOTs idénticos (byte‑for‑byte).
 
-## Layout Check (2026-02-04)
-- Update: `layout_core` now **infers principal column** when missing (needed for JSON layouts).
-- Command:  
-  `python3 LGA_Arrange_Prep/apply_layout.py LGA_Arrange_Prep/out/testGraph_v02.graph.json LGA_Arrange_Prep/out/testGraph_v02.after_layout.dot`
+## Chequeo de layout (2026-02-04)
+- Update: `layout_core` ahora **infiera columna principal** cuando falta.
+- Comando:
+  `python3 LGA_Arrange_Prep/LGA_arrangeJSON.py LGA_Arrange_Prep/out/testGraph_v02.graph.json LGA_Arrange_Prep/out/testGraph_v02.graph.arranged.dot`
 - Output:
-  - `LGA_Arrange_Prep/out/testGraph_v02.after_layout.dot`
+  - `LGA_Arrange_Prep/out/testGraph_v02.graph.arranged.dot`
 
-## Next
-- Validate that `.nk` connections are correctly recovered in more complex scripts.
-- If needed, enhance parsing of optional mask inputs and explicit input knobs.
+## Próximo
+- Validar que las conexiones `.nk` se recuperen bien en scripts más complejos.
+- Si hace falta, mejorar parsing de máscaras opcionales e inputs explícitos.

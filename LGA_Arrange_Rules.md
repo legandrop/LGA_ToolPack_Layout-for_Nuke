@@ -1,62 +1,51 @@
-# LGA Arrange Nodes — Rules Log
+# LGA Arrange Nodes — Reglas
 
-Last updated: 2026-02-06
+Última actualización: 2026-02-06
 
-## Goal
-Define the **arrange behavior** (rules and priorities) that will be implemented in Nuke.
+## Objetivo
+Definir el **comportamiento de arrange** (reglas y prioridades) que se implementa en Nuke.
 
-## Status (2026-02-06)
-- `LGA_arrangeNodes.py` rewritten as **v2.0**, using the validated graph layout core and a Nuke adapter.
-- Logging system (Docu_Logging_System) integrated into `LGA_arrangeNodes.py` with key decision logs.
+## Estado (2026-02-06)
+- `LGA_arrangeNodes.py` reescrito como **v2.0**, usando el core de layout validado y un adapter de Nuke.
+- Sistema de logging (Docu_Logging_System) integrado en `LGA_arrangeNodes.py` con logs de decisiones clave.
 
-## Rules / Discoveries (confirmed)
-1. **Vertical order is preserved** within each column (original order never changes).
-   - Nuke adapter **inverts Y** for layout so “higher” matches the core (larger Y).
-2. **Connection alignment rule:** if a node is connected across columns, it must share the same Y as the connected node.
-   - **Anchor direction:** by default **the input aligns to the node it feeds** (dst is anchor, src follows).  
-   - **Principal guard:** if one side is in the principal column, the **principal node is always the anchor**.
-3. **Priority for conflicting connections:** alignment is enforced **from principal outward**; farther columns must adapt and **do not restrict** inner columns.  
-   - Implementation detail: alignment runs in **multiple passes** so dependencies (outer ↔ inner) settle.
-   - **Fallback:** if a column has no anchor toward the principal, it aligns **to its source** even if that source is farther out.
-4. **Baseline distribution:** nodes are distributed vertically as equidistant as possible based on the current column/subgroup height.  
-   - **Principal column is redistributed every iteration** with **top/bottom fixed**.
-5. **Overlap resolution priority:**
-   - First, push the **secondary** column subgroup down to clear overlaps.
-   - **Principal top/bottom never move**; if needed, **redistribute within bounds** (no expansion).
-   - **New (v08 case):** enforce a **fixed edge gap** between adjacent subgroups in a column:
-     - **upper bottom edge** vs **lower top edge**  
-     - target: `gap = OVERLAP_EDGE_GAP`  
-     - `delta = OVERLAP_EDGE_GAP - (upper_bottom_edge - lower_top_edge)`  
-     - shift the **upper** subgroup by `delta` (can be up or down).  
-     If the upper subgroup is anchored to principal, apply the same `delta` to its anchor and
-     redistribute the principal within fixed bounds.
-6. **No overlaps are acceptable** (avoid at all cost).
-7. **X‑alignment per column:** align to the most common X (if repeated), otherwise average.
-8. **Node heights matter:** distribution is based on **bounding boxes** (center ± height/2).
-9. **Dot size matters:** dots can be smaller/larger depending on settings and must be respected.
-10. **Subgroup alignment (single anchor):** in non‑principal columns, a connected subgroup is shifted **as a whole** to match **one anchor** (closest to principal).  
-    - This **preserves equidistant spacing** inside the subgroup.
-    - **No segmentation** inside a subgroup; only **between subgroups**.
-11. **Top constraint:** unconnected nodes must not rise above the top of the principal column.
-12. **Principal inference (when missing):** choose the column with **max subgroup height** as principal.
-13. **Flow adjacency inside a column:** any non‑mask connection (including A/B) keeps nodes in the same subgroup.
-14. **Single-column selection:** the principal column is distributed like any other (no special skip).
-15. **Anchors in principal are not fixed:** external columns re‑align to the principal after its redistribution.
+## Reglas / Descubrimientos (confirmados)
+**Flujo de trabajo obligatorio:** toda regla nueva se valida **primero en JSON**.  
+Pasos: `.nk → JSON → arrange JSON → check JSON → DOT`.  
+Recién después se porta la lógica a `LGA_arrangeNodes.py` (Nuke).
 
-## Decisions from User (2026-02-06)
-1. Apply column discovery + principal selection (done in core via `auto_columns`).
-2. Subgroup behavior: **apply single‑anchor shift**. Clarified rule: the subgroup follows one anchor; internal spacing is preserved.
-3. Potential/next columns logic: **removed for arrange** (outer columns must not restrict inner).
-4. SubSubgroupOld handling: **apply**.
-5. Top constraint for unconnected nodes: **apply**.
-6. Connectivity‑order distribution: **pending** (needs decision).
-7. Recursive conflict propagation: **pending** (only partially handled so far).
-8. X alignment heuristic (most common X first): **apply**.
-9. Nuke‑specific filtering (Backdrop/Viewer): **apply in Nuke** implementation.
-10. Logging: **apply** (debugPy_arrangeNodes.log, key decisions only).
-11. Principal top/bottom fixed; redistribute within bounds: **apply**.
-12. Do not fix anchors in principal: **apply**.
+1. **Se preserva el orden vertical** dentro de cada columna (el orden original no cambia). En Nuke se **invierte Y** para layout (más alto = Y mayor).
+2. **Regla de alineación de conexiones:** si un nodo está conectado entre columnas, debe compartir la misma Y que su conectado. Dirección del ancla: por defecto el **input se alinea al nodo que alimenta** (dst es ancla, src sigue). Si uno está en la columna principal, **la principal siempre es el ancla**.
+3. **Prioridad para conexiones conflictivas:** la alineación se fuerza **desde la principal hacia afuera**. Las columnas más lejanas **se adaptan** y **no restringen** a las internas. La alineación corre en **múltiples pasadas** para que las dependencias se estabilicen. Fallback: si una columna no tiene ancla hacia la principal, se alinea **a su fuente** aunque esté más lejos.
+4. **Distribución base:** los nodos se distribuyen verticalmente lo más equidistante posible según la altura del subgrupo/columna. La **columna principal se redistribuye en cada iteración** con top/bottom fijos.
+5. **Resolución de solapes:** primero se resuelve el solape entre subgrupos. La **principal no crece**; si hace falta, se redistribuye dentro de sus límites.
+6. **Regla v08 de solapes entre subgrupos:** se impone un **gap fijo entre bordes**: borde inferior del subgrupo superior vs borde superior del subgrupo inferior. Fórmula: `delta = OVERLAP_EDGE_GAP - (upper_bottom_edge - lower_top_edge)`. Se mueve el subgrupo superior por `delta` (puede subir o bajar). Si ese subgrupo está anclado a la principal, se aplica el mismo `delta` a su ancla y se redistribuye la principal dentro de sus límites.
+7. **No se permiten solapes** (evitar a toda costa).
+8. **Alineación X por columna:** se alinea al X más común (si se repite), si no, al promedio.
+9. **Alturas importan:** la distribución se calcula con **bounding boxes** (centro ± alto/2).
+10. **Tamaño de Dot importa:** puede variar y debe respetarse.
+11. **Alineación de subgrupos (una ancla):** en columnas no principales, un subgrupo conectado se mueve **como bloque** hacia **una sola ancla** (la más cercana a la principal). Se conserva el spacing interno; no hay segmentación dentro del subgrupo.
+12. **Alineación de subgrupos (múltiples anclas):** si un subgrupo tiene **más de un nodo conectado** a la misma columna, **cada nodo anclado se alinea** a su respectiva ancla.  
+   - Los nodos **entre anclas** se redistribuyen **entre esos dos puntos**.  
+   - Los nodos **por encima** de la primera ancla y **por debajo** de la última se desplazan con la **ancla más cercana**.  
+   - Si no hay espacio suficiente, se **comprime** el spacing interno sin romper las anclas.
+13. **Restricción de tope:** nodos no conectados no deben quedar por encima del tope de la principal.
+14. **Inferencia de principal:** si falta, se elige la columna con **mayor altura de subgrupo**.
+15. **Adyacencia de flujo en columna:** cualquier conexión no‑mask (incluye A/B) mantiene los nodos en el mismo subgrupo.
+16. **Selección de una sola columna:** la principal se distribuye como cualquier columna (sin excepción).
+17. **Anclas en principal no se fijan:** columnas externas se realinean a la principal tras su redistribución.
 
-## Pending / Open
-- **Connection‑order based distribution (NU):** decide whether to derive ordering from connectivity instead of vertical order when conflicts exist.
-- **Recursive conflict propagation:** confirm if we must propagate overlap fixes to parent columns beyond principal.
+## Decisiones del usuario (2026-02-06)
+1. Descubrimiento de columnas + selección de principal: **aplicar** (via `auto_columns`).
+2. Subgrupo con una sola ancla: **aplicar**.
+3. Lógica de columnas potencial/next: **eliminar** (las externas no restringen internas).
+4. Top constraint para no conectados: **aplicar**.
+5. Heurística de X (más común primero): **aplicar**.
+6. Filtrado Nuke (Backdrop/Viewer): **aplicar en Nuke**.
+7. Logging: **aplicar** (debugPy_arrangeNodes.log, decisiones clave).
+8. Principal top/bottom fijos: **aplicar**.
+9. No fijar anclas en principal: **aplicar**.
+
+## Pendiente / Abierto
+- **Distribución por conectividad (NU):** decidir si derivar orden por conectividad en lugar de orden vertical.
+- **Propagación recursiva de conflictos:** confirmar si debemos propagar ajustes más allá de la principal.

@@ -1,0 +1,179 @@
+{
+  "nodes": [
+    {
+      "name": "Transform2",
+      "klass": "Transform",
+      "column": "C1",
+      "order": 0,
+      "x": 13.700000000000001,
+      "y": 15.950000000000001,
+      "height": 0.5
+    },
+    {
+      "name": "Transform1",
+      "klass": "Transform",
+      "column": "C1",
+      "order": 1,
+      "x": 13.700000000000001,
+      "y": 12.700000000000001,
+      "height": 0.5
+    },
+    {
+      "name": "VectorDistort1",
+      "klass": "VectorDistort",
+      "column": "C1",
+      "order": 2,
+      "x": 13.700000000000001,
+      "y": 10.5,
+      "height": 0.5
+    },
+    {
+      "name": "Dilate1",
+      "klass": "Dilate",
+      "column": "C0",
+      "order": 0,
+      "x": 4.8500000000000005,
+      "y": 7.2,
+      "height": 0.5
+    },
+    {
+      "name": "Blur2",
+      "klass": "Blur",
+      "column": "C0",
+      "order": 1,
+      "x": 4.8500000000000005,
+      "y": 4.45,
+      "height": 0.6
+    },
+    {
+      "name": "Premult1",
+      "klass": "Premult",
+      "column": "C0",
+      "order": 2,
+      "x": 4.8500000000000005,
+      "y": 2.2,
+      "height": 0.5
+    },
+    {
+      "name": "Dot11",
+      "klass": "Dot",
+      "column": "C0",
+      "order": 3,
+      "x": 4.8500000000000005,
+      "y": -0.30000000000000004,
+      "height": 0.2
+    },
+    {
+      "name": "Saturation1",
+      "klass": "Saturation",
+      "column": "C1",
+      "order": 3,
+      "x": 13.700000000000001,
+      "y": 6.800000000000001,
+      "height": 0.5
+    },
+    {
+      "name": "Blur1",
+      "klass": "Blur",
+      "column": "C1",
+      "order": 4,
+      "x": 13.700000000000001,
+      "y": 3.95,
+      "height": 0.6
+    },
+    {
+      "name": "Merge8",
+      "klass": "Merge2",
+      "column": "C1",
+      "order": 5,
+      "x": 13.700000000000001,
+      "y": -0.55,
+      "height": 0.8
+    },
+    {
+      "name": "Copy1",
+      "klass": "Copy",
+      "column": "C1",
+      "order": 6,
+      "x": 13.700000000000001,
+      "y": -7.15,
+      "height": 0.6
+    }
+  ],
+  "edges": [
+    {
+      "src": "Transform2",
+      "dst": "Transform1",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Transform1",
+      "dst": "VectorDistort1",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "VectorDistort1",
+      "dst": "Dilate1",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Dilate1",
+      "dst": "Blur2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Blur2",
+      "dst": "Premult1",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Premult1",
+      "dst": "Dot11",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "VectorDistort1",
+      "dst": "Saturation1",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Saturation1",
+      "dst": "Blur1",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Dot11",
+      "dst": "Merge8",
+      "kind": "B",
+      "align": false
+    },
+    {
+      "src": "Blur1",
+      "dst": "Merge8",
+      "kind": "A",
+      "align": true
+    },
+    {
+      "src": "Merge8",
+      "dst": "Copy1",
+      "kind": "flow",
+      "align": false
+    }
+  ],
+  "meta": {
+    "source_nk": "testGraph_v09.nk",
+    "root_name": "/Users/leg4/.nuke/LGA_ToolPack-Layout/testGraph_v09.nk",
+    "scale": 0.05,
+    "tolerance_x": 2.5,
+    "centered_positions": true,
+    "used_stack": true
+  }
+}
