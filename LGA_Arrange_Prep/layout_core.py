@@ -6,6 +6,9 @@ Phase 1: no Nuke dependencies.
 from dataclasses import dataclass, field
 from typing import Dict, List, Tuple, Optional, Set
 
+# Fixed edge gap between upper-branch bottom edge and lower-branch top edge.
+# Units match graph coordinates (default min_gap = 0.2).
+OVERLAP_EDGE_GAP = 0.2
 
 @dataclass
 class Node:
@@ -764,14 +767,15 @@ def layout(
                 prev_top, prev_bottom = _subgroup_bounds(prev)
                 curr_top, curr_bottom = _subgroup_bounds(curr)
                 gap = prev_bottom - curr_top
-                if gap >= min_gap:
+                # Enforce fixed edge gap between upper-bottom and lower-top.
+                delta = OVERLAP_EDGE_GAP - gap
+                if abs(delta) <= 1e-6:
                     continue
-                needed = min_gap - gap
-                curr_idx = subgroups.index(curr)
-                if curr_idx in fixed_subgroups[col]:
-                    conflicts_all.append((col, (i - 1, i, needed)))
+                upper_idx = i - 1
+                if upper_idx in fixed_subgroups[col]:
+                    conflicts_all.append((col, (upper_idx, i, delta)))
                     continue
-                _shift_subgroup(curr, -needed)
+                _shift_subgroup(prev, delta)
 
         adjusted = False
         anchor_shifts: Dict[str, float] = {}
@@ -779,18 +783,19 @@ def layout(
             for name, needed in anchor_conflicts_all:
                 anchor_shifts[name] = max(anchor_shifts.get(name, 0.0), needed)
         if conflicts_all:
-            for col, (upper_idx, lower_idx, needed) in conflicts_all:
+            for col, (upper_idx, lower_idx, delta) in conflicts_all:
                 anchors = subgroup_anchor.get(col, {})
                 upper_anchor = anchors.get(upper_idx)
                 lower_anchor = anchors.get(lower_idx)
-                # Prefer moving the upper anchor UP (negative shift) to avoid overlap
+                # Prefer moving the upper anchor UP (negative shift) to avoid overlap.
                 if upper_anchor:
                     current = anchor_shifts.get(upper_anchor.name, 0.0)
-                    anchor_shifts[upper_anchor.name] = min(current, -needed) if current < 0 else -needed
+                    shift = -delta
+                    anchor_shifts[upper_anchor.name] = min(current, shift) if current < 0 else shift
                 elif lower_anchor:
                     # Fallback: move lower anchor down if upper missing
                     anchor_shifts[lower_anchor.name] = max(
-                        anchor_shifts.get(lower_anchor.name, 0.0), needed
+                        anchor_shifts.get(lower_anchor.name, 0.0), delta
                     )
         if anchor_shifts:
             adjusted |= _redistribute_principal_with_fixed_bounds(

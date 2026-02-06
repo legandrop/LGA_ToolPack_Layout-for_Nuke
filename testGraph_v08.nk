@@ -22,7 +22,7 @@ define_window_layout_xml {<?xml version="1.0" encoding="UTF-8"?>
                 </dock>
             </splitter>
             <split size="554"/>
-            <dock id="" activePageId="com.adrianpueyo.KnobScripterPane">
+            <dock id="" activePageId="Properties.1">
                 <page id="Properties.1"/>
                 <page id="uk.co.thefoundry.backgroundrenderview.1"/>
                 <page id="Scenegraph.1"/>
@@ -9204,6 +9204,7 @@ Saturation {
  xpos 742
  ypos 376
 }
+set N91146c00 [stack 0]
 VectorBlur2 {
  inputs 0
  channels rgba
@@ -9254,4 +9255,13 @@ Merge2 {
  name Merge6
  xpos 1121
  ypos 684
+}
+push $N91146c00
+Blur {
+ channels rgba
+ size 7
+ name Blur1
+ label "\[value size]"
+ xpos 742
+ ypos 408
 }

@@ -23,8 +23,13 @@ Define the **arrange behavior** (rules and priorities) that will be implemented 
 5. **Overlap resolution priority:**
    - First, push the **secondary** column subgroup down to clear overlaps.
    - **Principal top/bottom never move**; if needed, **redistribute within bounds** (no expansion).
-   - **New (v08 case):** when two **fixed subgroups** in an outer column overlap, move the **upper anchor up**
-     (with its whole branch) and redistribute nodes between that anchor and the **top** of the principal column.
+   - **New (v08 case):** enforce a **fixed edge gap** between adjacent subgroups in a column:
+     - **upper bottom edge** vs **lower top edge**  
+     - target: `gap = OVERLAP_EDGE_GAP`  
+     - `delta = OVERLAP_EDGE_GAP - (upper_bottom_edge - lower_top_edge)`  
+     - shift the **upper** subgroup by `delta` (can be up or down).  
+     If the upper subgroup is anchored to principal, apply the same `delta` to its anchor and
+     redistribute the principal within fixed bounds.
 6. **No overlaps are acceptable** (avoid at all cost).
 7. **X‑alignment per column:** align to the most common X (if repeated), otherwise average.
 8. **Node heights matter:** distribution is based on **bounding boxes** (center ± height/2).
