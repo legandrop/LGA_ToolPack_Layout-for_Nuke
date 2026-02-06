@@ -30,7 +30,7 @@ Key files:
   graph JSON → Graphviz DOT.
 - `LGA_Arrange_Prep/prep_cli.py`  
   End‑to‑end pipeline: `.nk` → graph JSON + DOTs.
-- `LGA_Arrange_Prep/apply_layout.py`  
+- `LGA_Arrange_Prep/LGA_arrangeJSON.py`  
   Apply layout to a graph JSON and export DOT.
 - `LGA_Arrange_Prep/out/`  
   Output folder for generated files.

@@ -1,0 +1,413 @@
+{
+  "nodes": [
+    {
+      "name": "Roto3",
+      "klass": "Roto",
+      "column": "C4",
+      "order": 0,
+      "x": 63.550000000000004,
+      "y": -28.1,
+      "height": 0.6
+    },
+    {
+      "name": "Roto5",
+      "klass": "Roto",
+      "column": "C5",
+      "order": 0,
+      "x": 72.9,
+      "y": -28.1,
+      "height": 0.6
+    },
+    {
+      "name": "Dot12",
+      "klass": "Dot",
+      "column": "C5",
+      "order": 1,
+      "x": 72.9,
+      "y": -31.6,
+      "height": 0.2
+    },
+    {
+      "name": "ChannelMerge2",
+      "klass": "ChannelMerge",
+      "column": "C4",
+      "order": 1,
+      "x": 63.550000000000004,
+      "y": -31.200000000000003,
+      "height": 0.5
+    },
+    {
+      "name": "Blur3",
+      "klass": "Blur",
+      "column": "C4",
+      "order": 2,
+      "x": 63.550000000000004,
+      "y": -34.5,
+      "height": 0.6
+    },
+    {
+      "name": "Shuffle12",
+      "klass": "Shuffle2",
+      "column": "C0",
+      "order": 0,
+      "x": 27.05,
+      "y": 4.0,
+      "height": 0.5
+    },
+    {
+      "name": "ColorCorrect2",
+      "klass": "ColorCorrect",
+      "column": "C0",
+      "order": 1,
+      "x": 27.05,
+      "y": 1.3,
+      "height": 0.5
+    },
+    {
+      "name": "Dot10",
+      "klass": "Dot",
+      "column": "C0",
+      "order": 2,
+      "x": 27.05,
+      "y": -14.200000000000001,
+      "height": 0.2
+    },
+    {
+      "name": "Dot14",
+      "klass": "Dot",
+      "column": "C2",
+      "order": 0,
+      "x": 46.650000000000006,
+      "y": -3.95,
+      "height": 0.2
+    },
+    {
+      "name": "VectorToMotion2",
+      "klass": "VectorToMotion",
+      "column": "C2",
+      "order": 1,
+      "x": 46.650000000000006,
+      "y": -6.3500000000000005,
+      "height": 0.5
+    },
+    {
+      "name": "Transform3",
+      "klass": "Transform",
+      "column": "C1",
+      "order": 0,
+      "x": 39.1,
+      "y": 7.25,
+      "height": 0.5
+    },
+    {
+      "name": "Transform4",
+      "klass": "Transform",
+      "column": "C1",
+      "order": 1,
+      "x": 39.1,
+      "y": 6.050000000000001,
+      "height": 0.5
+    },
+    {
+      "name": "VectorDistort2",
+      "klass": "VectorDistort",
+      "column": "C1",
+      "order": 2,
+      "x": 39.1,
+      "y": 1.85,
+      "height": 0.5
+    },
+    {
+      "name": "Copy2",
+      "klass": "Copy",
+      "column": "C1",
+      "order": 3,
+      "x": 39.1,
+      "y": -5.8500000000000005,
+      "height": 0.6
+    },
+    {
+      "name": "VectorBlur2",
+      "klass": "VectorBlur2",
+      "column": "C1",
+      "order": 4,
+      "x": 39.1,
+      "y": -10.100000000000001,
+      "height": 0.5
+    },
+    {
+      "name": "Merge10",
+      "klass": "Merge2",
+      "column": "C1",
+      "order": 5,
+      "x": 39.1,
+      "y": -14.450000000000001,
+      "height": 0.8
+    },
+    {
+      "name": "Grade1",
+      "klass": "Grade",
+      "column": "C1",
+      "order": 6,
+      "x": 39.1,
+      "y": -16.85,
+      "height": 0.5
+    },
+    {
+      "name": "Saturation3",
+      "klass": "Saturation",
+      "column": "C1",
+      "order": 7,
+      "x": 39.1,
+      "y": -19.3,
+      "height": 0.5
+    },
+    {
+      "name": "VectorBlur1",
+      "klass": "VectorBlur2",
+      "column": "C3",
+      "order": 0,
+      "x": 58.050000000000004,
+      "y": -6.75,
+      "height": 0.5
+    },
+    {
+      "name": "Merge7",
+      "klass": "Merge2",
+      "column": "C3",
+      "order": 1,
+      "x": 58.050000000000004,
+      "y": -10.4,
+      "height": 0.8
+    },
+    {
+      "name": "Grade2",
+      "klass": "Grade",
+      "column": "C3",
+      "order": 2,
+      "x": 58.050000000000004,
+      "y": -12.65,
+      "height": 0.5
+    },
+    {
+      "name": "Saturation2",
+      "klass": "Saturation",
+      "column": "C3",
+      "order": 3,
+      "x": 58.050000000000004,
+      "y": -13.850000000000001,
+      "height": 0.5
+    },
+    {
+      "name": "Grade3",
+      "klass": "Grade",
+      "column": "C3",
+      "order": 4,
+      "x": 58.050000000000004,
+      "y": -15.05,
+      "height": 0.5
+    },
+    {
+      "name": "Merge9",
+      "klass": "Merge2",
+      "column": "C3",
+      "order": 5,
+      "x": 58.050000000000004,
+      "y": -21.150000000000002,
+      "height": 0.8
+    },
+    {
+      "name": "Merge6",
+      "klass": "Merge2",
+      "column": "C3",
+      "order": 6,
+      "x": 58.050000000000004,
+      "y": -34.9,
+      "height": 0.8
+    },
+    {
+      "name": "Dot8",
+      "klass": "Dot",
+      "column": "C3",
+      "order": 7,
+      "x": 58.050000000000004,
+      "y": -37.75,
+      "height": 0.2
+    },
+    {
+      "name": "Merge5",
+      "klass": "Merge2",
+      "column": "C6",
+      "order": 0,
+      "x": 81.15,
+      "y": -37.95,
+      "height": 0.8
+    }
+  ],
+  "edges": [
+    {
+      "src": "Roto5",
+      "dst": "Dot12",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Roto3",
+      "dst": "ChannelMerge2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Dot12",
+      "dst": "ChannelMerge2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "ChannelMerge2",
+      "dst": "Blur3",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Shuffle12",
+      "dst": "ColorCorrect2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "ColorCorrect2",
+      "dst": "Dot10",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Dot14",
+      "dst": "VectorToMotion2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Transform3",
+      "dst": "Transform4",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Transform4",
+      "dst": "VectorDistort2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "VectorToMotion2",
+      "dst": "Copy2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "VectorDistort2",
+      "dst": "Copy2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Copy2",
+      "dst": "VectorBlur2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Dot10",
+      "dst": "Merge10",
+      "kind": "B",
+      "align": false
+    },
+    {
+      "src": "VectorBlur2",
+      "dst": "Merge10",
+      "kind": "A",
+      "align": true
+    },
+    {
+      "src": "Merge10",
+      "dst": "Grade1",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Grade1",
+      "dst": "Saturation3",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "VectorBlur1",
+      "dst": "Merge7",
+      "kind": "B",
+      "align": false
+    },
+    {
+      "src": "Merge7",
+      "dst": "Grade2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Grade2",
+      "dst": "Saturation2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Saturation2",
+      "dst": "Grade3",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Saturation3",
+      "dst": "Merge9",
+      "kind": "B",
+      "align": false
+    },
+    {
+      "src": "Grade3",
+      "dst": "Merge9",
+      "kind": "A",
+      "align": true
+    },
+    {
+      "src": "Blur3",
+      "dst": "Merge6",
+      "kind": "B",
+      "align": false
+    },
+    {
+      "src": "Merge9",
+      "dst": "Merge6",
+      "kind": "A",
+      "align": true
+    },
+    {
+      "src": "Merge6",
+      "dst": "Dot8",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Dot8",
+      "dst": "Merge5",
+      "kind": "B",
+      "align": false
+    }
+  ],
+  "meta": {
+    "source_nk": "/Users/leg4/.nuke/LGA_ToolPack-Layout/testGraph_v07.nk",
+    "root_name": "/Users/leg4/.nuke/LGA_ToolPack-Layout/testGraph_v07.nk",
+    "scale": 0.05,
+    "tolerance_x": 2.5,
+    "centered_positions": true,
+    "used_stack": true
+  }
+}

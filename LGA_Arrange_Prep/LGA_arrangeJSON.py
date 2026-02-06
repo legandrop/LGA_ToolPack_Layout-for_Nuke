@@ -15,7 +15,7 @@ from layout_core import layout
 
 def main() -> None:
     if len(sys.argv) < 3:
-        print("Usage: python apply_layout.py <input.json> <output.dot> [min_gap]")
+        print("Usage: python LGA_arrangeJSON.py <input.json> <output.dot> [min_gap]")
         raise SystemExit(1)
 
     in_path = sys.argv[1]

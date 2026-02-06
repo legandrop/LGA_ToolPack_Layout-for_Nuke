@@ -11,14 +11,28 @@ def _node_style(node: Node) -> str:
     klass = node.klass or name
     if klass.startswith("Grade"):
         return 'shape=box, style="rounded,filled", fillcolor="#cbd6ee"'
+    if klass.startswith("Saturation"):
+        return 'shape=box, style="rounded,filled", fillcolor="#cbd6ee"'
+    if klass.startswith("ColorCorrect"):
+        return 'shape=box, style="rounded,filled", fillcolor="#cbd6ee"'
     if klass.startswith("Roto"):
         return 'shape=box, style="rounded,filled", fillcolor="#8fd18f"'
     if klass.startswith("Blur"):
         return 'shape=box, style="rounded,filled", fillcolor="#f4a460"'
+    if klass.startswith("VectorBlur"):
+        return 'shape=box, style="rounded,filled", fillcolor="#f4a460"'
     if klass.startswith("Copy"):
+        return 'shape=box, style="rounded,filled", fillcolor="#d95da8"'
+    if klass.startswith("Shuffle"):
         return 'shape=box, style="rounded,filled", fillcolor="#d95da8"'
     if klass.startswith("Merge"):
         return 'shape=box, style="rounded,filled", fillcolor="#4f5fbf"'
+    if klass.startswith("ChannelMerge"):
+        return 'shape=box, style="rounded,filled", fillcolor="#4f5fbf"'
+    if klass.startswith("Transform"):
+        return 'shape=box, style="rounded,filled", fillcolor="#a77bb7"'
+    if klass.startswith("VectorDistort"):
+        return 'shape=box, style="rounded,filled", fillcolor="#a77bb7"'
     if klass.startswith("Dot"):
         return 'shape=circle, style=filled, fillcolor="#bdbdbd", label=""'
     return 'shape=box, style="rounded,filled", fillcolor="#dddddd"'
