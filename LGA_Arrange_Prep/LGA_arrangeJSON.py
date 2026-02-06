@@ -7,7 +7,7 @@ import sys
 
 sys.path.append(str(Path(__file__).resolve().parent))
 
-from graph_io import load_graph_json
+from graph_io import load_graph_json, save_graph_json
 import re
 from graphviz_export import to_dot
 from layout_core import layout
@@ -28,6 +28,9 @@ def main() -> None:
     safe_title = re.sub(r"[^A-Za-z0-9_]", "_", raw_title) or "Graph"
     dot = to_dot(graph, title=safe_title)
     Path(out_path).write_text(dot, encoding="utf-8")
+
+    arranged_json_path = Path(in_path).with_suffix(".arranged.json")
+    save_graph_json(graph, str(arranged_json_path))
 
 
 if __name__ == "__main__":

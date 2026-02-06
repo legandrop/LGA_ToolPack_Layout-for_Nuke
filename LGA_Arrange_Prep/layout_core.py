@@ -456,6 +456,20 @@ def _align_subgroup_by_subsubgroups(
     candidates.sort(key=lambda t: (t[0], t[1], t[2]))
     _dist, _order, _delta_abs, aligned_node, anchor = candidates[0]
 
+    # If a node in the subgroup is directly connected to the anchor, align that node.
+    connected_nodes: List[Node] = []
+    for node in subgroup:
+        for edge in graph.edges:
+            if (
+                (edge.src == node.name and edge.dst == anchor.name)
+                or (edge.dst == node.name and edge.src == anchor.name)
+            ):
+                connected_nodes.append(node)
+                break
+    if connected_nodes:
+        connected_nodes.sort(key=lambda n: (n.order, abs(anchor.y - n.y)))
+        aligned_node = connected_nodes[0]
+
     delta = anchor.y - aligned_node.y
     _shift_subgroup(subgroup, delta)
 
@@ -595,7 +609,7 @@ def _redistribute_principal_with_fixed_bounds(
     graph: Graph,
     anchor_shifts: Dict[str, float],
     min_gap: float,
-) -> bool:
+) -> Tuple[bool, Dict[str, float]]:
     """
     Redistribute principal column within fixed top/bottom bounds.
     Anchors can shift up (negative) or down (positive). Shifted anchors are fixed,
@@ -603,7 +617,7 @@ def _redistribute_principal_with_fixed_bounds(
     """
     principal = _principal_nodes(graph)
     if not principal:
-        return False
+        return False, {}
 
     top_node = principal[0]
     bottom_node = principal[-1]
@@ -633,6 +647,7 @@ def _redistribute_principal_with_fixed_bounds(
                 return j
         return None
 
+    applied_shifts: Dict[str, float] = {}
     for anchor_name, shift in anchor_shifts.items():
         if anchor_name in (top_node.name, bottom_node.name):
             continue
@@ -643,6 +658,7 @@ def _redistribute_principal_with_fixed_bounds(
         if idx is None:
             continue
 
+        before_y = anchor.y
         capped = shift
         if shift > 0:
             # Downward shift: cap by space to next fixed below
@@ -691,13 +707,70 @@ def _redistribute_principal_with_fixed_bounds(
             anchor.y = top_y
         if anchor.y < bottom_y:
             anchor.y = bottom_y
+        applied = anchor.y - before_y
+        if abs(applied) > 1e-6:
+            applied_shifts[anchor.name] = applied
 
     _distribute_column_with_fixed(principal, fixed, min_gap=min_gap)
 
     for n in principal:
         n.original_y = n.y
 
-    return True
+    return True, applied_shifts
+
+
+def _propagate_anchor_shifts_to_subgroups(
+    graph: Graph,
+    subgroup_lists: Dict[str, List[List[Node]]],
+    subgroup_anchor_names: Dict[str, Dict[int, Set[str]]],
+    applied_shifts: Dict[str, float],
+) -> bool:
+    moved = False
+    for col, subgroups in subgroup_lists.items():
+        if graph.principal_column and col == graph.principal_column:
+            continue
+        for idx, subgroup in enumerate(subgroups):
+            anchor_names = subgroup_anchor_names.get(col, {}).get(idx)
+            if not anchor_names or len(anchor_names) != 1:
+                continue
+            anchor_name = next(iter(anchor_names))
+            delta = applied_shifts.get(anchor_name)
+            if delta is None or abs(delta) <= 1e-6:
+                continue
+            _shift_subgroup(subgroup, delta)
+            for node in subgroup:
+                node.original_y = node.y
+            moved = True
+    return moved
+
+
+def _final_realign_to_principal(graph: Graph, min_gap: float) -> None:
+    col_order = _column_order(graph)
+    principal_idx = col_order.get(graph.principal_column, 0) if graph.principal_column else 0
+    ordered_cols = [
+        c for c in col_order.keys()
+        if not (graph.principal_column and c == graph.principal_column)
+    ]
+    ordered_cols.sort(
+        key=lambda c: (abs(col_order.get(c, 0) - principal_idx), col_order.get(c, 0))
+    )
+    for col in ordered_cols:
+        subgroups = _column_subgroups(graph, col)
+        col_idx = col_order.get(col, 0)
+        if col_idx >= principal_idx:
+            potential_cols = {c for c, i in col_order.items() if principal_idx <= i <= col_idx}
+            next_cols = {c for c, i in col_order.items() if i > col_idx}
+        else:
+            potential_cols = {c for c, i in col_order.items() if col_idx <= i <= principal_idx}
+            next_cols = {c for c, i in col_order.items() if i < col_idx}
+        for subgroup in subgroups:
+            _align_subgroup_by_subsubgroups(
+                graph,
+                subgroup,
+                potential_cols,
+                next_cols,
+                min_gap=min_gap,
+            )
 
 
 def _anchor_shift_slack(
@@ -750,12 +823,15 @@ def _anchor_alignment_shifts(
     graph: Graph,
     subgroup_lists: Dict[str, List[List[Node]]],
     subgroup_anchor: Dict[str, Dict[int, Node]],
+    subgroup_anchor_names: Dict[str, Dict[int, Set[str]]],
 ) -> Dict[str, float]:
     """
     If a subgroup moved (or was distributed) and its anchor stayed behind,
     return the exact shifts needed to align the anchor to the connected node.
     """
     shifts: Dict[str, float] = {}
+    principal = _principal_nodes(graph) if graph.principal_column else []
+    principal_index = {n.name: i for i, n in enumerate(principal)}
     for col, subgroups in subgroup_lists.items():
         anchors = subgroup_anchor.get(col, {})
         if not anchors:
@@ -764,6 +840,25 @@ def _anchor_alignment_shifts(
             anchor = anchors.get(idx)
             if not anchor:
                 continue
+            # Skip moving principal when subgroup has a single anchor in principal.
+            if anchor.column == graph.principal_column:
+                principal_anchors: Set[str] = set()
+                for node in subgroup:
+                    for edge in graph.edges:
+                        if not edge.align:
+                            continue
+                        if node.name not in (edge.src, edge.dst):
+                            continue
+                        other_name = edge.dst if edge.src == node.name else edge.src
+                        other = graph.nodes.get(other_name)
+                        if other and other.column == graph.principal_column:
+                            principal_anchors.add(other.name)
+                if len(principal_anchors) == 1:
+                    continue
+            if anchor.column == graph.principal_column:
+                anchor_idx = principal_index.get(anchor.name)
+                if anchor_idx is not None and anchor_idx in (0, len(principal) - 1):
+                    continue
             target_y = None
             best_dist = None
             for node in subgroup:
@@ -849,12 +944,14 @@ def layout(
         subgroup_map: Dict[str, Dict[str, int]] = {}
         subgroup_lists: Dict[str, List[List[Node]]] = {}
         subgroup_anchor: Dict[str, Dict[int, Node]] = {}
+        subgroup_anchor_names: Dict[str, Dict[int, Set[str]]] = {}
         # No fixed anchors in principal; outer columns adapt to principal
 
         for col in graph.columns().keys():
             subgroup_lists[col] = _column_subgroups(graph, col)
             subgroup_map[col] = {}
             subgroup_anchor[col] = {}
+            subgroup_anchor_names[col] = {}
             for idx, subgroup in enumerate(subgroup_lists[col]):
                 for node in subgroup:
                     subgroup_map[col][node.name] = idx
@@ -907,6 +1004,7 @@ def layout(
                                 key=lambda a: abs(col_order.get(a.column, 0) - principal_idx),
                             )
                             subgroup_anchor[col][idx] = anchor_list[0]
+                            subgroup_anchor_names[col][idx] = set(anchor_names)
                     after = [n.y for n in subgroup]
                     if any(abs(a - b) > 1e-6 for a, b in zip(after, before)):
                         moved = True
@@ -1073,22 +1171,69 @@ def layout(
             graph,
             subgroup_lists,
             subgroup_anchor,
+            subgroup_anchor_names,
         )
-        for name, delta in anchor_align_shifts.items():
-            if name not in anchor_shifts:
-                anchor_shifts[name] = delta
+        if graph.principal_column:
+            principal = _principal_nodes(graph)
+            index_by_name = {n.name: i for i, n in enumerate(principal)}
+            fixed_indices: Set[int] = {0, len(principal) - 1} if principal else set()
+            for name in anchor_shifts.keys():
+                idx = index_by_name.get(name)
+                if idx is not None:
+                    fixed_indices.add(idx)
+
+            def _apply_shift(name: str, shift: float) -> None:
+                current = anchor_shifts.get(name)
+                if current is None:
+                    anchor_shifts[name] = shift
+                else:
+                    if shift < 0:
+                        anchor_shifts[name] = min(current, shift) if current < 0 else shift
+                    elif shift > 0:
+                        anchor_shifts[name] = max(current, shift) if current > 0 else shift
+
+            for name, delta in anchor_align_shifts.items():
+                idx = index_by_name.get(name)
+                if idx is None:
+                    continue
+                if delta > 0:
+                    slack = _anchor_shift_slack(principal, fixed_indices, idx, "down", min_gap)
+                    if slack <= 0:
+                        continue
+                    delta = min(delta, slack)
+                elif delta < 0:
+                    slack = _anchor_shift_slack(principal, fixed_indices, idx, "up", min_gap)
+                    if slack <= 0:
+                        continue
+                    delta = max(delta, -slack)
+                else:
+                    continue
+                if abs(delta) <= 1e-6:
+                    continue
+                _apply_shift(name, delta)
         if anchor_shifts:
-            adjusted |= _redistribute_principal_with_fixed_bounds(
+            adjusted, applied_shifts = _redistribute_principal_with_fixed_bounds(
                 graph,
                 anchor_shifts,
                 min_gap=min_gap,
             )
             if adjusted:
                 principal_fixed_nodes = set(anchor_shifts.keys())
+                if applied_shifts:
+                    _propagate_anchor_shifts_to_subgroups(
+                        graph,
+                        subgroup_lists,
+                        subgroup_anchor_names,
+                        applied_shifts,
+                    )
+                else:
+                    break
         if adjusted:
             continue
         break
 
+    if graph.principal_column:
+        _final_realign_to_principal(graph, min_gap=min_gap)
     # Align columns in X at the end
     _align_columns_x(graph)
 

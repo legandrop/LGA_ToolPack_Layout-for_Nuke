@@ -1,0 +1,28 @@
+digraph testGraph_v10_graph_after {
+  graph [layout=neato, splines=ortho, overlap=false];
+  node [fontname="Helvetica", fontsize=10, fixedsize=true, width=1.6, height=0.5];
+  Shuffle2 [shape=box, style="rounded,filled", fillcolor="#d95da8", pos="-2.85,17.200000000000003!", height="0.5", width="1.6" ];
+  ColorLookup3 [shape=box, style="rounded,filled", fillcolor="#dddddd", pos="-2.85,14.833333333333336!", height="0.5", width="1.6" ];
+  Clamp4 [shape=box, style="rounded,filled", fillcolor="#dddddd", pos="-2.85,12.466666666666669!", height="0.5", width="1.6" ];
+  Dilate27 [shape=box, style="rounded,filled", fillcolor="#dddddd", pos="-2.85,10.100000000000001!", height="0.5", width="1.6" ];
+  Dot49 [shape=circle, style=filled, fillcolor="#bdbdbd", label="", pos="-7.3,10.100000000000001!", height="0.2", width="0.2" ];
+  Invert7 [shape=box, style="rounded,filled", fillcolor="#dddddd", pos="-7.3,8.505555555555556!", height="0.5", width="1.6" ];
+  Dilate28 [shape=box, style="rounded,filled", fillcolor="#dddddd", pos="-7.3,6.761111111111111!", height="0.5", width="1.6" ];
+  Dot1 [shape=circle, style=filled, fillcolor="#bdbdbd", label="", pos="-7.3,5.166666666666666!", height="0.2", width="0.2" ];
+  Dot48 [shape=circle, style=filled, fillcolor="#bdbdbd", label="", pos="1.6,10.100000000000001!", height="0.2", width="0.2" ];
+  Merge38 [shape=box, style="rounded,filled", fillcolor="#4f5fbf", pos="1.6,5.166666666666666!", height="0.8", width="1.6" ];
+  Blur9 [shape=box, style="rounded,filled", fillcolor="#f4a460", pos="1.6,0.03333333333333216!", height="0.6", width="1.6" ];
+  Grade1 [shape=box, style="rounded,filled", fillcolor="#cbd6ee", pos="1.6,-4.950000000000002!", height="0.5", width="1.6" ];
+  Shuffle2 -> ColorLookup3;
+  ColorLookup3 -> Clamp4;
+  Clamp4 -> Dilate27;
+  Dilate27 -> Dot49;
+  Dot49 -> Invert7;
+  Invert7 -> Dilate28;
+  Dilate28 -> Dot1;
+  Dilate27 -> Dot48;
+  Dot1 -> Merge38;
+  Dot48 -> Merge38;
+  Merge38 -> Blur9;
+  Blur9 -> Grade1;
+}

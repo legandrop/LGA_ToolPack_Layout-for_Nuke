@@ -129,6 +129,7 @@ Outputs:
 - `LGA_Arrange_Prep/out/testGraph_v01.graph.json`
 - `LGA_Arrange_Prep/out/testGraph_v01.from_nk.dot`
 - `LGA_Arrange_Prep/out/testGraph_v01.from_graph.dot`
+- `LGA_Arrange_Prep/out/testGraph_v02.graph.arranged.json`
 
 Estos DOT se pueden pegar en:
 https://dreampuf.github.io/GraphvizOnline

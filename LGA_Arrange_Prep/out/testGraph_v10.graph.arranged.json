@@ -1,0 +1,187 @@
+{
+  "nodes": [
+    {
+      "name": "Shuffle2",
+      "klass": "Shuffle2",
+      "column": "C1",
+      "order": 0,
+      "x": -2.85,
+      "y": 17.200000000000003,
+      "height": 0.5
+    },
+    {
+      "name": "ColorLookup3",
+      "klass": "ColorLookup",
+      "column": "C1",
+      "order": 1,
+      "x": -2.85,
+      "y": 14.833333333333336,
+      "height": 0.5
+    },
+    {
+      "name": "Clamp4",
+      "klass": "Clamp",
+      "column": "C1",
+      "order": 2,
+      "x": -2.85,
+      "y": 12.466666666666669,
+      "height": 0.5
+    },
+    {
+      "name": "Dilate27",
+      "klass": "Dilate",
+      "column": "C1",
+      "order": 3,
+      "x": -2.85,
+      "y": 10.100000000000001,
+      "height": 0.5
+    },
+    {
+      "name": "Dot49",
+      "klass": "Dot",
+      "column": "C0",
+      "order": 0,
+      "x": -7.3,
+      "y": 10.100000000000001,
+      "height": 0.2
+    },
+    {
+      "name": "Invert7",
+      "klass": "Invert",
+      "column": "C0",
+      "order": 1,
+      "x": -7.3,
+      "y": 8.505555555555556,
+      "height": 0.5
+    },
+    {
+      "name": "Dilate28",
+      "klass": "Dilate",
+      "column": "C0",
+      "order": 2,
+      "x": -7.3,
+      "y": 6.761111111111111,
+      "height": 0.5
+    },
+    {
+      "name": "Dot1",
+      "klass": "Dot",
+      "column": "C0",
+      "order": 3,
+      "x": -7.3,
+      "y": 5.166666666666666,
+      "height": 0.2
+    },
+    {
+      "name": "Dot48",
+      "klass": "Dot",
+      "column": "C2",
+      "order": 0,
+      "x": 1.6,
+      "y": 10.100000000000001,
+      "height": 0.2
+    },
+    {
+      "name": "Merge38",
+      "klass": "Merge2",
+      "column": "C2",
+      "order": 1,
+      "x": 1.6,
+      "y": 5.166666666666666,
+      "height": 0.8
+    },
+    {
+      "name": "Blur9",
+      "klass": "Blur",
+      "column": "C2",
+      "order": 2,
+      "x": 1.6,
+      "y": 0.03333333333333216,
+      "height": 0.6
+    },
+    {
+      "name": "Grade1",
+      "klass": "Grade",
+      "column": "C2",
+      "order": 3,
+      "x": 1.6,
+      "y": -4.950000000000002,
+      "height": 0.5
+    }
+  ],
+  "edges": [
+    {
+      "src": "Shuffle2",
+      "dst": "ColorLookup3",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "ColorLookup3",
+      "dst": "Clamp4",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Clamp4",
+      "dst": "Dilate27",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Dilate27",
+      "dst": "Dot49",
+      "kind": "flow",
+      "align": true
+    },
+    {
+      "src": "Dot49",
+      "dst": "Invert7",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Invert7",
+      "dst": "Dilate28",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Dilate28",
+      "dst": "Dot1",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Dilate27",
+      "dst": "Dot48",
+      "kind": "flow",
+      "align": true
+    },
+    {
+      "src": "Dot1",
+      "dst": "Merge38",
+      "kind": "B",
+      "align": true
+    },
+    {
+      "src": "Dot48",
+      "dst": "Merge38",
+      "kind": "A",
+      "align": false
+    },
+    {
+      "src": "Merge38",
+      "dst": "Blur9",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Blur9",
+      "dst": "Grade1",
+      "kind": "flow",
+      "align": false
+    }
+  ],
+  "meta": {}
+}
