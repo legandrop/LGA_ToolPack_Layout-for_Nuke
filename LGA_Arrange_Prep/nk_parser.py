@@ -35,6 +35,7 @@ class NkGraph:
     edges: List[NkEdge] = field(default_factory=list)
     root_name: Optional[str] = None
     has_stack: bool = False
+    explicit_stack_ops: bool = False
 
 
 _NODE_START_RE = re.compile(r"^([A-Za-z0-9_]+)\s*\{\s*$")
@@ -80,10 +81,11 @@ def _classify_input(klass: str, input_index: int, mandatory: int, mask: int) -> 
     if mask and input_index == total - 1:
         return "mask", True
     if klass.startswith("Merge"):
+        # Nuke: input 0 = B, input 1 = A, input 2+ = mask
         if input_index == 0:
-            return "A", True
-        if input_index == 1:
             return "B", False
+        if input_index == 1:
+            return "A", True
     return "flow", False
 
 
@@ -118,6 +120,7 @@ def parse_nk(path: str) -> NkGraph:
             var = m_set.group(1)
             variables[var] = stack[-1] if stack else None
             graph.has_stack = True
+            graph.explicit_stack_ops = True
             i += 1
             continue
 
@@ -133,6 +136,7 @@ def parse_nk(path: str) -> NkGraph:
             stack.append(val)
             explicit_push = True
             graph.has_stack = True
+            graph.explicit_stack_ops = True
             i += 1
             continue
 
@@ -140,6 +144,7 @@ def parse_nk(path: str) -> NkGraph:
             if stack:
                 stack.pop()
             graph.has_stack = True
+            graph.explicit_stack_ops = True
             i += 1
             continue
 

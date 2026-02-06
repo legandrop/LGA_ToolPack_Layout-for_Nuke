@@ -1,0 +1,106 @@
+#! /Applications/Nuke15.1v6/Nuke15.1v6.app/Contents/MacOS/libnuke-15.1.6.dylib -nx
+version 15.1 v6
+define_window_layout_xml {<?xml version="1.0" encoding="UTF-8"?>
+<layout version="1.0">
+    <window x="50" y="33" w="1678" h="1056" maximized="1" screen="0">
+        <splitter orientation="1">
+            <split size="40"/>
+            <dock id="" hideTitles="1" activePageId="Toolbar.1">
+                <page id="Toolbar.1"/>
+            </dock>
+            <split size="1076" stretch="1"/>
+            <splitter orientation="2">
+                <split size="0"/>
+                <dock id="" activePageId="Viewer.1">
+                    <page id="Viewer.1"/>
+                </dock>
+                <split size="1036"/>
+                <dock id="" activePageId="DAG.1" focus="true">
+                    <page id="DAG.1"/>
+                    <page id="Curve Editor.1"/>
+                    <page id="DopeSheet.1"/>
+                </dock>
+            </splitter>
+            <split size="554"/>
+            <dock id="" activePageId="Properties.1">
+                <page id="Properties.1"/>
+                <page id="uk.co.thefoundry.backgroundrenderview.1"/>
+                <page id="Scenegraph.1"/>
+                <page id="uk.co.thefoundry.scripteditor.1"/>
+            </dock>
+        </splitter>
+    </window>
+</layout>
+}
+Root {
+inputs 0
+name /Users/leg4/.nuke/LGA_ToolPack-Layout/testGraph_v04.nk
+format "4096 2160 0 0 4096 2160 1 4K_DCP"
+proxy_type scale
+proxy_format "1024 778 0 0 1024 778 1 1K_Super_35(full-ap)"
+colorManagement OCIO
+OCIO_config aces_1.2
+defaultViewerLUT "OCIO LUTs"
+workingSpaceLUT "ACES - ACES2065-1"
+monitorLut "sRGB (ACES)"
+monitorOutLUT "sRGB (ACES)"
+int8Lut "Output - Rec.709"
+int16Lut texture_paint
+logLut compositing_log
+floatLut "ACES - ACES2065-1"
+}
+Constant {
+inputs 0
+channels rgb
+format "4056 1708 0 0 4056 1708 1 "
+name Constant4
+xpos -74
+ypos -78
+}
+Dot {
+name Dot4
+xpos -40
+ypos 88
+}
+Clamp {
+inputs 0
+name Clamp3
+xpos -847
+ypos 81
+}
+Blur {
+inputs 0
+size 72.5
+name Blur11
+xpos -401
+ypos -126
+}
+Clamp {
+inputs 0
+name Clamp5
+xpos -681
+ypos -63
+}
+Shuffle2 {
+inputs 0
+fromInput1 {{0} B}
+fromInput2 {{0} B}
+mappings "4 rgba.red 0 0 rgba.red 0 0 rgba.green 0 1 rgba.green 0 1 rgba.blue 0 2 rgba.blue 0 2 black -1 -1 rgba.alpha 0 3"
+name Shuffle2
+xpos -541
+ypos -212
+}
+Merge2 {
+inputs 2+1
+operation multiply
+name Merge11
+xpos -541
+ypos -59
+}
+Merge2 {
+inputs 2+1
+operation multiply
+name Merge10
+xpos -541
+ypos 85
+}

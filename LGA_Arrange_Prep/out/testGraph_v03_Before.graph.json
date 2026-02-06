@@ -1,0 +1,359 @@
+{
+  "nodes": [
+    {
+      "name": "Constant4",
+      "klass": "Constant",
+      "column": "C4",
+      "order": 0,
+      "x": 8.05,
+      "y": 1.6500000000000001,
+      "height": 0.5
+    },
+    {
+      "name": "RotoPaint7",
+      "klass": "RotoPaint",
+      "column": "C4",
+      "order": 1,
+      "x": 8.05,
+      "y": -1.9500000000000002,
+      "height": 0.5
+    },
+    {
+      "name": "Blur9",
+      "klass": "Blur",
+      "column": "C4",
+      "order": 2,
+      "x": 8.05,
+      "y": -3.25,
+      "height": 0.6
+    },
+    {
+      "name": "Dot4",
+      "klass": "Dot",
+      "column": "C4",
+      "order": 3,
+      "x": 8.05,
+      "y": -8.55,
+      "height": 0.2
+    },
+    {
+      "name": "Grade2",
+      "klass": "Grade",
+      "column": "C0",
+      "order": 0,
+      "x": -31.1,
+      "y": 0.2,
+      "height": 0.5
+    },
+    {
+      "name": "Shuffle4",
+      "klass": "Shuffle2",
+      "column": "C0",
+      "order": 1,
+      "x": -30.6,
+      "y": -5.9,
+      "height": 0.5
+    },
+    {
+      "name": "Grade1",
+      "klass": "Grade",
+      "column": "C0",
+      "order": 2,
+      "x": -30.6,
+      "y": -7.1000000000000005,
+      "height": 0.5
+    },
+    {
+      "name": "Clamp3",
+      "klass": "Clamp",
+      "column": "C0",
+      "order": 3,
+      "x": -30.6,
+      "y": -8.3,
+      "height": 0.5
+    },
+    {
+      "name": "Constant6",
+      "klass": "Constant",
+      "column": "C3",
+      "order": 0,
+      "x": -5.550000000000001,
+      "y": 6.7,
+      "height": 0.5
+    },
+    {
+      "name": "RotoPaint9",
+      "klass": "RotoPaint",
+      "column": "C3",
+      "order": 1,
+      "x": -5.550000000000001,
+      "y": 3.1,
+      "height": 0.5
+    },
+    {
+      "name": "Blur11",
+      "klass": "Blur",
+      "column": "C3",
+      "order": 2,
+      "x": -5.550000000000001,
+      "y": 1.8,
+      "height": 0.6
+    },
+    {
+      "name": "Transform_MatchMove2",
+      "klass": "Transform",
+      "column": "C3",
+      "order": 3,
+      "x": -5.550000000000001,
+      "y": 0.1,
+      "height": 0.5
+    },
+    {
+      "name": "Shuffle5",
+      "klass": "Shuffle2",
+      "column": "C1",
+      "order": 0,
+      "x": -22.3,
+      "y": 0.35000000000000003,
+      "height": 0.5
+    },
+    {
+      "name": "Invert3",
+      "klass": "Invert",
+      "column": "C1",
+      "order": 1,
+      "x": -22.3,
+      "y": -1.3,
+      "height": 0.5
+    },
+    {
+      "name": "Clamp5",
+      "klass": "Clamp",
+      "column": "C1",
+      "order": 2,
+      "x": -22.3,
+      "y": -3.5,
+      "height": 0.5
+    },
+    {
+      "name": "Constant1",
+      "klass": "Constant",
+      "column": "C2",
+      "order": 0,
+      "x": -15.3,
+      "y": 23.3,
+      "height": 0.5
+    },
+    {
+      "name": "Merge1",
+      "klass": "Merge2",
+      "column": "C2",
+      "order": 1,
+      "x": -15.3,
+      "y": 17.85,
+      "height": 0.8
+    },
+    {
+      "name": "Crop2",
+      "klass": "Crop",
+      "column": "C2",
+      "order": 2,
+      "x": -15.3,
+      "y": 15.5,
+      "height": 0.5
+    },
+    {
+      "name": "Merge17",
+      "klass": "Merge2",
+      "column": "C2",
+      "order": 3,
+      "x": -15.3,
+      "y": 11.200000000000001,
+      "height": 0.8
+    },
+    {
+      "name": "Merge18",
+      "klass": "Merge2",
+      "column": "C2",
+      "order": 4,
+      "x": -15.3,
+      "y": 8.75,
+      "height": 0.8
+    },
+    {
+      "name": "Shuffle2",
+      "klass": "Shuffle2",
+      "column": "C2",
+      "order": 5,
+      "x": -15.3,
+      "y": 7.75,
+      "height": 0.5
+    },
+    {
+      "name": "Merge11",
+      "klass": "Merge2",
+      "column": "C2",
+      "order": 6,
+      "x": -15.3,
+      "y": -5.15,
+      "height": 0.8
+    },
+    {
+      "name": "Merge10",
+      "klass": "Merge2",
+      "column": "C2",
+      "order": 7,
+      "x": -16.25,
+      "y": -8.8,
+      "height": 0.8
+    }
+  ],
+  "edges": [
+    {
+      "src": "Constant4",
+      "dst": "RotoPaint7",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "RotoPaint7",
+      "dst": "Blur9",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Blur9",
+      "dst": "Dot4",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Dot4",
+      "dst": "Grade2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Grade2",
+      "dst": "Shuffle4",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Shuffle4",
+      "dst": "Grade1",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Grade1",
+      "dst": "Clamp3",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Constant6",
+      "dst": "RotoPaint9",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "RotoPaint9",
+      "dst": "Blur11",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Blur11",
+      "dst": "Transform_MatchMove2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Dot4",
+      "dst": "Shuffle5",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Shuffle5",
+      "dst": "Invert3",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Invert3",
+      "dst": "Clamp5",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Clamp5",
+      "dst": "Merge1",
+      "kind": "B",
+      "align": false
+    },
+    {
+      "src": "Constant1",
+      "dst": "Merge1",
+      "kind": "A",
+      "align": true
+    },
+    {
+      "src": "Merge1",
+      "dst": "Crop2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Transform_MatchMove2",
+      "dst": "Merge17",
+      "kind": "B",
+      "align": false
+    },
+    {
+      "src": "Crop2",
+      "dst": "Merge17",
+      "kind": "A",
+      "align": true
+    },
+    {
+      "src": "Clamp3",
+      "dst": "Merge18",
+      "kind": "B",
+      "align": false
+    },
+    {
+      "src": "Merge17",
+      "dst": "Merge18",
+      "kind": "A",
+      "align": true
+    },
+    {
+      "src": "Merge18",
+      "dst": "Shuffle2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Shuffle2",
+      "dst": "Merge11",
+      "kind": "B",
+      "align": false
+    },
+    {
+      "src": "Merge11",
+      "dst": "Merge10",
+      "kind": "B",
+      "align": false
+    }
+  ],
+  "meta": {
+    "source_nk": "/Users/leg4/.nuke/LGA_ToolPack-Layout/testGraph_v03_Before.nk",
+    "root_name": "/Users/leg4/.nuke/LGA_ToolPack-Layout/testGraph_v03_Before.nk",
+    "scale": 0.05,
+    "tolerance_x": 2.5,
+    "centered_positions": true,
+    "used_stack": true
+  }
+}

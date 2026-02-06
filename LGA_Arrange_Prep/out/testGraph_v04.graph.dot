@@ -1,0 +1,19 @@
+digraph testGraph_v04_graph {
+  graph [layout=neato, splines=ortho, overlap=false];
+  node [fontname="Helvetica", fontsize=10, fixedsize=true, width=1.6, height=0.5];
+  Constant4 [shape=box, style="rounded,filled", fillcolor="#dddddd", pos="-1.7000000000000002,3.4000000000000004!", height="0.5", width="1.6" ];
+  Dot4 [shape=circle, style=filled, fillcolor="#bdbdbd", label="", pos="-1.7000000000000002,-4.7!", height="0.2", width="0.2" ];
+  Clamp3 [shape=box, style="rounded,filled", fillcolor="#dddddd", pos="-40.35,-4.55!", height="0.5", width="1.6" ];
+  Blur11 [shape=box, style="rounded,filled", fillcolor="#f4a460", pos="-18.05,5.7!", height="0.6", width="1.6" ];
+  Clamp5 [shape=box, style="rounded,filled", fillcolor="#dddddd", pos="-32.050000000000004,2.6500000000000004!", height="0.5", width="1.6" ];
+  Shuffle2 [shape=box, style="rounded,filled", fillcolor="#dddddd", pos="-25.05,10.100000000000001!", height="0.5", width="1.6" ];
+  Merge11 [shape=box, style="rounded,filled", fillcolor="#4f5fbf", pos="-25.05,2.25!", height="0.8", width="1.6" ];
+  Merge10 [shape=box, style="rounded,filled", fillcolor="#4f5fbf", pos="-25.05,-4.95!", height="0.8", width="1.6" ];
+  Constant4 -> Dot4;
+  Shuffle2 -> Merge11;
+  Clamp5 -> Merge11;
+  Blur11 -> Merge11 [label="mask", fontsize=9];
+  Merge11 -> Merge10;
+  Clamp3 -> Merge10;
+  Dot4 -> Merge10 [label="mask", fontsize=9];
+}

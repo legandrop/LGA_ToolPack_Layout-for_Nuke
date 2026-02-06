@@ -1,0 +1,128 @@
+{
+  "nodes": [
+    {
+      "name": "Constant4",
+      "klass": "Constant",
+      "column": "C4",
+      "order": 0,
+      "x": -1.7000000000000002,
+      "y": 3.4000000000000004,
+      "height": 0.5
+    },
+    {
+      "name": "Dot4",
+      "klass": "Dot",
+      "column": "C4",
+      "order": 1,
+      "x": -1.7000000000000002,
+      "y": -4.7,
+      "height": 0.2
+    },
+    {
+      "name": "Clamp3",
+      "klass": "Clamp",
+      "column": "C0",
+      "order": 0,
+      "x": -40.35,
+      "y": -4.55,
+      "height": 0.5
+    },
+    {
+      "name": "Blur11",
+      "klass": "Blur",
+      "column": "C3",
+      "order": 0,
+      "x": -18.05,
+      "y": 5.7,
+      "height": 0.6
+    },
+    {
+      "name": "Clamp5",
+      "klass": "Clamp",
+      "column": "C1",
+      "order": 0,
+      "x": -32.050000000000004,
+      "y": 2.6500000000000004,
+      "height": 0.5
+    },
+    {
+      "name": "Shuffle2",
+      "klass": "Shuffle2",
+      "column": "C2",
+      "order": 0,
+      "x": -25.05,
+      "y": 10.100000000000001,
+      "height": 0.5
+    },
+    {
+      "name": "Merge11",
+      "klass": "Merge2",
+      "column": "C2",
+      "order": 1,
+      "x": -25.05,
+      "y": 2.25,
+      "height": 0.8
+    },
+    {
+      "name": "Merge10",
+      "klass": "Merge2",
+      "column": "C2",
+      "order": 2,
+      "x": -25.05,
+      "y": -4.95,
+      "height": 0.8
+    }
+  ],
+  "edges": [
+    {
+      "src": "Constant4",
+      "dst": "Dot4",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Shuffle2",
+      "dst": "Merge11",
+      "kind": "B",
+      "align": false
+    },
+    {
+      "src": "Clamp5",
+      "dst": "Merge11",
+      "kind": "A",
+      "align": true
+    },
+    {
+      "src": "Blur11",
+      "dst": "Merge11",
+      "kind": "mask",
+      "align": true
+    },
+    {
+      "src": "Merge11",
+      "dst": "Merge10",
+      "kind": "B",
+      "align": false
+    },
+    {
+      "src": "Clamp3",
+      "dst": "Merge10",
+      "kind": "A",
+      "align": true
+    },
+    {
+      "src": "Dot4",
+      "dst": "Merge10",
+      "kind": "mask",
+      "align": true
+    }
+  ],
+  "meta": {
+    "source_nk": "/Users/leg4/.nuke/LGA_ToolPack-Layout/testGraph_v04.nk",
+    "root_name": "/Users/leg4/.nuke/LGA_ToolPack-Layout/testGraph_v04.nk",
+    "scale": 0.05,
+    "tolerance_x": 2.5,
+    "centered_positions": true,
+    "used_stack": false
+  }
+}
