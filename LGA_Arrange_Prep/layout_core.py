@@ -138,21 +138,17 @@ def _choose_anchor(graph: Graph, edge: Edge) -> Tuple[Node, Node]:
     dst = graph.nodes[edge.dst]
 
     if graph.principal_column is None:
-        return src, dst
-
-    order = _column_order(graph)
-    p_idx = order.get(graph.principal_column, 0)
-
-    def dist(col: str) -> int:
-        return abs(order.get(col, 0) - p_idx)
-
-    # Prefer node in principal or closest-to-principal column as anchor
-    if dist(src.column) < dist(dst.column):
-        return src, dst
-    if dist(dst.column) < dist(src.column):
+        # Default: inputs align to the node they feed (dst).
         return dst, src
-    # Tie: keep src as anchor
-    return src, dst
+
+    # Principal column is always the anchor.
+    if src.column == graph.principal_column:
+        return src, dst
+    if dst.column == graph.principal_column:
+        return dst, src
+
+    # Default: inputs align to the node they feed (dst).
+    return dst, src
 
 
 def _baseline_distribute_column(nodes: List[Node]) -> None:
@@ -356,83 +352,46 @@ def _align_subgroup_by_subsubgroups(
     min_gap: float,
 ) -> Tuple[bool, Set[str], List[Tuple[str, float]]]:
     """
-    Align only the portion of subgroup from each connected node upward.
+    Align the entire subgroup to a single anchor.
+
+    Rule: preserve the subgroup's internal spacing (equidistant distribution)
+    and shift the whole subgroup to match its chosen anchor. We only resolve
+    collisions between different subgroups; we do not segment a subgroup.
     Returns (aligned?, anchors_used, anchor_conflicts).
     """
     if not subgroup:
         return False, set(), []
 
-    ordered_bt = sorted(subgroup, key=lambda n: n.order, reverse=True)  # bottom to top
-    anchors_used: Set[str] = set()
-    any_aligned = False
-    conflicts: List[Tuple[str, float]] = []
+    order = _column_order(graph)
+    p_idx = order.get(graph.principal_column, 0) if graph.principal_column else 0
 
-    # Identify aligned nodes in bottom->top order
-    aligned_indices: List[Tuple[int, Node, Node]] = []
-    for i, node in enumerate(ordered_bt):
+    def dist(col: str) -> int:
+        return abs(order.get(col, 0) - p_idx)
+
+    candidates: List[Tuple[int, int, float, Node, Node]] = []
+    for node in subgroup:
         anchor = _find_anchor_for_node(graph, node, potential_cols)
         if anchor is None:
             continue
-        aligned_indices.append((i, node, anchor))
+        candidates.append((dist(anchor.column), node.order, abs(anchor.y - node.y), node, anchor))
 
-    if not aligned_indices:
+    if not candidates:
         return False, set(), []
 
-    any_aligned = True
+    # Choose the anchor closest to principal; tie-break by node order, then smallest movement.
+    candidates.sort(key=lambda t: (t[0], t[1], t[2]))
+    _dist, _order, _delta_abs, aligned_node, anchor = candidates[0]
 
-    # Build disjoint segments: each aligned node owns itself and nodes above until next aligned node
-    # Also keep the tail below the lowest aligned node as an unanchored segment (if any).
-    aligned_indices.sort(key=lambda t: t[0])
-    segments: List[Tuple[List[Node], Optional[Node]]] = []
+    delta = anchor.y - aligned_node.y
+    _shift_subgroup(subgroup, delta)
 
-    first_i = aligned_indices[0][0]
-    if first_i > 0:
-        tail_nodes = ordered_bt[:first_i]
-        segments.append((tail_nodes, None))
-
-    for idx, (i, node, anchor) in enumerate(aligned_indices):
-        next_i = aligned_indices[idx + 1][0] if idx + 1 < len(aligned_indices) else len(ordered_bt)
-        seg_nodes = ordered_bt[i:next_i]
-        segments.append((seg_nodes, anchor))
-        anchors_used.add(anchor.name)
-
-    # Align each segment to its anchor (by the aligned node at segment start)
-    for seg_nodes, anchor in segments:
-        if anchor is None:
-            continue
-        aligned_node = seg_nodes[0]
-        delta = anchor.y - aligned_node.y
-        _shift_subgroup(seg_nodes, delta)
-
-    # Resolve overlaps between segments (top to bottom)
-    # Build segment bounds after alignment
-    seg_bounds = []
-    for seg_nodes, anchor in segments:
-        top, bottom = _subgroup_bounds(seg_nodes)
-        seg_bounds.append((seg_nodes, anchor, top, bottom))
-
-    # Order by top descending
-    seg_bounds.sort(key=lambda t: t[2], reverse=True)
-    for i in range(1, len(seg_bounds)):
-        upper_nodes, upper_anchor, upper_top, upper_bottom = seg_bounds[i - 1]
-        lower_nodes, lower_anchor, lower_top, lower_bottom = seg_bounds[i]
-        gap = upper_bottom - lower_top
-        if gap >= min_gap:
-            continue
-        needed = min_gap - gap
-        # If lower segment anchored, record conflict to adjust principal; otherwise push it down
-        if lower_anchor is not None:
-            conflicts.append((lower_anchor.name, needed))
-        else:
-            _shift_subgroup(lower_nodes, -needed)
-            # update bounds
-            new_top, new_bottom = _subgroup_bounds(lower_nodes)
-            seg_bounds[i] = (lower_nodes, lower_anchor, new_top, new_bottom)
+    anchors_used = {anchor.name}
+    conflicts: List[Tuple[str, float]] = []
 
     # NOTE: We do NOT constrain by next_cols.
     # Alignment is enforced from principal outward; farther columns must adapt.
 
-    return any_aligned, anchors_used, conflicts
+    return True, anchors_used, conflicts
 
 
 def _distribute_column_with_fixed(nodes: List[Node], fixed: Set[str], min_gap: float) -> None:
@@ -560,7 +519,8 @@ def _redistribute_principal_with_fixed_bounds(
 ) -> bool:
     """
     Redistribute principal column within fixed top/bottom bounds.
-    Anchors with conflicts are shifted downward, then the rest is redistributed.
+    Anchors can shift up (negative) or down (positive). Shifted anchors are fixed,
+    and nodes are redistributed between fixed anchors.
     """
     principal = _principal_nodes(graph)
     if not principal:
@@ -569,6 +529,7 @@ def _redistribute_principal_with_fixed_bounds(
     top_node = principal[0]
     bottom_node = principal[-1]
     fixed = {top_node.name, bottom_node.name}
+    fixed.update(anchor_shifts.keys())
 
     # Reset to original positions before applying shifts
     for n in principal:
@@ -577,7 +538,6 @@ def _redistribute_principal_with_fixed_bounds(
     top_y = top_node.y
     bottom_y = bottom_node.y
 
-    # Precompute fixed indices for segment capacity checks
     fixed_indices = [i for i, n in enumerate(principal) if n.name in fixed]
     fixed_indices = sorted(set(fixed_indices))
     index_by_name = {n.name: i for i, n in enumerate(principal)}
@@ -588,37 +548,61 @@ def _redistribute_principal_with_fixed_bounds(
                 return j
         return None
 
-    # Apply anchor shifts (downwards), capped by segment capacity
-    for anchor_name, needed in anchor_shifts.items():
-        if anchor_name in fixed:
+    def _next_fixed_above(idx: int) -> Optional[int]:
+        for j in reversed(fixed_indices):
+            if j < idx:
+                return j
+        return None
+
+    for anchor_name, shift in anchor_shifts.items():
+        if anchor_name in (top_node.name, bottom_node.name):
             continue
         anchor = next((n for n in principal if n.name == anchor_name), None)
         if not anchor:
             continue
         idx = index_by_name.get(anchor.name)
-        lower_idx = _next_fixed_below(idx) if idx is not None else None
-        capped = needed
-        if lower_idx is not None:
-            top = anchor.y + anchor.height / 2
-            bottom = principal[lower_idx].y - principal[lower_idx].height / 2
-            segment = principal[idx : lower_idx + 1]
-            required = sum(n.height for n in segment) + min_gap * (len(segment) - 1)
-            available = top - bottom
-            slack = available - required
-            if slack < 0:
-                slack = 0.0
-            if capped > slack:
-                capped = slack
-        anchor.y = anchor.y - capped
+        if idx is None:
+            continue
+
+        capped = shift
+        if shift > 0:
+            # Downward shift: cap by space to next fixed below
+            lower_idx = _next_fixed_below(idx)
+            if lower_idx is not None:
+                top = anchor.y + anchor.height / 2
+                bottom = principal[lower_idx].y - principal[lower_idx].height / 2
+                segment = principal[idx : lower_idx + 1]
+                required = sum(n.height for n in segment) + min_gap * (len(segment) - 1)
+                available = top - bottom
+                slack = available - required
+                if slack < 0:
+                    slack = 0.0
+                if capped > slack:
+                    capped = slack
+            anchor.y = anchor.y - capped
+        elif shift < 0:
+            # Upward shift: cap by space to next fixed above
+            upper_idx = _next_fixed_above(idx)
+            if upper_idx is not None:
+                top = principal[upper_idx].y + principal[upper_idx].height / 2
+                bottom = anchor.y - anchor.height / 2
+                segment = principal[upper_idx : idx + 1]
+                required = sum(n.height for n in segment) + min_gap * (len(segment) - 1)
+                available = top - bottom
+                slack = available - required
+                if slack < 0:
+                    slack = 0.0
+                if -capped > slack:
+                    capped = -slack
+            anchor.y = anchor.y - capped
+
         if anchor.y > top_y:
             anchor.y = top_y
         if anchor.y < bottom_y:
             anchor.y = bottom_y
 
-    # Redistribute non-fixed nodes between fixed anchors
     _distribute_column_with_fixed(principal, fixed, min_gap=min_gap)
 
-    # Persist new positions as baseline for next iteration
     for n in principal:
         n.original_y = n.y
 
@@ -656,6 +640,8 @@ def layout(
 
     only_one_column = len(graph.columns()) <= 1
 
+    principal_fixed_nodes: Set[str] = set()
+
     for _iter in range(max_iters):
         conflicts_all = []
         anchor_conflicts_all = []
@@ -665,10 +651,16 @@ def layout(
             node.y = node.original_y
             node.fixed_y = False
 
-        # Distribute principal column every iteration (top/bottom fixed by original_y)
+        # Distribute principal column every iteration
         principal_nodes = _principal_nodes(graph)
         if principal_nodes:
-            _baseline_distribute_subgroup(principal_nodes, min_gap=min_gap)
+            if principal_fixed_nodes:
+                fixed = set(principal_fixed_nodes)
+                fixed.add(principal_nodes[0].name)
+                fixed.add(principal_nodes[-1].name)
+                _distribute_column_with_fixed(principal_nodes, fixed, min_gap=min_gap)
+            else:
+                _baseline_distribute_subgroup(principal_nodes, min_gap=min_gap)
 
         # Baseline distribution per subgroup (skip principal column)
         for col in graph.columns().keys():
@@ -697,37 +689,54 @@ def layout(
         col_order = _column_order(graph)
         principal_idx = col_order.get(graph.principal_column, 0) if graph.principal_column else 0
 
-        for col, subgroups in subgroup_lists.items():
-            if graph.principal_column and col == graph.principal_column:
-                continue
-            col_idx = col_order.get(col, 0)
-            if col_idx >= principal_idx:
-                potential_cols = {c for c, i in col_order.items() if principal_idx <= i <= col_idx}
-                next_cols = {c for c, i in col_order.items() if i > col_idx}
-            else:
-                potential_cols = {c for c, i in col_order.items() if col_idx <= i <= principal_idx}
-                next_cols = {c for c, i in col_order.items() if i < col_idx}
+        # Align columns from principal outward so outer columns follow inner updates.
+        ordered_cols = [
+            c for c in col_order.keys()
+            if not (graph.principal_column and c == graph.principal_column)
+        ]
+        ordered_cols.sort(
+            key=lambda c: (abs(col_order.get(c, 0) - principal_idx), col_order.get(c, 0))
+        )
 
-            for idx, subgroup in enumerate(subgroups):
-                aligned, anchor_names, anchor_conflicts = _align_subgroup_by_subsubgroups(
-                    graph,
-                    subgroup,
-                    potential_cols,
-                    next_cols,
-                    min_gap=min_gap,
-                )
-                if aligned:
-                    fixed_subgroups[col].add(idx)
-                    if anchor_conflicts:
-                        anchor_conflicts_all.extend(anchor_conflicts)
-                    if anchor_names:
-                        anchors = [graph.nodes[name] for name in anchor_names]
-                        # Store one anchor for conflict handling (closest to principal)
-                        anchor_list = sorted(
-                            anchors,
-                            key=lambda a: abs(col_order.get(a.column, 0) - principal_idx),
-                        )
-                        subgroup_anchor[col][idx] = anchor_list[0]
+        # Multi-pass alignment so outer/inner dependencies can settle.
+        for _pass in range(3):
+            moved = False
+            for col in ordered_cols:
+                subgroups = subgroup_lists.get(col, [])
+                col_idx = col_order.get(col, 0)
+                if col_idx >= principal_idx:
+                    potential_cols = {c for c, i in col_order.items() if principal_idx <= i <= col_idx}
+                    next_cols = {c for c, i in col_order.items() if i > col_idx}
+                else:
+                    potential_cols = {c for c, i in col_order.items() if col_idx <= i <= principal_idx}
+                    next_cols = {c for c, i in col_order.items() if i < col_idx}
+
+                for idx, subgroup in enumerate(subgroups):
+                    before = [n.y for n in subgroup]
+                    aligned, anchor_names, anchor_conflicts = _align_subgroup_by_subsubgroups(
+                        graph,
+                        subgroup,
+                        potential_cols,
+                        next_cols,
+                        min_gap=min_gap,
+                    )
+                    if aligned:
+                        fixed_subgroups[col].add(idx)
+                        if anchor_conflicts:
+                            anchor_conflicts_all.extend(anchor_conflicts)
+                        if anchor_names:
+                            anchors = [graph.nodes[name] for name in anchor_names]
+                            # Store one anchor for conflict handling (closest to principal)
+                            anchor_list = sorted(
+                                anchors,
+                                key=lambda a: abs(col_order.get(a.column, 0) - principal_idx),
+                            )
+                            subgroup_anchor[col][idx] = anchor_list[0]
+                    after = [n.y for n in subgroup]
+                    if any(abs(a - b) > 1e-6 for a, b in zip(after, before)):
+                        moved = True
+            if not moved:
+                break
         # Principal already distributed at the start of the iteration
 
         # Enforce top constraint for unconnected subgroups
@@ -770,10 +779,16 @@ def layout(
             for name, needed in anchor_conflicts_all:
                 anchor_shifts[name] = max(anchor_shifts.get(name, 0.0), needed)
         if conflicts_all:
-            for col, (_upper_idx, lower_idx, needed) in conflicts_all:
+            for col, (upper_idx, lower_idx, needed) in conflicts_all:
                 anchors = subgroup_anchor.get(col, {})
+                upper_anchor = anchors.get(upper_idx)
                 lower_anchor = anchors.get(lower_idx)
-                if lower_anchor:
+                # Prefer moving the upper anchor UP (negative shift) to avoid overlap
+                if upper_anchor:
+                    current = anchor_shifts.get(upper_anchor.name, 0.0)
+                    anchor_shifts[upper_anchor.name] = min(current, -needed) if current < 0 else -needed
+                elif lower_anchor:
+                    # Fallback: move lower anchor down if upper missing
                     anchor_shifts[lower_anchor.name] = max(
                         anchor_shifts.get(lower_anchor.name, 0.0), needed
                     )
@@ -783,6 +798,8 @@ def layout(
                 anchor_shifts,
                 min_gap=min_gap,
             )
+            if adjusted:
+                principal_fixed_nodes = set(anchor_shifts.keys())
         if adjusted:
             continue
         break

@@ -1,0 +1,31 @@
+digraph testGraph_v08_graph {
+  graph [layout=neato, splines=ortho, overlap=false];
+  node [fontname="Helvetica", fontsize=10, fixedsize=true, width=1.6, height=0.5];
+  Roto3 [shape=box, style="rounded,filled", fillcolor="#8fd18f", pos="49.85,-28.200000000000003!", height="0.6", width="1.6" ];
+  Roto5 [shape=box, style="rounded,filled", fillcolor="#8fd18f", pos="39.400000000000006,-28.200000000000003!", height="0.6", width="1.6" ];
+  Dot12 [shape=circle, style=filled, fillcolor="#bdbdbd", label="", pos="39.400000000000006,-31.700000000000003!", height="0.2", width="0.2" ];
+  ChannelMerge2 [shape=box, style="rounded,filled", fillcolor="#4f5fbf", pos="49.85,-31.3!", height="0.5", width="1.6" ];
+  Blur3 [shape=box, style="rounded,filled", fillcolor="#f4a460", pos="49.85,-34.6!", height="0.6", width="1.6" ];
+  Grade1 [shape=box, style="rounded,filled", fillcolor="#cbd6ee", pos="39.1,-16.85!", height="0.5", width="1.6" ];
+  Saturation3 [shape=box, style="rounded,filled", fillcolor="#cbd6ee", pos="39.1,-19.3!", height="0.5", width="1.6" ];
+  VectorBlur1 [shape=box, style="rounded,filled", fillcolor="#f4a460", pos="58.050000000000004,-6.75!", height="0.5", width="1.6" ];
+  Merge7 [shape=box, style="rounded,filled", fillcolor="#4f5fbf", pos="58.050000000000004,-10.4!", height="0.8", width="1.6" ];
+  Grade2 [shape=box, style="rounded,filled", fillcolor="#cbd6ee", pos="58.050000000000004,-12.65!", height="0.5", width="1.6" ];
+  Saturation2 [shape=box, style="rounded,filled", fillcolor="#cbd6ee", pos="58.050000000000004,-13.850000000000001!", height="0.5", width="1.6" ];
+  Grade3 [shape=box, style="rounded,filled", fillcolor="#cbd6ee", pos="58.050000000000004,-15.05!", height="0.5", width="1.6" ];
+  Merge9 [shape=box, style="rounded,filled", fillcolor="#4f5fbf", pos="58.050000000000004,-21.150000000000002!", height="0.8", width="1.6" ];
+  Merge6 [shape=box, style="rounded,filled", fillcolor="#4f5fbf", pos="58.050000000000004,-34.9!", height="0.8", width="1.6" ];
+  Roto5 -> Dot12;
+  Roto3 -> ChannelMerge2;
+  Dot12 -> ChannelMerge2;
+  ChannelMerge2 -> Blur3;
+  Grade1 -> Saturation3;
+  VectorBlur1 -> Merge7;
+  Merge7 -> Grade2;
+  Grade2 -> Saturation2;
+  Saturation2 -> Grade3;
+  Saturation3 -> Merge9;
+  Grade3 -> Merge9;
+  Blur3 -> Merge6;
+  Merge9 -> Merge6;
+}

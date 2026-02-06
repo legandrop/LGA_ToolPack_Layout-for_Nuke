@@ -1,0 +1,218 @@
+{
+  "nodes": [
+    {
+      "name": "Roto3",
+      "klass": "Roto",
+      "column": "C1",
+      "order": 0,
+      "x": 49.85,
+      "y": -28.200000000000003,
+      "height": 0.6
+    },
+    {
+      "name": "Roto5",
+      "klass": "Roto",
+      "column": "C0",
+      "order": 2,
+      "x": 39.400000000000006,
+      "y": -28.200000000000003,
+      "height": 0.6
+    },
+    {
+      "name": "Dot12",
+      "klass": "Dot",
+      "column": "C0",
+      "order": 3,
+      "x": 39.400000000000006,
+      "y": -31.700000000000003,
+      "height": 0.2
+    },
+    {
+      "name": "ChannelMerge2",
+      "klass": "ChannelMerge",
+      "column": "C1",
+      "order": 1,
+      "x": 49.85,
+      "y": -31.3,
+      "height": 0.5
+    },
+    {
+      "name": "Blur3",
+      "klass": "Blur",
+      "column": "C1",
+      "order": 2,
+      "x": 49.85,
+      "y": -34.6,
+      "height": 0.6
+    },
+    {
+      "name": "Grade1",
+      "klass": "Grade",
+      "column": "C0",
+      "order": 0,
+      "x": 39.1,
+      "y": -16.85,
+      "height": 0.5
+    },
+    {
+      "name": "Saturation3",
+      "klass": "Saturation",
+      "column": "C0",
+      "order": 1,
+      "x": 39.1,
+      "y": -19.3,
+      "height": 0.5
+    },
+    {
+      "name": "VectorBlur1",
+      "klass": "VectorBlur2",
+      "column": "C2",
+      "order": 0,
+      "x": 58.050000000000004,
+      "y": -6.75,
+      "height": 0.5
+    },
+    {
+      "name": "Merge7",
+      "klass": "Merge2",
+      "column": "C2",
+      "order": 1,
+      "x": 58.050000000000004,
+      "y": -10.4,
+      "height": 0.8
+    },
+    {
+      "name": "Grade2",
+      "klass": "Grade",
+      "column": "C2",
+      "order": 2,
+      "x": 58.050000000000004,
+      "y": -12.65,
+      "height": 0.5
+    },
+    {
+      "name": "Saturation2",
+      "klass": "Saturation",
+      "column": "C2",
+      "order": 3,
+      "x": 58.050000000000004,
+      "y": -13.850000000000001,
+      "height": 0.5
+    },
+    {
+      "name": "Grade3",
+      "klass": "Grade",
+      "column": "C2",
+      "order": 4,
+      "x": 58.050000000000004,
+      "y": -15.05,
+      "height": 0.5
+    },
+    {
+      "name": "Merge9",
+      "klass": "Merge2",
+      "column": "C2",
+      "order": 5,
+      "x": 58.050000000000004,
+      "y": -21.150000000000002,
+      "height": 0.8
+    },
+    {
+      "name": "Merge6",
+      "klass": "Merge2",
+      "column": "C2",
+      "order": 6,
+      "x": 58.050000000000004,
+      "y": -34.9,
+      "height": 0.8
+    }
+  ],
+  "edges": [
+    {
+      "src": "Roto5",
+      "dst": "Dot12",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Roto3",
+      "dst": "ChannelMerge2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Dot12",
+      "dst": "ChannelMerge2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "ChannelMerge2",
+      "dst": "Blur3",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Grade1",
+      "dst": "Saturation3",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "VectorBlur1",
+      "dst": "Merge7",
+      "kind": "B",
+      "align": false
+    },
+    {
+      "src": "Merge7",
+      "dst": "Grade2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Grade2",
+      "dst": "Saturation2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Saturation2",
+      "dst": "Grade3",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Saturation3",
+      "dst": "Merge9",
+      "kind": "B",
+      "align": false
+    },
+    {
+      "src": "Grade3",
+      "dst": "Merge9",
+      "kind": "A",
+      "align": true
+    },
+    {
+      "src": "Blur3",
+      "dst": "Merge6",
+      "kind": "B",
+      "align": false
+    },
+    {
+      "src": "Merge9",
+      "dst": "Merge6",
+      "kind": "A",
+      "align": true
+    }
+  ],
+  "meta": {
+    "source_nk": "testGraph_v08.nk",
+    "root_name": "/Users/leg4/.nuke/LGA_ToolPack-Layout/testGraph_v08.nk",
+    "scale": 0.05,
+    "tolerance_x": 2.5,
+    "centered_positions": true,
+    "used_stack": true
+  }
+}

@@ -1,0 +1,406 @@
+{
+  "nodes": [
+    {
+      "name": "Roto3",
+      "klass": "Roto",
+      "column": "C4",
+      "order": 0,
+      "x": 63.55,
+      "y": -27.028571428571432,
+      "height": 0.6
+    },
+    {
+      "name": "Roto5",
+      "klass": "Roto",
+      "column": "C5",
+      "order": 0,
+      "x": 72.9,
+      "y": -26.728571428571424,
+      "height": 0.6
+    },
+    {
+      "name": "Dot12",
+      "klass": "Dot",
+      "column": "C5",
+      "order": 1,
+      "x": 72.9,
+      "y": -30.228571428571428,
+      "height": 0.2
+    },
+    {
+      "name": "ChannelMerge2",
+      "klass": "ChannelMerge",
+      "column": "C4",
+      "order": 1,
+      "x": 63.55,
+      "y": -30.228571428571428,
+      "height": 0.5
+    },
+    {
+      "name": "Blur3",
+      "klass": "Blur",
+      "column": "C4",
+      "order": 2,
+      "x": 63.55,
+      "y": -33.42857142857142,
+      "height": 0.6
+    },
+    {
+      "name": "Shuffle12",
+      "klass": "Shuffle2",
+      "column": "C0",
+      "order": 0,
+      "x": 27.05,
+      "y": -2.9857142857142787,
+      "height": 0.5
+    },
+    {
+      "name": "ColorCorrect2",
+      "klass": "ColorCorrect",
+      "column": "C0",
+      "order": 1,
+      "x": 27.05,
+      "y": -12.16071428571428,
+      "height": 0.5
+    },
+    {
+      "name": "Dot10",
+      "klass": "Dot",
+      "column": "C0",
+      "order": 2,
+      "x": 27.05,
+      "y": -21.18571428571428,
+      "height": 0.2
+    },
+    {
+      "name": "Dot14",
+      "klass": "Dot",
+      "column": "C2",
+      "order": 0,
+      "x": 46.65,
+      "y": -11.114285714285707,
+      "height": 0.2
+    },
+    {
+      "name": "VectorToMotion2",
+      "klass": "VectorToMotion",
+      "column": "C2",
+      "order": 1,
+      "x": 46.65,
+      "y": -13.514285714285709,
+      "height": 0.5
+    },
+    {
+      "name": "Transform3",
+      "klass": "Transform",
+      "column": "C1",
+      "order": 0,
+      "x": 39.1,
+      "y": -2.2571428571428527,
+      "height": 0.5
+    },
+    {
+      "name": "Transform4",
+      "klass": "Transform",
+      "column": "C1",
+      "order": 1,
+      "x": 39.1,
+      "y": -5.992857142857138,
+      "height": 0.5
+    },
+    {
+      "name": "VectorDistort2",
+      "klass": "VectorDistort",
+      "column": "C1",
+      "order": 2,
+      "x": 39.1,
+      "y": -9.728571428571424,
+      "height": 0.5
+    },
+    {
+      "name": "Copy2",
+      "klass": "Copy",
+      "column": "C1",
+      "order": 3,
+      "x": 39.1,
+      "y": -13.514285714285709,
+      "height": 0.6
+    },
+    {
+      "name": "VectorBlur2",
+      "klass": "VectorBlur2",
+      "column": "C1",
+      "order": 4,
+      "x": 39.1,
+      "y": -17.299999999999994,
+      "height": 0.5
+    },
+    {
+      "name": "Merge10",
+      "klass": "Merge2",
+      "column": "C1",
+      "order": 5,
+      "x": 39.1,
+      "y": -21.18571428571428,
+      "height": 0.8
+    },
+    {
+      "name": "Grade1",
+      "klass": "Grade",
+      "column": "C1",
+      "order": 6,
+      "x": 39.1,
+      "y": -25.071428571428566,
+      "height": 0.5
+    },
+    {
+      "name": "Saturation3",
+      "klass": "Saturation",
+      "column": "C1",
+      "order": 7,
+      "x": 39.1,
+      "y": -28.80714285714285,
+      "height": 0.5
+    },
+    {
+      "name": "VectorBlur1",
+      "klass": "VectorBlur2",
+      "column": "C3",
+      "order": 0,
+      "x": 58.05,
+      "y": -6.75,
+      "height": 0.5
+    },
+    {
+      "name": "Merge7",
+      "klass": "Merge2",
+      "column": "C3",
+      "order": 1,
+      "x": 58.05,
+      "y": -11.221428571428572,
+      "height": 0.8
+    },
+    {
+      "name": "Grade2",
+      "klass": "Grade",
+      "column": "C3",
+      "order": 2,
+      "x": 58.05,
+      "y": -15.692857142857143,
+      "height": 0.5
+    },
+    {
+      "name": "Saturation2",
+      "klass": "Saturation",
+      "column": "C3",
+      "order": 3,
+      "x": 58.05,
+      "y": -20.014285714285712,
+      "height": 0.5
+    },
+    {
+      "name": "Grade3",
+      "klass": "Grade",
+      "column": "C3",
+      "order": 4,
+      "x": 58.05,
+      "y": -24.335714285714282,
+      "height": 0.5
+    },
+    {
+      "name": "Merge9",
+      "klass": "Merge2",
+      "column": "C3",
+      "order": 5,
+      "x": 58.05,
+      "y": -28.80714285714285,
+      "height": 0.8
+    },
+    {
+      "name": "Merge6",
+      "klass": "Merge2",
+      "column": "C3",
+      "order": 6,
+      "x": 58.05,
+      "y": -33.42857142857142,
+      "height": 0.8
+    },
+    {
+      "name": "Dot8",
+      "klass": "Dot",
+      "column": "C3",
+      "order": 7,
+      "x": 58.05,
+      "y": -37.75,
+      "height": 0.2
+    },
+    {
+      "name": "Merge5",
+      "klass": "Merge2",
+      "column": "C6",
+      "order": 0,
+      "x": 81.15,
+      "y": -37.75,
+      "height": 0.8
+    }
+  ],
+  "edges": [
+    {
+      "src": "Roto5",
+      "dst": "Dot12",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Roto3",
+      "dst": "ChannelMerge2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Dot12",
+      "dst": "ChannelMerge2",
+      "kind": "flow",
+      "align": true
+    },
+    {
+      "src": "ChannelMerge2",
+      "dst": "Blur3",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Shuffle12",
+      "dst": "ColorCorrect2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "ColorCorrect2",
+      "dst": "Dot10",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Dot14",
+      "dst": "VectorToMotion2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Transform3",
+      "dst": "Transform4",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Transform4",
+      "dst": "VectorDistort2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "VectorToMotion2",
+      "dst": "Copy2",
+      "kind": "flow",
+      "align": true
+    },
+    {
+      "src": "VectorDistort2",
+      "dst": "Copy2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Copy2",
+      "dst": "VectorBlur2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Dot10",
+      "dst": "Merge10",
+      "kind": "B",
+      "align": true
+    },
+    {
+      "src": "VectorBlur2",
+      "dst": "Merge10",
+      "kind": "A",
+      "align": false
+    },
+    {
+      "src": "Merge10",
+      "dst": "Grade1",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Grade1",
+      "dst": "Saturation3",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "VectorBlur1",
+      "dst": "Merge7",
+      "kind": "B",
+      "align": false
+    },
+    {
+      "src": "Merge7",
+      "dst": "Grade2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Grade2",
+      "dst": "Saturation2",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Saturation2",
+      "dst": "Grade3",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Saturation3",
+      "dst": "Merge9",
+      "kind": "B",
+      "align": true
+    },
+    {
+      "src": "Grade3",
+      "dst": "Merge9",
+      "kind": "A",
+      "align": false
+    },
+    {
+      "src": "Blur3",
+      "dst": "Merge6",
+      "kind": "B",
+      "align": true
+    },
+    {
+      "src": "Merge9",
+      "dst": "Merge6",
+      "kind": "A",
+      "align": false
+    },
+    {
+      "src": "Merge6",
+      "dst": "Dot8",
+      "kind": "flow",
+      "align": false
+    },
+    {
+      "src": "Dot8",
+      "dst": "Merge5",
+      "kind": "B",
+      "align": true
+    }
+  ],
+  "meta": {}
+}
