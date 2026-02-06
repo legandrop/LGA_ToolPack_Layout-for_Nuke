@@ -712,7 +712,7 @@ def _redistribute_principal_with_fixed_bounds(
     principal_fixed_nodes: Set[str],
     anchor_shifts: Dict[str, float],
     min_gap: float,
-) -> bool:
+) -> Tuple[bool, Dict[str, float]]:
     """
     Redistribute principal column within fixed top/bottom bounds.
     Anchors can shift up (negative) or down (positive). Shifted anchors are fixed,
@@ -720,7 +720,7 @@ def _redistribute_principal_with_fixed_bounds(
     """
     principal = _principal_nodes(graph)
     if not principal:
-        return False
+        return False, {}
 
     top_node = principal[0]
     bottom_node = principal[-1]
@@ -753,6 +753,7 @@ def _redistribute_principal_with_fixed_bounds(
                 return j
         return None
 
+    applied_shifts: Dict[str, float] = {}
     for anchor_name, shift in anchor_shifts.items():
         if anchor_name in (top_node.name, bottom_node.name):
             continue
@@ -763,6 +764,7 @@ def _redistribute_principal_with_fixed_bounds(
         if idx is None:
             continue
 
+        before_y = anchor.y
         capped = shift
         if shift > 0:
             # Downward shift: cap by space to next fixed below
@@ -822,6 +824,9 @@ def _redistribute_principal_with_fixed_bounds(
             anchor.y = top_y
         if anchor.y < bottom_y:
             anchor.y = bottom_y
+        applied = anchor.y - before_y
+        if abs(applied) > 1e-6:
+            applied_shifts[anchor.name] = applied
 
     # Capacity check per segment (only warn on failure)
     for i in range(len(fixed_indices) - 1):
@@ -854,7 +859,63 @@ def _redistribute_principal_with_fixed_bounds(
     for n in principal:
         n.original_y = n.y
 
-    return True
+    return True, applied_shifts
+
+
+def _propagate_anchor_shifts_to_subgroups(
+    graph: Graph,
+    subgroup_lists: Dict[str, List[List[NodeModel]]],
+    subgroup_anchor_names: Dict[str, Dict[int, Set[str]]],
+    applied_shifts: Dict[str, float],
+) -> bool:
+    """Move anchored subgroups by the same delta applied to their single anchor."""
+    moved = False
+    for col, subgroups in subgroup_lists.items():
+        if graph.principal_column and col == graph.principal_column:
+            continue
+        for idx, subgroup in enumerate(subgroups):
+            anchor_names = subgroup_anchor_names.get(col, {}).get(idx)
+            if not anchor_names or len(anchor_names) != 1:
+                continue
+            anchor_name = next(iter(anchor_names))
+            delta = applied_shifts.get(anchor_name)
+            if delta is None or abs(delta) <= 1e-6:
+                continue
+            _shift_subgroup(subgroup, delta)
+            for node in subgroup:
+                node.original_y = node.y
+            moved = True
+    return moved
+
+
+def _final_realign_to_principal(graph: Graph, min_gap: float) -> None:
+    """Final pass to align external columns to the principal after redistribution."""
+    col_order = _column_order(graph)
+    principal_idx = col_order.get(graph.principal_column, 0) if graph.principal_column else 0
+    ordered_cols = [
+        c for c in col_order.keys()
+        if not (graph.principal_column and c == graph.principal_column)
+    ]
+    ordered_cols.sort(
+        key=lambda c: (abs(col_order.get(c, 0) - principal_idx), col_order.get(c, 0))
+    )
+    for col in ordered_cols:
+        subgroups = _column_subgroups(graph, col)
+        col_idx = col_order.get(col, 0)
+        if col_idx >= principal_idx:
+            potential_cols = {c for c, i in col_order.items() if principal_idx <= i <= col_idx}
+            next_cols = {c for c, i in col_order.items() if i > col_idx}
+        else:
+            potential_cols = {c for c, i in col_order.items() if col_idx <= i <= principal_idx}
+            next_cols = {c for c, i in col_order.items() if i < col_idx}
+        for subgroup in subgroups:
+            _align_subgroup_by_subsubgroups(
+                graph,
+                subgroup,
+                potential_cols,
+                next_cols,
+                min_gap=min_gap,
+            )
 
 
 def _anchor_shift_slack(
@@ -1008,10 +1069,12 @@ def layout(graph: Graph, min_gap: float = MIN_GAP, max_iters: int = 5) -> None:
         fixed_subgroups: Dict[str, Set[int]] = {}
         subgroup_lists: Dict[str, List[List[NodeModel]]] = {}
         subgroup_anchor: Dict[str, Dict[int, NodeModel]] = {}
+        subgroup_anchor_names: Dict[str, Dict[int, Set[str]]] = {}
 
         for col in graph.columns().keys():
             subgroup_lists[col] = _column_subgroups(graph, col)
             subgroup_anchor[col] = {}
+            subgroup_anchor_names[col] = {}
             fixed_subgroups[col] = set()
 
         col_order = _column_order(graph)
@@ -1058,6 +1121,7 @@ def layout(graph: Graph, min_gap: float = MIN_GAP, max_iters: int = 5) -> None:
                                 key=lambda a: abs(col_order.get(a.column, 0) - principal_idx),
                             )
                             subgroup_anchor[col][idx] = anchor_list[0]
+                            subgroup_anchor_names[col][idx] = set(anchor_names)
                             # No fixed anchors in principal; outer columns adapt to principal
                     after = [n.y for n in subgroup]
                     if any(abs(a - b) > 1e-6 for a, b in zip(after, before)):
@@ -1249,7 +1313,7 @@ def layout(graph: Graph, min_gap: float = MIN_GAP, max_iters: int = 5) -> None:
             if name not in anchor_shifts:
                 anchor_shifts[name] = delta
         if anchor_shifts:
-            adjusted |= _redistribute_principal_with_fixed_bounds(
+            adjusted, applied_shifts = _redistribute_principal_with_fixed_bounds(
                 graph,
                 principal_fixed_nodes,
                 anchor_shifts,
@@ -1257,11 +1321,20 @@ def layout(graph: Graph, min_gap: float = MIN_GAP, max_iters: int = 5) -> None:
             )
             if adjusted:
                 principal_fixed_nodes = set(anchor_shifts.keys())
+                if applied_shifts:
+                    _propagate_anchor_shifts_to_subgroups(
+                        graph,
+                        subgroup_lists,
+                        subgroup_anchor_names,
+                        applied_shifts,
+                    )
         if adjusted:
             debug_print("Principal redistribuida dentro de top/bottom, re-iterando...")
             continue
         break
 
+    if graph.principal_column:
+        _final_realign_to_principal(graph, min_gap=min_gap)
     _align_columns_x(graph)
     debug_print("=== LAYOUT END ===")
 
