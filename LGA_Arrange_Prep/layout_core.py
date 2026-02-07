@@ -380,7 +380,7 @@ def _align_subgroup_by_subsubgroups(
         anchor = _find_anchor_for_node(graph, node, potential_cols)
         if anchor is None:
             continue
-        candidates.append((dist(anchor.column), node.order, abs(anchor.y - node.y), node, anchor))
+        candidates.append((dist(anchor.column), abs(anchor.y - node.y), node.order, node, anchor))
 
     if not candidates:
         return False, set(), []
@@ -393,8 +393,11 @@ def _align_subgroup_by_subsubgroups(
         index_by_name = {n.name: i for i, n in enumerate(subgroup)}
         anchors_sorted = sorted(anchors_by_node, key=lambda t: index_by_name.get(t[0].name, t[0].order))
 
-        # If anchors are sufficiently spaced, treat as single-anchor to preserve spacing.
+        # If anchors are sufficiently spaced AND already aligned, treat as single-anchor to preserve spacing.
         conflict = False
+        anchor_deltas = {node.name: (anchor.y - node.y) for node, anchor in anchors_sorted}
+        align_eps = max(1e-6, min_gap * 0.1)
+        any_misaligned = any(abs(delta) > align_eps for delta in anchor_deltas.values())
         for (node_a, anchor_a), (node_b, anchor_b) in zip(anchors_sorted, anchors_sorted[1:]):
             idx_a = index_by_name.get(node_a.name)
             idx_b = index_by_name.get(node_b.name)
@@ -415,7 +418,7 @@ def _align_subgroup_by_subsubgroups(
                 conflict = True
                 break
 
-        if not conflict:
+        if not conflict and not any_misaligned:
             # Fall back to single-anchor behavior to avoid unnecessary reshaping.
             candidates.sort(key=lambda t: (t[0], t[1], t[2]))
             _dist, _order, _delta_abs, aligned_node, anchor = candidates[0]
@@ -436,7 +439,6 @@ def _align_subgroup_by_subsubgroups(
             return True, {anchor.name}, []
 
         # Compute deltas before overriding positions.
-        anchor_deltas = {node.name: (anchor.y - node.y) for node, anchor in anchors_sorted}
         for node, anchor in anchors_sorted:
             node.y = anchor.y
 
