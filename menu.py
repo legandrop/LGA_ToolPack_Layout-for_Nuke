@@ -457,6 +457,15 @@ if is_enabled("Arrange_Nodes"):
         shortcutContext=2,
         icon=icon_LTPD,
     )
+    import LGA_arrangeNodes_OLD
+
+    n.addCommand(
+        "  Arrange Nodes (Old)",
+        "LGA_arrangeNodes_OLD.main()",
+        "Ctrl+Alt+5",
+        shortcutContext=2,
+        icon=icon_LTPD,
+    )
 
 """
 # Importar el LGA_arrangeNodes_NU
