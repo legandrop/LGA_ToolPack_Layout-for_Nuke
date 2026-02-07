@@ -805,6 +805,118 @@ def _propagate_anchor_shifts_to_subgroups(
     return moved
 
 
+def _propagate_nonprincipal_anchor_shifts(
+    graph: Graph,
+    subgroup_lists: Dict[str, List[List[Node]]],
+    subgroup_anchor_names: Dict[str, Dict[int, Set[str]]],
+    subgroup_anchor_y_at_align: Dict[Tuple[str, int], float],
+) -> Set[str]:
+    """Move subgroups to follow a single non-principal anchor that moved."""
+    moved_cols: Set[str] = set()
+    for col, subgroups in subgroup_lists.items():
+        if graph.principal_column and col == graph.principal_column:
+            continue
+        for idx, subgroup in enumerate(subgroups):
+            anchor_names = subgroup_anchor_names.get(col, {}).get(idx)
+            if not anchor_names or len(anchor_names) != 1:
+                continue
+            anchor_name = next(iter(anchor_names))
+            anchor = graph.nodes.get(anchor_name)
+            if not anchor:
+                continue
+            if graph.principal_column and anchor.column == graph.principal_column:
+                continue
+            if anchor.column == col:
+                continue
+            key = (col, idx)
+            anchor_y_at_align = subgroup_anchor_y_at_align.get(key)
+            if anchor_y_at_align is None:
+                continue
+            delta = anchor.y - anchor_y_at_align
+            if abs(delta) <= 1e-6:
+                continue
+            _shift_subgroup(subgroup, delta)
+            subgroup_anchor_y_at_align[key] = anchor.y
+            moved_cols.add(col)
+    return moved_cols
+
+
+def _resolve_overlaps_in_columns(
+    subgroup_lists: Dict[str, List[List[Node]]],
+    fixed_subgroups: Dict[str, Set[int]],
+    conflicts_all: List[Tuple[str, Tuple[int, int, float]]],
+    cols: Set[str],
+) -> None:
+    for col in cols:
+        subgroups = subgroup_lists.get(col, [])
+        if not subgroups:
+            continue
+        for i in range(1, len(subgroups)):
+            prev = subgroups[i - 1]
+            curr = subgroups[i]
+            prev_top, prev_bottom = _subgroup_bounds(prev)
+            curr_top, _curr_bottom = _subgroup_bounds(curr)
+            gap = prev_bottom - curr_top
+            delta = OVERLAP_EDGE_GAP - gap
+            if abs(delta) <= 1e-6:
+                continue
+            upper_idx = i - 1
+            if upper_idx in fixed_subgroups[col]:
+                conflicts_all.append((col, (upper_idx, i, delta)))
+                continue
+            _shift_subgroup(prev, delta)
+
+
+def _realign_subgroups_to_anchor_connected(
+    graph: Graph,
+    subgroup_lists: Dict[str, List[List[Node]]],
+    subgroup_anchor_names: Dict[str, Dict[int, Set[str]]],
+    subgroup_anchor_y_at_align: Dict[Tuple[str, int], float],
+    cols: Set[str],
+) -> Set[str]:
+    """After propagation, align subgroups to their anchor using the connected node."""
+    moved_cols: Set[str] = set()
+    for col in cols:
+        subgroups = subgroup_lists.get(col, [])
+        if not subgroups:
+            continue
+        for idx, subgroup in enumerate(subgroups):
+            anchor_names = subgroup_anchor_names.get(col, {}).get(idx)
+            if not anchor_names or len(anchor_names) != 1:
+                continue
+            anchor_name = next(iter(anchor_names))
+            anchor = graph.nodes.get(anchor_name)
+            if not anchor:
+                continue
+            if graph.principal_column and anchor.column == graph.principal_column:
+                continue
+            if anchor.column == col:
+                continue
+            target_node = None
+            best_dist = None
+            for node in subgroup:
+                for edge in graph.edges:
+                    if not edge.align:
+                        continue
+                    if (
+                        (edge.src == node.name and edge.dst == anchor.name)
+                        or (edge.dst == node.name and edge.src == anchor.name)
+                    ):
+                        dist = abs(anchor.y - node.y)
+                        if best_dist is None or dist < best_dist:
+                            best_dist = dist
+                            target_node = node
+            if not target_node:
+                continue
+            delta = anchor.y - target_node.y
+            if abs(delta) <= 1e-6:
+                continue
+            _shift_subgroup(subgroup, delta)
+            subgroup_anchor_y_at_align[(col, idx)] = anchor.y
+            moved_cols.add(col)
+    return moved_cols
+
+
 def _final_realign_to_principal(graph: Graph, min_gap: float) -> None:
     col_order = _column_order(graph)
     principal_idx = col_order.get(graph.principal_column, 0) if graph.principal_column else 0
@@ -972,6 +1084,7 @@ def layout(
     only_one_column = len(graph.columns()) <= 1
 
     principal_fixed_nodes: Set[str] = set()
+    final_subgroup_anchor_names: Dict[str, Dict[int, Set[str]]] = {}
 
     for _iter in range(max_iters):
         conflicts_all = []
@@ -1006,6 +1119,8 @@ def layout(
         subgroup_lists: Dict[str, List[List[Node]]] = {}
         subgroup_anchor: Dict[str, Dict[int, Node]] = {}
         subgroup_anchor_names: Dict[str, Dict[int, Set[str]]] = {}
+        subgroup_anchor_y_at_align: Dict[Tuple[str, int], float] = {}
+        subgroup_anchor_y_at_align: Dict[Tuple[str, int], float] = {}
         # No fixed anchors in principal; outer columns adapt to principal
 
         for col in graph.columns().keys():
@@ -1066,12 +1181,24 @@ def layout(
                             )
                             subgroup_anchor[col][idx] = anchor_list[0]
                             subgroup_anchor_names[col][idx] = set(anchor_names)
+                            if len(anchor_names) == 1:
+                                subgroup_anchor_y_at_align[(col, idx)] = subgroup_anchor[col][idx].y
+                            else:
+                                subgroup_anchor_y_at_align.pop((col, idx), None)
+                            if len(anchor_names) == 1:
+                                subgroup_anchor_y_at_align[(col, idx)] = subgroup_anchor[col][idx].y
+                            else:
+                                subgroup_anchor_y_at_align.pop((col, idx), None)
                     after = [n.y for n in subgroup]
                     if any(abs(a - b) > 1e-6 for a, b in zip(after, before)):
                         moved = True
             if not moved:
                 break
         # Principal already distributed at the start of the iteration
+        final_subgroup_anchor_names = {
+            col: {idx: set(names) for idx, names in anchors.items()}
+            for col, anchors in subgroup_anchor_names.items()
+        }
 
         # Clamp anchored subgroups to principal vertical bounds (no hardcode: any anchor in principal)
         if graph.principal_column:
@@ -1129,6 +1256,46 @@ def layout(
                     conflicts_all.append((col, (upper_idx, i, delta)))
                     continue
                 _shift_subgroup(prev, delta)
+
+        # Propagate shifts from non-principal anchors to dependent subgroups
+        propagated_cols = _propagate_nonprincipal_anchor_shifts(
+            graph,
+            subgroup_lists,
+            subgroup_anchor_names,
+            subgroup_anchor_y_at_align,
+        )
+        if propagated_cols:
+            realigned_cols = _realign_subgroups_to_anchor_connected(
+                graph,
+                subgroup_lists,
+                subgroup_anchor_names,
+                subgroup_anchor_y_at_align,
+                propagated_cols,
+            )
+            cols_to_fix = set(propagated_cols)
+            cols_to_fix.update(realigned_cols)
+            if cols_to_fix:
+                _resolve_overlaps_in_columns(
+                    subgroup_lists,
+                    fixed_subgroups,
+                    conflicts_all,
+                    cols_to_fix,
+                )
+
+        # Propagate shifts from non-principal anchors to dependent subgroups
+        propagated_cols = _propagate_nonprincipal_anchor_shifts(
+            graph,
+            subgroup_lists,
+            subgroup_anchor_names,
+            subgroup_anchor_y_at_align,
+        )
+        if propagated_cols:
+            _resolve_overlaps_in_columns(
+                subgroup_lists,
+                fixed_subgroups,
+                conflicts_all,
+                propagated_cols,
+            )
 
         adjusted = False
         anchor_shifts: Dict[str, float] = {}
@@ -1326,6 +1493,26 @@ def layout(
 
     if graph.principal_column:
         _final_realign_to_principal(graph, min_gap=min_gap)
+        if final_subgroup_anchor_names:
+            subgroup_lists = {col: _column_subgroups(graph, col) for col in graph.columns().keys()}
+            empty_fixed = {col: set() for col in subgroup_lists.keys()}
+            cols = set(final_subgroup_anchor_names.keys())
+            cols.discard(graph.principal_column)
+            if cols:
+                realigned_cols = _realign_subgroups_to_anchor_connected(
+                    graph,
+                    subgroup_lists,
+                    final_subgroup_anchor_names,
+                    {},
+                    cols,
+                )
+                if realigned_cols:
+                    _resolve_overlaps_in_columns(
+                        subgroup_lists,
+                        empty_fixed,
+                        conflicts_all,
+                        realigned_cols,
+                    )
     # Align columns in X at the end
     _align_columns_x(graph)
 
