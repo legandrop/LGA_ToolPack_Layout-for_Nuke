@@ -26,6 +26,8 @@ import time
 # -------------------------
 TOLERANCE_X = 55  # pixels for column grouping
 MIN_GAP = 10      # pixels minimum gap between node boxes
+# Run the whole arrange multiple times to stabilize layouts that need extra passes.
+GLOBAL_ITERATIONS = 3
 # Compresión mínima permitida cuando no hay espacio (en px).
 MIN_GAP_FLOOR = 3
 # Fixed gap between the bottom edge of the upper branch and
@@ -1524,9 +1526,10 @@ def main() -> None:
     undo = nuke.Undo()
     undo.begin("Arrange Nodes v2")
     try:
-        graph = _build_graph_from_nuke(regular_nodes)
-        layout(graph, min_gap=MIN_GAP)
-        _apply_graph_to_nuke(graph)
+        for _ in range(max(1, int(GLOBAL_ITERATIONS))):
+            graph = _build_graph_from_nuke(regular_nodes)
+            layout(graph, min_gap=MIN_GAP)
+            _apply_graph_to_nuke(graph)
         debug_print("=== Arrange Nodes v2 END ===")
     finally:
         undo.end()
