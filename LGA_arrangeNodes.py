@@ -40,6 +40,7 @@ OVERLAP_NODE_GAP = 30
 DEBUG = True
 DEBUG_CONSOLE = False
 DEBUG_LOG = True
+DEBUG_VERBOSE = True  # Verbose logs for deep debugging
 
 script_start_time = None
 debug_log_listener = None
@@ -141,6 +142,13 @@ def debug_print(*message, level="info"):
         print(timestamped_msg)
 
 
+def debug_print_verbose(*message, level="info"):
+    """Verbose logging helper (only when DEBUG_VERBOSE is True)."""
+    if not DEBUG_VERBOSE:
+        return
+    debug_print(*message, level=level)
+
+
 def cleanup_logging():
     """Stop the logging listener on exit."""
     global debug_log_listener
@@ -232,6 +240,18 @@ class Graph:
 def _column_order(graph: Graph) -> Dict[str, int]:
     ordered = sorted(graph.column_positions.items(), key=lambda kv: kv[1])
     return {col: idx for idx, (col, _x) in enumerate(ordered)}
+
+
+def _col_rel_label(graph: Graph, col: str, col_order: Optional[Dict[str, int]] = None) -> str:
+    if col_order is None:
+        col_order = _column_order(graph)
+    principal = graph.principal_column
+    if not principal or principal not in col_order or col not in col_order:
+        return col
+    rel = col_order[col] - col_order[principal]
+    if rel == 0:
+        return "C0"
+    return f"C{rel:+d}"
 
 
 def _subgroup_height(subgroup: List[NodeModel]) -> float:
@@ -420,7 +440,8 @@ def _column_flow_lines(graph: Graph, use_original: bool) -> List[str]:
             y = n.original_y if use_original and n.original_y is not None else n.y
             parts.append(f"{n.name}(y={y:.2f},h={n.height:.1f})")
         principal_tag = " *PRINCIPAL*" if graph.principal_column == col else ""
-        lines.append(f"{col}{principal_tag}: " + " -> ".join(parts))
+        col_label = _col_rel_label(graph, col, col_order)
+        lines.append(f"{col_label}{principal_tag}: " + " -> ".join(parts))
     return lines
 
 
@@ -434,6 +455,7 @@ def _log_arrange_checks(graph: Graph, tol_y: float = 1.0, tol_overlap: float = 0
     align_errors: List[str] = []
     overlap_errors: List[str] = []
 
+    col_order = _column_order(graph)
     for e in graph.edges:
         src = graph.nodes.get(e.src)
         dst = graph.nodes.get(e.dst)
@@ -447,7 +469,9 @@ def _log_arrange_checks(graph: Graph, tol_y: float = 1.0, tol_overlap: float = 0
         if abs(y1 - y2) > max_delta:
             align_errors.append(
                 f"ALIGN_Y: {e.src} ({y1:.2f}) -> {e.dst} ({y2:.2f}), "
-                f"columns {src.column}->{dst.column}, h=({src.height:.1f},{dst.height:.1f})"
+                f"columns {_col_rel_label(graph, src.column, col_order)}"
+                f"->{_col_rel_label(graph, dst.column, col_order)}, "
+                f"h=({src.height:.1f},{dst.height:.1f})"
             )
 
     by_col: Dict[str, List[NodeModel]] = {}
@@ -463,7 +487,8 @@ def _log_arrange_checks(graph: Graph, tol_y: float = 1.0, tol_overlap: float = 0
                 if abs(n1.y - n2.y) < min_sep:
                     overlap_errors.append(
                         f"OVERLAP: {n1.name} ({n1.y:.2f}, h={n1.height:.1f}) "
-                        f"vs {n2.name} ({n2.y:.2f}, h={n2.height:.1f}) in {col}"
+                        f"vs {n2.name} ({n2.y:.2f}, h={n2.height:.1f}) "
+                        f"in {_col_rel_label(graph, col, col_order)}"
                     )
 
     debug_print(f"--- ARRANGE CHECKS ---")
@@ -484,13 +509,18 @@ def _log_arrange_checks(graph: Graph, tol_y: float = 1.0, tol_overlap: float = 0
 
 def _log_column_overview(graph: Graph) -> None:
     cols = graph.columns()
-    debug_print(f"Columnas detectadas: {len(cols)} | principal={graph.principal_column}")
+    col_order = _column_order(graph)
+    principal_label = _col_rel_label(graph, graph.principal_column, col_order) if graph.principal_column else "none"
+    debug_print(f"Columnas detectadas: {len(cols)} | principal={principal_label}")
     for col, nodes in cols.items():
         if not nodes:
             continue
         top_name = nodes[0].name
         bottom_name = nodes[-1].name
-        debug_print(f"Columna {col}: {len(nodes)} nodos, top={top_name}, bottom={bottom_name}")
+        debug_print(
+            f"Columna {_col_rel_label(graph, col, col_order)}: "
+            f"{len(nodes)} nodos, top={top_name}, bottom={bottom_name}"
+        )
 
 
 def _find_anchor_for_node(graph: Graph, node: NodeModel, potential_cols: Set[str]) -> Optional[NodeModel]:
@@ -813,6 +843,7 @@ def _adjust_principal_for_conflicts(
         return False
 
     adjusted = False
+    col_order = _column_order(graph)
     for col, (upper_idx, lower_idx, needed) in conflicts:
         anchors = subgroup_anchor.get(col, {})
         upper_anchor = anchors.get(upper_idx)
@@ -824,7 +855,8 @@ def _adjust_principal_for_conflicts(
             upper_anchor, lower_anchor = lower_anchor, upper_anchor
 
         debug_print(
-            f"Ajuste principal por solapamiento: columna {col}, ancla {lower_anchor.name}, shift={needed:.2f}"
+            f"Ajuste principal por solapamiento: columna {_col_rel_label(graph, col, col_order)}, "
+            f"ancla {lower_anchor.name}, shift={needed:.2f}"
         )
         for node in principal:
             if node.order >= lower_anchor.order:
@@ -1024,6 +1056,7 @@ def _propagate_anchor_shifts_to_subgroups(
 ) -> bool:
     """Move anchored subgroups by the same delta applied to their single anchor."""
     moved = False
+    col_order = _column_order(graph)
     for col, subgroups in subgroup_lists.items():
         if graph.principal_column and col == graph.principal_column:
             continue
@@ -1036,7 +1069,8 @@ def _propagate_anchor_shifts_to_subgroups(
             if delta is None or abs(delta) <= 1e-6:
                 continue
             debug_print(
-                f"PROPAGATE_PRINCIPAL {anchor_name} -> {col}[{idx}] delta={delta:+.2f}"
+                f"PROPAGATE_PRINCIPAL {anchor_name} -> {_col_rel_label(graph, col, col_order)}[{idx}] "
+                f"delta={delta:+.2f}"
             )
             _shift_subgroup(subgroup, delta)
             for node in subgroup:
@@ -1057,6 +1091,7 @@ def _propagate_nonprincipal_anchor_shifts(
     Returns columns that were moved.
     """
     moved_cols: Set[str] = set()
+    col_order = _column_order(graph)
     for col, subgroups in subgroup_lists.items():
         if graph.principal_column and col == graph.principal_column:
             continue
@@ -1080,7 +1115,8 @@ def _propagate_nonprincipal_anchor_shifts(
             if abs(delta) <= 1e-6:
                 continue
             debug_print(
-                f"PROPAGATE_ANCHOR {anchor.name}({anchor.column}) -> {col}[{idx}] "
+                f"PROPAGATE_ANCHOR {anchor.name}({_col_rel_label(graph, anchor.column, col_order)}) "
+                f"-> {_col_rel_label(graph, col, col_order)}[{idx}] "
                 f"delta={delta:+.2f}"
             )
             _shift_subgroup(subgroup, delta)
@@ -1092,12 +1128,14 @@ def _propagate_nonprincipal_anchor_shifts(
 
 
 def _resolve_overlaps_in_columns(
+    graph: Graph,
     subgroup_lists: Dict[str, List[List[NodeModel]]],
     fixed_subgroups: Dict[str, Set[int]],
     conflicts_all: List[Tuple[str, Tuple[int, int, float]]],
     cols: Set[str],
 ) -> None:
     """Run the overlap resolution pass for a subset of columns."""
+    col_order = _column_order(graph)
     for col in cols:
         subgroups = subgroup_lists.get(col, [])
         if not subgroups:
@@ -1116,7 +1154,8 @@ def _resolve_overlaps_in_columns(
                 conflicts_all.append((col, (upper_idx, i, delta)))
                 continue
             debug_print(
-                f"OVERLAP_FIX (propagated) {col}[{upper_idx}->{i}] delta={delta:+.2f}"
+                f"OVERLAP_FIX (propagated) {_col_rel_label(graph, col, col_order)}"
+                f"[{upper_idx}->{i}] delta={delta:+.2f}"
             )
             _shift_subgroup(prev, delta)
 
@@ -1130,6 +1169,7 @@ def _realign_subgroups_to_anchor_connected(
 ) -> Set[str]:
     """After propagation, align subgroups to their anchor using the connected node."""
     moved_cols: Set[str] = set()
+    col_order = _column_order(graph)
     for col in cols:
         subgroups = subgroup_lists.get(col, [])
         if not subgroups:
@@ -1166,7 +1206,8 @@ def _realign_subgroups_to_anchor_connected(
             if abs(delta) <= 1e-6:
                 continue
             debug_print(
-                f"REALIGN_SUBGROUP {col}[{idx}] anchor={anchor.name} "
+                f"REALIGN_SUBGROUP {_col_rel_label(graph, col, col_order)}[{idx}] "
+                f"anchor={anchor.name} "
                 f"target={target_node.name} delta={delta:+.2f}"
             )
             _shift_subgroup(subgroup, delta)
@@ -1193,15 +1234,15 @@ def _subgroup_has_internal_overlap(subgroup: List[NodeModel]) -> bool:
 
 def _subgroup_follower_nodes(graph: Graph, subgroup: List[NodeModel]) -> Set[str]:
     fixed: Set[str] = set()
-    for node in subgroup:
-        for edge in graph.edges:
-            if not edge.align:
-                continue
-            if node.name not in (edge.src, edge.dst):
-                continue
-            anchor, follower = _choose_anchor(graph, edge)
-            if follower.name == node.name:
-                fixed.add(node.name)
+    subgroup_names = {n.name for n in subgroup}
+    for edge in graph.edges:
+        if not edge.align:
+            continue
+        if edge.src in subgroup_names and edge.dst not in subgroup_names:
+            fixed.add(edge.src)
+            continue
+        if edge.dst in subgroup_names and edge.src not in subgroup_names:
+            fixed.add(edge.dst)
     return fixed
 
 
@@ -1210,6 +1251,7 @@ def _fix_internal_overlaps_in_subgroups(
     subgroup_lists: Dict[str, List[List[NodeModel]]],
     min_gap: float,
 ) -> None:
+    col_order = _column_order(graph)
     for col, subgroups in subgroup_lists.items():
         if graph.principal_column and col == graph.principal_column:
             continue
@@ -1217,10 +1259,80 @@ def _fix_internal_overlaps_in_subgroups(
             if not _subgroup_has_internal_overlap(subgroup):
                 continue
             fixed = _subgroup_follower_nodes(graph, subgroup)
+            # Ensure there is enough space between fixed anchors to avoid reordering.
+            fixed_indices = [i for i, n in enumerate(subgroup) if n.name in fixed]
+            if 0 not in fixed_indices:
+                fixed_indices.append(0)
+            if len(subgroup) - 1 not in fixed_indices:
+                fixed_indices.append(len(subgroup) - 1)
+            fixed_indices = sorted(set(fixed_indices))
+            insufficient = False
+            for i in range(len(fixed_indices) - 1):
+                start = fixed_indices[i]
+                end = fixed_indices[i + 1]
+                if start == end:
+                    continue
+                top = subgroup[start].y + subgroup[start].height / 2
+                bottom = subgroup[end].y - subgroup[end].height / 2
+                segment = subgroup[start : end + 1]
+                total_heights = sum(n.height for n in segment)
+                available = top - bottom
+                if available + 1e-6 < total_heights:
+                    insufficient = True
+                    debug_print(
+                        f"SUBGROUP_OVERLAP_SKIP {_col_rel_label(graph, col, col_order)}[{idx}] segment "
+                        f"{subgroup[start].name}..{subgroup[end].name} "
+                        f"available={available:.2f} < total_h={total_heights:.2f}",
+                        level="warning",
+                    )
+                    break
+            if insufficient:
+                continue
             debug_print(
-                f"SUBGROUP_OVERLAP_FIX {col}[{idx}] fixed={sorted(fixed)}"
+                f"SUBGROUP_OVERLAP_FIX {_col_rel_label(graph, col, col_order)}[{idx}] "
+                f"fixed={sorted(fixed)}"
             )
-            _distribute_column_with_fixed(subgroup, fixed, min_gap=min_gap)
+            debug_print(
+                "SUBGROUP_BEFORE "
+                + " -> ".join(f"{n.name}(y={n.y:.2f},h={n.height:.1f})" for n in subgroup)
+            )
+            # Redistribute only between fixed anchors to avoid reordering.
+            for i in range(len(fixed_indices) - 1):
+                start = fixed_indices[i]
+                end = fixed_indices[i + 1]
+                if start == end:
+                    continue
+                segment = subgroup[start : end + 1]
+                if len(segment) <= 2:
+                    continue
+                top = subgroup[start].y + subgroup[start].height / 2
+                bottom = subgroup[end].y - subgroup[end].height / 2
+                total_heights = sum(n.height for n in segment)
+                available = top - bottom
+                gap = (available - total_heights) / (len(segment) - 1)
+                if gap < 0:
+                    gap = 0.0
+                debug_print(
+                    f"SUBGROUP_SEG {_col_rel_label(graph, col, col_order)}[{idx}] "
+                    f"{subgroup[start].name}..{subgroup[end].name} "
+                    f"available={available:.2f} total_h={total_heights:.2f} gap={gap:.2f}"
+                )
+                current_top = top
+                for j, node in enumerate(segment):
+                    if j == 0 or j == len(segment) - 1:
+                        current_top -= node.height + gap
+                        continue
+                    before_y = node.y
+                    node.y = current_top - node.height / 2
+                    if abs(node.y - before_y) > 1e-6:
+                        debug_print(
+                            f"SUBGROUP_MOVE {node.name} {before_y:.2f}->{node.y:.2f}"
+                        )
+                    current_top -= node.height + gap
+            debug_print(
+                "SUBGROUP_AFTER "
+                + " -> ".join(f"{n.name}(y={n.y:.2f},h={n.height:.1f})" for n in subgroup)
+            )
 
 
 def _final_realign_to_principal(graph: Graph, min_gap: float) -> None:
@@ -1310,6 +1422,7 @@ def _anchor_alignment_shifts(
     return the exact shifts needed to align the anchor to the connected node.
     """
     shifts: Dict[str, float] = {}
+    col_order = _column_order(graph)
     principal = _principal_nodes(graph) if graph.principal_column else []
     principal_index = {n.name: i for i, n in enumerate(principal)}
     for col, subgroups in subgroup_lists.items():
@@ -1355,7 +1468,8 @@ def _anchor_alignment_shifts(
                             target_node = node.name
             if target_y is None:
                 debug_print(
-                    f"Alineacion ancla: {anchor.name} sin nodo conectado en subgrupo {col}[{idx}] (skip)"
+                    f"Alineacion ancla: {anchor.name} sin nodo conectado en subgrupo "
+                    f"{_col_rel_label(graph, col, col_order)}[{idx}] (skip)"
                 )
                 continue
             delta = anchor.y - target_y
@@ -1493,6 +1607,7 @@ def layout(graph: Graph, min_gap: float = MIN_GAP, max_iters: int = 5) -> None:
                 break
 
         # Log subgroup summary per column (non-principal)
+        col_order = _column_order(graph)
         for col, subgroups in subgroup_lists.items():
             if graph.principal_column and col == graph.principal_column:
                 continue
@@ -1504,7 +1619,10 @@ def layout(graph: Graph, min_gap: float = MIN_GAP, max_iters: int = 5) -> None:
             )
             if not anchor_desc:
                 anchor_desc = "none"
-            debug_print(f"Columna {col} subgrupos: {subgroup_desc} | anchors: {anchor_desc}")
+            debug_print(
+                f"Columna {_col_rel_label(graph, col, col_order)} subgrupos: "
+                f"{subgroup_desc} | anchors: {anchor_desc}"
+            )
 
         # Principal already distributed at the start of the iteration
         final_subgroup_anchor_names = {
@@ -1518,23 +1636,106 @@ def layout(graph: Graph, min_gap: float = MIN_GAP, max_iters: int = 5) -> None:
             if principal_nodes:
                 principal_top = max(n.y + n.height / 2 for n in principal_nodes)
                 principal_bottom = min(n.y - n.height / 2 for n in principal_nodes)
+                principal_orig_top = max(
+                    (n.original_y if n.original_y is not None else n.y) + n.height / 2
+                    for n in principal_nodes
+                )
+                principal_orig_bottom = min(
+                    (n.original_y if n.original_y is not None else n.y) - n.height / 2
+                    for n in principal_nodes
+                )
+                col_orig_bounds: Dict[str, Tuple[float, float]] = {}
+                for col_name, col_nodes in graph.columns().items():
+                    if not col_nodes:
+                        continue
+                    top = max(
+                        (n.original_y if n.original_y is not None else n.y) + n.height / 2
+                        for n in col_nodes
+                    )
+                    bottom = min(
+                        (n.original_y if n.original_y is not None else n.y) - n.height / 2
+                        for n in col_nodes
+                    )
+                    col_orig_bounds[col_name] = (top, bottom)
                 for col, subgroups in subgroup_lists.items():
                     if col == graph.principal_column:
                         continue
+                    col_orig_top, col_orig_bottom = col_orig_bounds.get(
+                        col, (principal_orig_top, principal_orig_bottom)
+                    )
+                    # Preserve original relative offset to principal.
+                    allowed_top = principal_top + (col_orig_top - principal_orig_top)
+                    allowed_bottom = principal_bottom + (col_orig_bottom - principal_orig_bottom)
+                    # Never allow a column to go above/below its original extremes.
+                    if allowed_top > col_orig_top:
+                        allowed_top = col_orig_top
+                    if allowed_bottom < col_orig_bottom:
+                        allowed_bottom = col_orig_bottom
                     for idx, subgroup in enumerate(subgroups):
                         anchor = subgroup_anchor.get(col, {}).get(idx)
                         if not anchor or anchor.column != graph.principal_column:
                             continue
                         top, bottom = _subgroup_bounds(subgroup)
                         delta = 0.0
-                        if top > principal_top:
-                            delta -= (top - principal_top)
-                        if bottom < principal_bottom:
-                            delta += (principal_bottom - bottom)
+                        top_excess = top - allowed_top
+                        bottom_excess = allowed_bottom - bottom
+                        if top > allowed_top:
+                            delta -= (top - allowed_top)
+                        if bottom < allowed_bottom:
+                            delta += (allowed_bottom - bottom)
                         if abs(delta) > 1e-6:
+                            # Exception: if subgroup has a single principal anchor, allow crossing
+                            # when clamp would break alignment and no local overlaps would be introduced.
+                            anchor_names = subgroup_anchor_names.get(col, {}).get(idx)
+                            if anchor_names and len(anchor_names) == 1:
+                                # Check for local overlaps with adjacent subgroups
+                                ok = True
+                                if idx > 0:
+                                    prev = subgroups[idx - 1]
+                                    prev_top, prev_bottom = _subgroup_bounds(prev)
+                                    curr_top, _ = _subgroup_bounds(subgroup)
+                                    gap = prev_bottom - curr_top
+                                    if gap < OVERLAP_NODE_GAP - 1e-6:
+                                        ok = False
+                                if idx < len(subgroups) - 1:
+                                    nxt = subgroups[idx + 1]
+                                    _curr_top, curr_bottom = _subgroup_bounds(subgroup)
+                                    next_top, _next_bottom = _subgroup_bounds(nxt)
+                                    gap = curr_bottom - next_top
+                                    if gap < OVERLAP_NODE_GAP - 1e-6:
+                                        ok = False
+                                if ok:
+                                    col_order = _column_order(graph)
+                                    debug_print_verbose(
+                                        f"CLAMP_BYPASS {_col_rel_label(graph, col, col_order)}[{idx}] "
+                                        f"anchor={anchor.name} reason=single_principal_anchor "
+                                        f"delta={delta:+.2f}"
+                                    )
+                                    continue
+
+                            col_order = _column_order(graph)
                             debug_print(
-                                f"CLAMP_PRINCIPAL {col}[{idx}] delta={delta:+.2f} "
-                                f"bounds=({principal_bottom:.2f},{principal_top:.2f})"
+                                f"CLAMP_PRINCIPAL {_col_rel_label(graph, col, col_order)}[{idx}] "
+                                f"delta={delta:+.2f} "
+                                f"bounds=({allowed_bottom:.2f},{allowed_top:.2f})"
+                            )
+                            reason_parts = []
+                            if top_excess > 1e-6:
+                                reason_parts.append(
+                                    f"top {top:.2f} > allowed_top {allowed_top:.2f} (+{top_excess:.2f})"
+                                )
+                            if bottom_excess > 1e-6:
+                                reason_parts.append(
+                                    f"bottom {bottom:.2f} < allowed_bottom {allowed_bottom:.2f} "
+                                    f"(+{bottom_excess:.2f})"
+                                )
+                            reason = "; ".join(reason_parts) if reason_parts else "n/a"
+                            debug_print_verbose(
+                                f"CLAMP_VERBOSE {_col_rel_label(graph, col, col_order)}[{idx}] "
+                                f"anchor={anchor.name} anchor_y={anchor.y:.2f} "
+                                f"top={top:.2f} bottom={bottom:.2f} "
+                                f"allowed=({allowed_bottom:.2f},{allowed_top:.2f}) "
+                                f"reason={reason}"
                             )
                             _shift_subgroup(subgroup, delta)
 
@@ -1549,8 +1750,10 @@ def layout(graph: Graph, min_gap: float = MIN_GAP, max_iters: int = 5) -> None:
                     top, _bottom = _subgroup_bounds(subgroup)
                     if top > principal_top:
                         shift = (top - principal_top) + min_gap
+                        col_order = _column_order(graph)
                         debug_print(
-                            f"TOP_CONSTRAINT {col}[{idx}] shift={-shift:+.2f}"
+                            f"TOP_CONSTRAINT {_col_rel_label(graph, col, col_order)}[{idx}] "
+                            f"shift={-shift:+.2f}"
                         )
                         _shift_subgroup(subgroup, -shift)
 
@@ -1572,7 +1775,8 @@ def layout(graph: Graph, min_gap: float = MIN_GAP, max_iters: int = 5) -> None:
                     conflicts_all.append((col, (upper_idx, i, delta)))
                     continue
                 debug_print(
-                    f"OVERLAP_FIX {col}[{upper_idx}->{i}] delta={delta:+.2f}"
+                    f"OVERLAP_FIX {_col_rel_label(graph, col, _column_order(graph))}"
+                    f"[{upper_idx}->{i}] delta={delta:+.2f}"
                 )
                 _shift_subgroup(prev, delta)
 
@@ -1595,6 +1799,7 @@ def layout(graph: Graph, min_gap: float = MIN_GAP, max_iters: int = 5) -> None:
             cols_to_fix.update(realigned_cols)
             if cols_to_fix:
                 _resolve_overlaps_in_columns(
+                    graph,
                     subgroup_lists,
                     fixed_subgroups,
                     conflicts_all,
@@ -1621,8 +1826,9 @@ def layout(graph: Graph, min_gap: float = MIN_GAP, max_iters: int = 5) -> None:
             for name, needed in anchor_conflicts_all:
                 _apply_shift(name, needed)
         if conflicts_all:
+            col_order = _column_order(graph)
             formatted = ", ".join(
-                f"{col}({upper_idx}->{lower_idx}, +{needed:.2f})"
+                f"{_col_rel_label(graph, col, col_order)}({upper_idx}->{lower_idx}, +{needed:.2f})"
                 for col, (upper_idx, lower_idx, needed) in conflicts_all
             )
             debug_print(f"Conflictos de solapamiento detectados: {formatted}")
@@ -1826,6 +2032,7 @@ def layout(graph: Graph, min_gap: float = MIN_GAP, max_iters: int = 5) -> None:
                 )
                 if realigned_cols:
                     _resolve_overlaps_in_columns(
+                        graph,
                         subgroup_lists,
                         empty_fixed,
                         conflicts_all,
@@ -1897,7 +2104,8 @@ def _build_graph_from_nuke(nodes: List[object]) -> Graph:
     # Assign columns/principal
     _auto_columns(graph)
     _infer_principal_if_missing(graph)
-    debug_print(f"Principal detectada (auto-columns): {graph.principal_column}")
+    principal_label = _col_rel_label(graph, graph.principal_column) if graph.principal_column else "none"
+    debug_print(f"Principal detectada (auto-columns): {principal_label}")
     debug_print("Adapter Nuke: usando Y invertida para layout")
 
     # Mark align edges for any cross-column connection

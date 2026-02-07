@@ -8,6 +8,7 @@ Definir el **comportamiento de arrange** (reglas y prioridades) que se implement
 ## Estado (2026-02-06)
 - `LGA_arrangeNodes.py` reescrito como **v2.0**, usando el core de layout validado y un adapter de Nuke.
 - Sistema de logging (Docu_Logging_System) integrado en `LGA_arrangeNodes.py` con logs de decisiones clave.
+- Flag `DEBUG_VERBOSE` disponible para logs **detallados** (solo cuando se necesita diagnóstico profundo).
 
 ## Reglas / Descubrimientos (confirmados)
 **Flujo de trabajo obligatorio:** toda regla nueva se valida **primero en JSON**.  
@@ -42,12 +43,26 @@ Recién después se porta la lógica a `LGA_arrangeNodes.py` (Nuke).
    - Los nodos **por encima** de la primera ancla y **por debajo** de la última se desplazan con la **ancla más cercana**.  
    - Si no hay espacio suficiente, se **comprime** el spacing interno sin romper las anclas.
 24. **Solapes dentro del subgrupo:** si aparecen solapes **entre nodos del mismo subgrupo**, se redistribuye ese subgrupo con **nodos seguidores fijos** (los conectados a anclas) para eliminar solapes sin romper alineaciones.
+   - **Condición:** solo se aplica si **hay espacio suficiente** entre anclas fijas. Si `available < total_heights` en algún tramo, **se omite** la redistribución para evitar invertir el orden.
+   - **Distribución por tramos:** la redistribución se hace **solo entre anclas fijas consecutivas**, respetando sus Y reales (no se desplazan las anclas).
 25. **Fallback de una sola ancla (múltiples anclas):** solo se permite el fallback **si todas las anclas ya están alineadas** (deltas ~ 0). Si alguna está desalineada, se usa el modo multi‑ancla (para no romper alineaciones).
 26. **Restricción de tope:** nodos no conectados no deben quedar por encima del tope de la principal.
 27. **Inferencia de principal:** si falta, se elige la columna con **mayor altura de subgrupo**.
 28. **Adyacencia de flujo en columna:** cualquier conexión no‑mask (incluye A/B) mantiene los nodos en el mismo subgrupo.
 29. **Selección de una sola columna:** la principal se distribuye como cualquier columna (sin excepción).
 30. **Anclas en principal no se fijan:** columnas externas se realinean a la principal tras su redistribución.
+31. **Clamp con offsets originales:** al clamplear una columna por límites de la principal, se respetan los **offsets originales** entre esa columna y la principal.  
+   - Si originalmente una columna estaba **más alta** que la principal, se permite que su top quede **igual de arriba** luego del arrange.  
+   - Si originalmente estaba **más baja**, se permite ese mismo offset hacia abajo.  
+   - Esto evita “tirar” columnas completas cuando el conflicto viene de otra rama.
+   - **Tope duro:** nunca se permite que el top/bottom de una columna supere sus **extremos originales** (no puede quedar más alta ni más baja que al inicio).
+32. **Excepción al clamp (ancla única en principal):** si un subgrupo tiene **una única ancla en la principal**, y el clamp lo movería rompiendo esa alineación, se **permite cruzar el límite** **solo si** no genera solapes locales con subgrupos vecinos.  
+    - Se loguea en verbose como `CLAMP_BYPASS ... reason=single_principal_anchor`.
+
+## Convenciones para explicaciones
+- **Columnas relativas a la principal:** `0` es la principal, `-1` es una columna a la **izquierda**, `-2` dos a la izquierda; `+1` y `+2` son a la **derecha**.
+- **En logs:** las columnas se reportan como `C0`, `C-1`, `C-2`, `C+1`, `C+2`, etc. (siempre relativas a la principal).
+- **Siempre nombrar nodos** cuando se explica un movimiento (ej: “la columna -2 (Transform3..Saturation3) se clampa por Merge9”).
 
 ## Decisiones del usuario (2026-02-06)
 1. Descubrimiento de columnas + selección de principal: **aplicar** (via `auto_columns`).

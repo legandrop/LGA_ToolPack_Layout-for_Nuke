@@ -935,15 +935,15 @@ def _subgroup_has_internal_overlap(subgroup: List[Node]) -> bool:
 
 def _subgroup_follower_nodes(graph: Graph, subgroup: List[Node]) -> Set[str]:
     fixed: Set[str] = set()
-    for node in subgroup:
-        for edge in graph.edges:
-            if not edge.align:
-                continue
-            if node.name not in (edge.src, edge.dst):
-                continue
-            anchor, follower = _choose_anchor(graph, edge)
-            if follower.name == node.name:
-                fixed.add(node.name)
+    subgroup_names = {n.name for n in subgroup}
+    for edge in graph.edges:
+        if not edge.align:
+            continue
+        if edge.src in subgroup_names and edge.dst not in subgroup_names:
+            fixed.add(edge.src)
+            continue
+        if edge.dst in subgroup_names and edge.src not in subgroup_names:
+            fixed.add(edge.dst)
     return fixed
 
 
@@ -959,7 +959,51 @@ def _fix_internal_overlaps_in_subgroups(
             if not _subgroup_has_internal_overlap(subgroup):
                 continue
             fixed = _subgroup_follower_nodes(graph, subgroup)
-            _distribute_column_with_fixed(subgroup, fixed, min_gap=min_gap)
+            fixed_indices = [i for i, n in enumerate(subgroup) if n.name in fixed]
+            if 0 not in fixed_indices:
+                fixed_indices.append(0)
+            if len(subgroup) - 1 not in fixed_indices:
+                fixed_indices.append(len(subgroup) - 1)
+            fixed_indices = sorted(set(fixed_indices))
+            insufficient = False
+            for i in range(len(fixed_indices) - 1):
+                start = fixed_indices[i]
+                end = fixed_indices[i + 1]
+                if start == end:
+                    continue
+                top = subgroup[start].y + subgroup[start].height / 2
+                bottom = subgroup[end].y - subgroup[end].height / 2
+                segment = subgroup[start : end + 1]
+                total_heights = sum(n.height for n in segment)
+                available = top - bottom
+                if available + 1e-6 < total_heights:
+                    insufficient = True
+                    break
+            if insufficient:
+                continue
+            # Redistribute only between fixed anchors to avoid reordering.
+            for i in range(len(fixed_indices) - 1):
+                start = fixed_indices[i]
+                end = fixed_indices[i + 1]
+                if start == end:
+                    continue
+                segment = subgroup[start : end + 1]
+                if len(segment) <= 2:
+                    continue
+                top = subgroup[start].y + subgroup[start].height / 2
+                bottom = subgroup[end].y - subgroup[end].height / 2
+                total_heights = sum(n.height for n in segment)
+                available = top - bottom
+                gap = (available - total_heights) / (len(segment) - 1)
+                if gap < 0:
+                    gap = 0.0
+                current_top = top
+                for j, node in enumerate(segment):
+                    if j == 0 or j == len(segment) - 1:
+                        current_top -= node.height + gap
+                        continue
+                    node.y = current_top - node.height / 2
+                    current_top -= node.height + gap
 
 
 def _final_realign_to_principal(graph: Graph, min_gap: float) -> None:
@@ -1251,19 +1295,50 @@ def layout(
             if principal_nodes:
                 principal_top = max(n.y + n.height / 2 for n in principal_nodes)
                 principal_bottom = min(n.y - n.height / 2 for n in principal_nodes)
+                principal_orig_top = max(
+                    (n.original_y if n.original_y is not None else n.y) + n.height / 2
+                    for n in principal_nodes
+                )
+                principal_orig_bottom = min(
+                    (n.original_y if n.original_y is not None else n.y) - n.height / 2
+                    for n in principal_nodes
+                )
+                col_orig_bounds: Dict[str, Tuple[float, float]] = {}
+                for col_name, col_nodes in graph.columns().items():
+                    if not col_nodes:
+                        continue
+                    top = max(
+                        (n.original_y if n.original_y is not None else n.y) + n.height / 2
+                        for n in col_nodes
+                    )
+                    bottom = min(
+                        (n.original_y if n.original_y is not None else n.y) - n.height / 2
+                        for n in col_nodes
+                    )
+                    col_orig_bounds[col_name] = (top, bottom)
                 for col, subgroups in subgroup_lists.items():
                     if col == graph.principal_column:
                         continue
+                    col_orig_top, col_orig_bottom = col_orig_bounds.get(
+                        col, (principal_orig_top, principal_orig_bottom)
+                    )
+                    allowed_top = principal_top + (col_orig_top - principal_orig_top)
+                    allowed_bottom = principal_bottom + (col_orig_bottom - principal_orig_bottom)
+                    # Never allow a column to go above/below its original extremes.
+                    if allowed_top > col_orig_top:
+                        allowed_top = col_orig_top
+                    if allowed_bottom < col_orig_bottom:
+                        allowed_bottom = col_orig_bottom
                     for idx, subgroup in enumerate(subgroups):
                         anchor = subgroup_anchor.get(col, {}).get(idx)
                         if not anchor or anchor.column != graph.principal_column:
                             continue
                         top, bottom = _subgroup_bounds(subgroup)
                         delta = 0.0
-                        if top > principal_top:
-                            delta -= (top - principal_top)
-                        if bottom < principal_bottom:
-                            delta += (principal_bottom - bottom)
+                        if top > allowed_top:
+                            delta -= (top - allowed_top)
+                        if bottom < allowed_bottom:
+                            delta += (allowed_bottom - bottom)
                         if abs(delta) > 1e-6:
                             _shift_subgroup(subgroup, delta)
 
