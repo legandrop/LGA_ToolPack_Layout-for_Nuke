@@ -15,7 +15,7 @@ define_window_layout_xml {<?xml version="1.0" encoding="UTF-8"?>
                     <page id="Viewer.1"/>
                 </dock>
                 <split size="1036"/>
-                <dock id="" activePageId="DAG.1" focus="true">
+                <dock id="" activePageId="DAG.1">
                     <page id="DAG.1"/>
                     <page id="Curve Editor.1"/>
                     <page id="DopeSheet.1"/>
@@ -141,7 +141,7 @@ Shuffle2 {
  mappings "4 rgba.red 0 0 rgba.red 0 0 rgba.green 0 1 rgba.green 0 1 rgba.blue 0 2 rgba.blue 0 2 white -1 -1 rgba.alpha 0 3"
  name Shuffle12
  xpos 501
- ypos -90
+ ypos 64
 }
 ColorCorrect {
  saturation 0
@@ -150,23 +150,23 @@ ColorCorrect {
  gain 2
  name ColorCorrect2
  xpos 501
- ypos -36
+ ypos 248
 }
 Dot {
  name Dot10
  xpos 535
- ypos 278
+ ypos 432
 }
 Dot {
  inputs 0
  name Dot14
  xpos 927
- ypos 73
+ ypos 306
 }
 VectorToMotion {
  name VectorToMotion2
  xpos 893
- ypos 117
+ ypos 350
  scale {{"proxy ? proxy_scale.0 : 1"} {"proxy ? proxy_scale.1 : 1"}}
 }
 Transform {
@@ -176,7 +176,7 @@ Transform {
  center {2700 1640}
  name Transform3
  xpos 742
- ypos -155
+ ypos 42
 }
 Transform {
  translate {{curve x1038 -266 x1040 -194 x1041 -302 -284 x1044 -296 x1045 -179 -179 x1050 -179 x1056 -179 x1059 -213 x1060 -202 x1062 -144 x1063 21 52 -18} {curve x1038 -651 x1040 -662 x1041 -714 -684 x1044 -680 x1045 -615 -615 x1050 -615 x1056 -615 x1059 -649 x1060 -646 x1062 -664 x1063 -732 x1065 -632}}
@@ -188,7 +188,7 @@ Transform {
  shutteroffset centred
  name Transform4
  xpos 742
- ypos -131
+ ypos 114
 }
 push 0
 VectorDistort {
@@ -199,7 +199,7 @@ VectorDistort {
  blurSize 2
  name VectorDistort2
  xpos 742
- ypos -47
+ ypos 186
 }
 Copy {
  inputs 2
@@ -209,7 +209,7 @@ Copy {
  to1 forward.v
  name Copy2
  xpos 742
- ypos 105
+ ypos 258
 }
 VectorBlur2 {
  channels rgba
@@ -217,14 +217,14 @@ VectorBlur2 {
  scale {{curve x1063 2 5}}
  name VectorBlur2
  xpos 742
- ypos 192
+ ypos 349
 }
 Merge2 {
  inputs 2
  operation multiply
  name Merge10
  xpos 742
- ypos 275
+ ypos 429
 }
 Grade {
  white {0.64 0.11 0.006 0}
@@ -233,13 +233,13 @@ Grade {
  gamma {{curve x1049 1.6 x1056 1.55}}
  name Grade1
  xpos 742
- ypos 327
+ ypos 501
 }
 Saturation {
  saturation {{curve x1041 0.48 x1049 0.25 x1056 0.35 x1062 0.48 x1063 0.28}}
  name Saturation3
  xpos 742
- ypos 376
+ ypos 573
 }
 VectorBlur2 {
  inputs 0
@@ -254,20 +254,42 @@ Merge2 {
  operation multiply
  name Merge7
  xpos 1121
- ypos 194
+ ypos 221
+}
+Grade {
+ white {0.64 0.11 0.006 0}
+ white_panelDropped true
+ multiply {{curve x1034 0.14 x1038 0.35 x1041 0.38 0.52 x1049 0.3 x1051 0.24}}
+ gamma {{curve x1038 1.6 x1041 1.65 1.55 x1049 1.38 x1060 1.35}}
+ name Grade2
+ xpos 1121
+ ypos 309
+}
+Saturation {
+ saturation {{curve x1041 0.19 x1058 0.38}}
+ name Saturation2
+ xpos 1121
+ ypos 397
+}
+Grade {
+ white 0.62
+ gamma 0.86
+ name Grade3
+ xpos 1121
+ ypos 485
 }
 Merge2 {
  inputs 2
  mix {{curve x1042 0 1 x1065 1 x1066 0}}
  name Merge9
  xpos 1121
- ypos 409
+ ypos 573
 }
 Merge2 {
  operation mask
  name Merge6
  xpos 1121
- ypos 684
+ ypos 661
 }
 Dot {
  name Dot8

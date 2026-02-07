@@ -393,6 +393,48 @@ def _align_subgroup_by_subsubgroups(
         index_by_name = {n.name: i for i, n in enumerate(subgroup)}
         anchors_sorted = sorted(anchors_by_node, key=lambda t: index_by_name.get(t[0].name, t[0].order))
 
+        # If anchors are sufficiently spaced, treat as single-anchor to preserve spacing.
+        conflict = False
+        for (node_a, anchor_a), (node_b, anchor_b) in zip(anchors_sorted, anchors_sorted[1:]):
+            idx_a = index_by_name.get(node_a.name)
+            idx_b = index_by_name.get(node_b.name)
+            if idx_a is None or idx_b is None:
+                continue
+            if idx_a > idx_b:
+                idx_a, idx_b = idx_b, idx_a
+                node_a, node_b = node_b, node_a
+                anchor_a, anchor_b = anchor_b, anchor_a
+            segment = subgroup[idx_a : idx_b + 1]
+            if not segment:
+                continue
+            required = sum(n.height for n in segment) + min_gap * (len(segment) - 1)
+            top = anchor_a.y + node_a.height / 2
+            bottom = anchor_b.y - node_b.height / 2
+            available = top - bottom
+            if available < required:
+                conflict = True
+                break
+
+        if not conflict:
+            # Fall back to single-anchor behavior to avoid unnecessary reshaping.
+            candidates.sort(key=lambda t: (t[0], t[1], t[2]))
+            _dist, _order, _delta_abs, aligned_node, anchor = candidates[0]
+            connected_nodes: List[Node] = []
+            for node in subgroup:
+                for edge in graph.edges:
+                    if (
+                        (edge.src == node.name and edge.dst == anchor.name)
+                        or (edge.dst == node.name and edge.src == anchor.name)
+                    ):
+                        connected_nodes.append(node)
+                        break
+            if connected_nodes:
+                connected_nodes.sort(key=lambda n: (n.order, abs(anchor.y - n.y)))
+                aligned_node = connected_nodes[0]
+            delta = anchor.y - aligned_node.y
+            _shift_subgroup(subgroup, delta)
+            return True, {anchor.name}, []
+
         # Compute deltas before overriding positions.
         anchor_deltas = {node.name: (anchor.y - node.y) for node, anchor in anchors_sorted}
         for node, anchor in anchors_sorted:
