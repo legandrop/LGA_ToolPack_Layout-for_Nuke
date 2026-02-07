@@ -8,3 +8,5 @@ Building_Blocks/
 z_*.py
 .DS_Store
 Thumbs.db
+Km_NodeGraphEN/templates/
+fix_gitgraph.ps1
