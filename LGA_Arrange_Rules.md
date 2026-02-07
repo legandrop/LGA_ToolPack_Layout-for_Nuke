@@ -28,7 +28,7 @@ Recién después se porta la lógica a `LGA_arrangeNodes.py` (Nuke).
 11. **Cap de alineación por slack real del ancla:** si la alineación de un ancla requiere un `delta` mayor al **slack disponible**, se **capea** al máximo posible. Si el slack es **0**, **no se fuerza** la alineación y se **corta la re‑iteración** para evitar oscilaciones.
 12. **Anclas fijas en extremos:** si el ancla está en el **tope o fondo** de la principal (nodo fijo), **no se intenta moverla** para alineación. En ese caso, la columna externa se alinea a ese ancla y no se re‑itera por ese delta.
 13. **Ancla única en principal no mueve la principal:** si un subgrupo tiene **una sola ancla** y esa ancla está en la **principal**, **no se mueve la principal** para alinear; el subgrupo se adapta a la ancla. (Evita loops de re‑alineación).
-14. **Compresión permitida (global):** si no alcanza el espacio con `MIN_GAP`, se permite comprimir **en cualquier distribución** (principal y subgrupos) hasta un **mínimo** (`MIN_GAP_FLOOR`, 3 px). Si ni siquiera así entra, se permite bajar **hasta 0 px** (sin solapar).
+14. **Compresión permitida (global):** si no alcanza el espacio con `MIN_GAP`, se permite comprimir **en cualquier distribución** (principal y subgrupos) hasta un **mínimo** (`MIN_GAP_FLOOR`, 3 px) **solo cuando hay conflictos**. Si no hay conflictos, se **preserva el gap original** (aunque sea menor a `MIN_GAP`). Si ni siquiera así entra, se permite bajar **hasta 0 px** (sin solapar).
 15. **No se permiten solapes** (evitar a toda costa).
 16. **Alineación X por columna:** se alinea al X más común (si se repite), si no, al promedio.
 17. **Alturas importan:** la distribución se calcula con **bounding boxes** (centro ± alto/2).

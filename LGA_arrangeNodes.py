@@ -376,11 +376,8 @@ def _baseline_distribute_subgroup(subgroup: List[NodeModel], min_gap: float) -> 
     total_heights = sum(n.height for n in subgroup)
     gap = (available - total_heights) / (len(subgroup) - 1)
     if gap < min_gap:
-        gap_floor = min(min_gap, MIN_GAP_FLOOR)
-        if gap < gap_floor:
-            gap = max(0.0, gap)
-        else:
-            gap = gap_floor
+        # Preserve original spacing when below min_gap (no forced floor here).
+        gap = max(0.0, gap)
 
     current_top = top
     for node in subgroup:
