@@ -25,6 +25,36 @@ def _ini_paths():
     return user_ini, pkg_ini
 
 
+def _ensure_user_ini_keys(user_ini, keys):
+    """Asegura que existan claves en el INI del usuario sin borrar comentarios."""
+    try:
+        if not os.path.isfile(user_ini):
+            with open(user_ini, "w", encoding="utf-8") as f:
+                f.write("[Tools]\n")
+                for key, val in keys.items():
+                    f.write(f"{key} = {val}\n")
+            return
+
+        content = ""
+        with open(user_ini, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        if "[Tools]" not in content:
+            with open(user_ini, "a", encoding="utf-8") as f:
+                f.write("\n[Tools]\n")
+                for key, val in keys.items():
+                    f.write(f"{key} = {val}\n")
+            return
+
+        # Si hay [Tools], agregamos al final del archivo las claves faltantes.
+        for key, val in keys.items():
+            if key not in content:
+                with open(user_ini, "a", encoding="utf-8") as f:
+                    f.write(f"\n{key} = {val}\n")
+    except Exception:
+        pass
+
+
 _TOOL_FLAGS = None  # cache
 
 
@@ -33,6 +63,9 @@ def load_tool_flags():
     global _TOOL_FLAGS
     if _TOOL_FLAGS is not None:
         return _TOOL_FLAGS
+
+    # Claves nuevas que deben existir en el INI del usuario
+    _ensure_user_ini_keys(_ini_paths()[0], {"Layout_Panel": "True"})
 
     cfg = configparser.ConfigParser()
     cfg.optionxform = str  # respeta mayúsculas en claves
@@ -252,9 +285,10 @@ n.addSeparator()
 
 # Define el icono para los items C
 icon_LTPC = _get_icon("LTPC")
+icon_LTPCDE = _get_icon("LTPCDE")
 
 
-if is_enabled("Select_Nodes"):
+if is_enabled("Layout_Panel"):
     add_tool(
         n,
         label="  Layout Panel",
@@ -262,9 +296,13 @@ if is_enabled("Select_Nodes"):
         module="LGA_layoutPanel",
         attr="show_panel",
         shortcut="Alt+5",
-        icon=icon_LTPC,
+        icon=icon_LTPCDE,
         context=2,
     )
+    n.addSeparator()
+
+
+if is_enabled("Select_Nodes"):
 
     import LGA_selectNodes
 
