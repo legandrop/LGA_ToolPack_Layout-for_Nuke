@@ -41,12 +41,13 @@ Recién después se porta la lógica a `LGA_arrangeNodes.py` (Nuke).
    - Los nodos **entre anclas** se redistribuyen **entre esos dos puntos**.  
    - Los nodos **por encima** de la primera ancla y **por debajo** de la última se desplazan con la **ancla más cercana**.  
    - Si no hay espacio suficiente, se **comprime** el spacing interno sin romper las anclas.
-24. **Fallback de una sola ancla (múltiples anclas):** solo se permite el fallback **si todas las anclas ya están alineadas** (deltas ~ 0). Si alguna está desalineada, se usa el modo multi‑ancla (para no romper alineaciones).
-25. **Restricción de tope:** nodos no conectados no deben quedar por encima del tope de la principal.
-26. **Inferencia de principal:** si falta, se elige la columna con **mayor altura de subgrupo**.
-27. **Adyacencia de flujo en columna:** cualquier conexión no‑mask (incluye A/B) mantiene los nodos en el mismo subgrupo.
-28. **Selección de una sola columna:** la principal se distribuye como cualquier columna (sin excepción).
-29. **Anclas en principal no se fijan:** columnas externas se realinean a la principal tras su redistribución.
+24. **Solapes dentro del subgrupo:** si aparecen solapes **entre nodos del mismo subgrupo**, se redistribuye ese subgrupo con **nodos seguidores fijos** (los conectados a anclas) para eliminar solapes sin romper alineaciones.
+25. **Fallback de una sola ancla (múltiples anclas):** solo se permite el fallback **si todas las anclas ya están alineadas** (deltas ~ 0). Si alguna está desalineada, se usa el modo multi‑ancla (para no romper alineaciones).
+26. **Restricción de tope:** nodos no conectados no deben quedar por encima del tope de la principal.
+27. **Inferencia de principal:** si falta, se elige la columna con **mayor altura de subgrupo**.
+28. **Adyacencia de flujo en columna:** cualquier conexión no‑mask (incluye A/B) mantiene los nodos en el mismo subgrupo.
+29. **Selección de una sola columna:** la principal se distribuye como cualquier columna (sin excepción).
+30. **Anclas en principal no se fijan:** columnas externas se realinean a la principal tras su redistribución.
 
 ## Decisiones del usuario (2026-02-06)
 1. Descubrimiento de columnas + selección de principal: **aplicar** (via `auto_columns`).

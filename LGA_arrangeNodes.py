@@ -1177,6 +1177,52 @@ def _realign_subgroups_to_anchor_connected(
     return moved_cols
 
 
+def _subgroup_has_internal_overlap(subgroup: List[NodeModel]) -> bool:
+    if len(subgroup) < 2:
+        return False
+    for i in range(1, len(subgroup)):
+        prev = subgroup[i - 1]
+        curr = subgroup[i]
+        prev_bottom = prev.y - prev.height / 2
+        curr_top = curr.y + curr.height / 2
+        gap = prev_bottom - curr_top
+        if gap < OVERLAP_NODE_GAP - 1e-6:
+            return True
+    return False
+
+
+def _subgroup_follower_nodes(graph: Graph, subgroup: List[NodeModel]) -> Set[str]:
+    fixed: Set[str] = set()
+    for node in subgroup:
+        for edge in graph.edges:
+            if not edge.align:
+                continue
+            if node.name not in (edge.src, edge.dst):
+                continue
+            anchor, follower = _choose_anchor(graph, edge)
+            if follower.name == node.name:
+                fixed.add(node.name)
+    return fixed
+
+
+def _fix_internal_overlaps_in_subgroups(
+    graph: Graph,
+    subgroup_lists: Dict[str, List[List[NodeModel]]],
+    min_gap: float,
+) -> None:
+    for col, subgroups in subgroup_lists.items():
+        if graph.principal_column and col == graph.principal_column:
+            continue
+        for idx, subgroup in enumerate(subgroups):
+            if not _subgroup_has_internal_overlap(subgroup):
+                continue
+            fixed = _subgroup_follower_nodes(graph, subgroup)
+            debug_print(
+                f"SUBGROUP_OVERLAP_FIX {col}[{idx}] fixed={sorted(fixed)}"
+            )
+            _distribute_column_with_fixed(subgroup, fixed, min_gap=min_gap)
+
+
 def _final_realign_to_principal(graph: Graph, min_gap: float) -> None:
     """Final pass to align external columns to the principal after redistribution."""
     col_order = _column_order(graph)
@@ -1554,6 +1600,9 @@ def layout(graph: Graph, min_gap: float = MIN_GAP, max_iters: int = 5) -> None:
                     conflicts_all,
                     cols_to_fix,
                 )
+
+        # Final pass inside iteration: fix internal overlaps within subgroups.
+        _fix_internal_overlaps_in_subgroups(graph, subgroup_lists, min_gap=min_gap)
 
         adjusted = False
         anchor_shifts: Dict[str, float] = {}
