@@ -27,7 +27,7 @@ import time
 TOLERANCE_X = 55  # pixels for column grouping
 MIN_GAP = 10      # pixels minimum gap between node boxes
 # Run the whole arrange multiple times to stabilize layouts that need extra passes.
-GLOBAL_ITERATIONS = 3
+GLOBAL_ITERATIONS = 1
 # Compresión mínima permitida cuando no hay espacio (en px).
 MIN_GAP_FLOOR = 3
 # Fixed gap between the bottom edge of the upper branch and
@@ -38,7 +38,7 @@ OVERLAP_NODE_GAP = 30
 # Logging config
 # -------------------------
 DEBUG = True
-DEBUG_CONSOLE = True
+DEBUG_CONSOLE = False
 DEBUG_LOG = True
 
 script_start_time = None
