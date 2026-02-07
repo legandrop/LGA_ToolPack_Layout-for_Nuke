@@ -406,6 +406,82 @@ def _format_subgroup(subgroup: List[NodeModel]) -> str:
     return f"{subgroup[0].name}..{subgroup[-1].name}"
 
 
+def _column_flow_lines(graph: Graph, use_original: bool) -> List[str]:
+    col_order = _column_order(graph)
+    ordered_cols = sorted(col_order.keys(), key=lambda c: col_order.get(c, 0))
+    lines: List[str] = []
+    for col in ordered_cols:
+        nodes = [n for n in graph.nodes.values() if n.column == col]
+        if not nodes:
+            continue
+        nodes.sort(key=lambda n: n.order)
+        parts: List[str] = []
+        for n in nodes:
+            y = n.original_y if use_original and n.original_y is not None else n.y
+            parts.append(f"{n.name}(y={y:.2f},h={n.height:.1f})")
+        principal_tag = " *PRINCIPAL*" if graph.principal_column == col else ""
+        lines.append(f"{col}{principal_tag}: " + " -> ".join(parts))
+    return lines
+
+
+def _log_column_flows(graph: Graph, label: str, use_original: bool) -> None:
+    debug_print(f"--- {label} COLUMN FLOWS ---")
+    for line in _column_flow_lines(graph, use_original=use_original):
+        debug_print(line)
+
+
+def _log_arrange_checks(graph: Graph, tol_y: float = 1.0, tol_overlap: float = 0.5) -> None:
+    align_errors: List[str] = []
+    overlap_errors: List[str] = []
+
+    for e in graph.edges:
+        src = graph.nodes.get(e.src)
+        dst = graph.nodes.get(e.dst)
+        if not src or not dst:
+            continue
+        if src.column == dst.column:
+            continue
+        y1 = src.y
+        y2 = dst.y
+        max_delta = (src.height + dst.height) / 2.0 + tol_y
+        if abs(y1 - y2) > max_delta:
+            align_errors.append(
+                f"ALIGN_Y: {e.src} ({y1:.2f}) -> {e.dst} ({y2:.2f}), "
+                f"columns {src.column}->{dst.column}, h=({src.height:.1f},{dst.height:.1f})"
+            )
+
+    by_col: Dict[str, List[NodeModel]] = {}
+    for n in graph.nodes.values():
+        by_col.setdefault(n.column, []).append(n)
+    for col, col_nodes in by_col.items():
+        col_nodes = sorted(col_nodes, key=lambda n: n.y, reverse=True)
+        for i in range(len(col_nodes)):
+            n1 = col_nodes[i]
+            for j in range(i + 1, len(col_nodes)):
+                n2 = col_nodes[j]
+                min_sep = (n1.height + n2.height) / 2.0 - tol_overlap
+                if abs(n1.y - n2.y) < min_sep:
+                    overlap_errors.append(
+                        f"OVERLAP: {n1.name} ({n1.y:.2f}, h={n1.height:.1f}) "
+                        f"vs {n2.name} ({n2.y:.2f}, h={n2.height:.1f}) in {col}"
+                    )
+
+    debug_print(f"--- ARRANGE CHECKS ---")
+    if align_errors:
+        debug_print(f"ALIGN_Y errors: {len(align_errors)}")
+        for e in align_errors:
+            debug_print(f"- {e}")
+    else:
+        debug_print("ALIGN_Y errors: 0")
+
+    if overlap_errors:
+        debug_print(f"OVERLAP errors: {len(overlap_errors)}")
+        for e in overlap_errors:
+            debug_print(f"- {e}")
+    else:
+        debug_print("OVERLAP errors: 0")
+
+
 def _log_column_overview(graph: Graph) -> None:
     cols = graph.columns()
     debug_print(f"Columnas detectadas: {len(cols)} | principal={graph.principal_column}")
@@ -521,6 +597,27 @@ def _align_subgroup_by_subsubgroups(
         index_by_name = {n.name: i for i, n in enumerate(subgroup)}
         anchors_sorted = sorted(anchors_by_node, key=lambda t: index_by_name.get(t[0].name, t[0].order))
 
+        # Detect anchor order conflicts and request principal shifts if needed.
+        anchor_conflicts: List[Tuple[str, float]] = []
+        for (node_a, anchor_a), (node_b, anchor_b) in zip(anchors_sorted, anchors_sorted[1:]):
+            idx_a = index_by_name.get(node_a.name)
+            idx_b = index_by_name.get(node_b.name)
+            if idx_a is None or idx_b is None:
+                continue
+            if idx_a > idx_b:
+                idx_a, idx_b = idx_b, idx_a
+                node_a, node_b = node_b, node_a
+                anchor_a, anchor_b = anchor_b, anchor_a
+            required = (node_a.height + node_b.height) / 2.0 + min_gap
+            actual = anchor_a.y - anchor_b.y
+            if actual >= required:
+                continue
+            needed = required - actual
+            if anchor_a.column == graph.principal_column:
+                anchor_conflicts.append((anchor_a.name, -needed))
+            elif anchor_b.column == graph.principal_column:
+                anchor_conflicts.append((anchor_b.name, needed))
+
         anchor_deltas = {node.name: (anchor.y - node.y) for node, anchor in anchors_sorted}
         for node, anchor in anchors_sorted:
             node.y = anchor.y
@@ -569,7 +666,7 @@ def _align_subgroup_by_subsubgroups(
                 node.y = current_top - node.height / 2
                 current_top -= node.height + gap
 
-        return True, {anchor.name for _node, anchor in anchors_sorted}, []
+        return True, {anchor.name for _node, anchor in anchors_sorted}, anchor_conflicts
 
     candidates.sort(key=lambda t: (t[0], t[1], t[2]))
     _dist, _order, _delta_abs, aligned_node, anchor = candidates[0]
@@ -1181,6 +1278,28 @@ def layout(graph: Graph, min_gap: float = MIN_GAP, max_iters: int = 5) -> None:
 
         # Principal already distributed at the start of the iteration
 
+        # Clamp anchored subgroups to principal vertical bounds (any anchor in principal)
+        if graph.principal_column:
+            principal_nodes = _principal_nodes(graph)
+            if principal_nodes:
+                principal_top = max(n.y + n.height / 2 for n in principal_nodes)
+                principal_bottom = min(n.y - n.height / 2 for n in principal_nodes)
+                for col, subgroups in subgroup_lists.items():
+                    if col == graph.principal_column:
+                        continue
+                    for idx, subgroup in enumerate(subgroups):
+                        anchor = subgroup_anchor.get(col, {}).get(idx)
+                        if not anchor or anchor.column != graph.principal_column:
+                            continue
+                        top, bottom = _subgroup_bounds(subgroup)
+                        delta = 0.0
+                        if top > principal_top:
+                            delta -= (top - principal_top)
+                        if bottom < principal_bottom:
+                            delta += (principal_bottom - bottom)
+                        if abs(delta) > 1e-6:
+                            _shift_subgroup(subgroup, delta)
+
         if graph.principal_column:
             principal_top = max(n.y + n.height / 2 for n in _principal_nodes(graph))
             for col, subgroups in subgroup_lists.items():
@@ -1216,10 +1335,19 @@ def layout(graph: Graph, min_gap: float = MIN_GAP, max_iters: int = 5) -> None:
         adjusted = False
         anchor_shifts: Dict[str, float] = {}
         if anchor_conflicts_all:
-            formatted = ", ".join(f"{name} (+{needed:.2f})" for name, needed in anchor_conflicts_all)
+            formatted = ", ".join(f"{name} ({needed:+.2f})" for name, needed in anchor_conflicts_all)
             debug_print(f"Conflictos de anclaje detectados: {formatted}")
+            def _apply_shift(name: str, shift: float) -> None:
+                current = anchor_shifts.get(name)
+                if current is None:
+                    anchor_shifts[name] = shift
+                else:
+                    if shift < 0:
+                        anchor_shifts[name] = min(current, shift) if current < 0 else shift
+                    elif shift > 0:
+                        anchor_shifts[name] = max(current, shift) if current > 0 else shift
             for name, needed in anchor_conflicts_all:
-                anchor_shifts[name] = max(anchor_shifts.get(name, 0.0), needed)
+                _apply_shift(name, needed)
         if conflicts_all:
             formatted = ", ".join(
                 f"{col}({upper_idx}->{lower_idx}, +{needed:.2f})"
@@ -1457,6 +1585,8 @@ def _build_graph_from_nuke(nodes: List[object]) -> Graph:
             y=-cy,
             height=float(n.screenHeight()),
             ref=n,
+            original_y=-cy,
+            original_x=cx,
         )
         graph.add_node(node)
 
@@ -1528,7 +1658,10 @@ def main() -> None:
     try:
         for _ in range(max(1, int(GLOBAL_ITERATIONS))):
             graph = _build_graph_from_nuke(regular_nodes)
+            _log_column_flows(graph, "ORIGINAL", use_original=True)
             layout(graph, min_gap=MIN_GAP)
+            _log_column_flows(graph, "FINAL", use_original=False)
+            _log_arrange_checks(graph, tol_y=1.0, tol_overlap=0.5)
             _apply_graph_to_nuke(graph)
         debug_print("=== Arrange Nodes v2 END ===")
     finally:

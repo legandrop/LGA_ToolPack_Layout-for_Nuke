@@ -445,9 +445,31 @@ def _align_subgroup_by_subsubgroups(
                 node.y = current_top - node.height / 2
                 current_top -= node.height + gap
 
+        # Detect anchor order conflicts and request principal shifts if needed.
+        anchor_conflicts: List[Tuple[str, float]] = []
+        for (node_a, anchor_a), (node_b, anchor_b) in zip(anchors_sorted, anchors_sorted[1:]):
+            idx_a = index_by_name.get(node_a.name)
+            idx_b = index_by_name.get(node_b.name)
+            if idx_a is None or idx_b is None:
+                continue
+            if idx_a > idx_b:
+                idx_a, idx_b = idx_b, idx_a
+                node_a, node_b = node_b, node_a
+                anchor_a, anchor_b = anchor_b, anchor_a
+            required = (node_a.height + node_b.height) / 2.0 + min_gap
+            actual = anchor_a.y - anchor_b.y
+            if actual >= required:
+                continue
+            needed = required - actual
+            if anchor_a.column == graph.principal_column:
+                # Move anchor_a up by needed (negative shift)
+                anchor_conflicts.append((anchor_a.name, -needed))
+            elif anchor_b.column == graph.principal_column:
+                # Move anchor_b down by needed (positive shift)
+                anchor_conflicts.append((anchor_b.name, needed))
+
         anchors_used = {anchor.name for _node, anchor in anchors_sorted}
-        conflicts: List[Tuple[str, float]] = []
-        return True, anchors_used, conflicts
+        return True, anchors_used, anchor_conflicts
 
     # Single-anchor behavior (default): shift whole subgroup to anchor.
     candidates.sort(key=lambda t: (t[0], t[1], t[2]))
@@ -1009,6 +1031,28 @@ def layout(
                 break
         # Principal already distributed at the start of the iteration
 
+        # Clamp anchored subgroups to principal vertical bounds (no hardcode: any anchor in principal)
+        if graph.principal_column:
+            principal_nodes = _principal_nodes(graph)
+            if principal_nodes:
+                principal_top = max(n.y + n.height / 2 for n in principal_nodes)
+                principal_bottom = min(n.y - n.height / 2 for n in principal_nodes)
+                for col, subgroups in subgroup_lists.items():
+                    if col == graph.principal_column:
+                        continue
+                    for idx, subgroup in enumerate(subgroups):
+                        anchor = subgroup_anchor.get(col, {}).get(idx)
+                        if not anchor or anchor.column != graph.principal_column:
+                            continue
+                        top, bottom = _subgroup_bounds(subgroup)
+                        delta = 0.0
+                        if top > principal_top:
+                            delta -= (top - principal_top)
+                        if bottom < principal_bottom:
+                            delta += (principal_bottom - bottom)
+                        if abs(delta) > 1e-6:
+                            _shift_subgroup(subgroup, delta)
+
         # Enforce top constraint for unconnected subgroups
         if graph.principal_column:
             principal_top = max(n.y + n.height / 2 for n in _principal_nodes(graph))
@@ -1047,8 +1091,17 @@ def layout(
         adjusted = False
         anchor_shifts: Dict[str, float] = {}
         if anchor_conflicts_all:
+            def _apply_shift(name: str, shift: float) -> None:
+                current = anchor_shifts.get(name)
+                if current is None:
+                    anchor_shifts[name] = shift
+                else:
+                    if shift < 0:
+                        anchor_shifts[name] = min(current, shift) if current < 0 else shift
+                    elif shift > 0:
+                        anchor_shifts[name] = max(current, shift) if current > 0 else shift
             for name, needed in anchor_conflicts_all:
-                anchor_shifts[name] = max(anchor_shifts.get(name, 0.0), needed)
+                _apply_shift(name, needed)
         if conflicts_all:
             principal = _principal_nodes(graph)
             index_by_name = {n.name: i for i, n in enumerate(principal)}
