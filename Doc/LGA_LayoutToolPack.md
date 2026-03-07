@@ -156,11 +156,8 @@ distribuye backdrops.
 ![](media_md/image20.png)
 
 <strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
-
-> ***Ctrl + 0*** Horizontal \* El 0 es más ancho horizontalmente en el
-> teclado numérico que el punto
->
-> ***Ctrl + .*** Vertical
+<span style="color:#8a8a8a;">***Ctrl + 0*** Horizontal <span style="font-weight:400;color:#8a8a8a;">(El 0 es más ancho en el teclado numérico que el punto)</span></span><br>
+<span style="color:#8a8a8a;">***Ctrl + .*** Vertical</span><br><br>
 
 ## ![](media_md/seccion_verde.png) Arrange Nodes v0.81 - Lega
 
