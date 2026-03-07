@@ -11,14 +11,22 @@ DEST_MEDIA = DOC_DIR / 'media_md'
 LOG_PATH = DOC_DIR / 'scale_images.log'
 ADJUSTMENTS = {
     # fine-tune specific icons (extra padding, etc.)
-    'image15.png': {'bottom_pad': 5},
-    'image4.png': {'bottom_pad': 5},
-    'image6.png': {'bottom_pad': 5},
-    'image16.png': {'bottom_pad': 5},
-    'image28.png': {'bottom_pad': 5},
-    'image3.png': {'bottom_pad': 5},
+    'seccion_azul.png': {'bottom_pad': 5},
+    'seccion_amarilla.png': {'bottom_pad': 5},
+    'seccion_verde.png': {'bottom_pad': 5},
+    'seccion_naranja.png': {'bottom_pad': 5},
+    'seccion_violeta.png': {'bottom_pad': 5},
+    'seccion_rosa.png': {'bottom_pad': 5},
 }
 ALWAYS_INCLUDE = {'image22.png'}
+ICON_ALIASES = {
+    'seccion_azul.png': 'image15.png',
+    'seccion_amarilla.png': 'image4.png',
+    'seccion_verde.png': 'image6.png',
+    'seccion_naranja.png': 'image16.png',
+    'seccion_violeta.png': 'image28.png',
+    'seccion_rosa.png': 'image3.png',
+}
 
 if not PANDOC_MD.exists():
     raise SystemExit("Missing LGA_LayoutToolPack_pandoc.md. Run pandoc with --extract-media=media_tmp to regenerate metadata before scaling.")
@@ -64,7 +72,8 @@ for fname in unique_files:
         continue
     with Image.open(src) as img:
         orig_w, orig_h = img.size
-        entry = size_map.get(fname, {})
+        lookup_name = ICON_ALIASES.get(fname, fname)
+        entry = size_map.get(lookup_name, {})
         width_in = entry.get('width_in')
         height_in = entry.get('height_in')
         if width_in is not None:

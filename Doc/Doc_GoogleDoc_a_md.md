@@ -28,13 +28,16 @@
      - Copias escaladas en media_md/.
      - Cambios dentro de LGA_LayoutToolPack.md para que apunte a media_md/.
      - Un log con el detalle de cada redimensionado en scale_images.log (ideal para revisiones rápidas).
-    - Si alguna imagen necesita ajustes extra (p. ej. agregar padding inferior para alinear íconos), editar el diccionario `ADJUSTMENTS` en scale_images.py; actualmente `image15.png` recibe 5 px adicionales en la parte inferior.
+    - Si alguna imagen necesita ajustes extra (p. ej. agregar padding inferior para alinear íconos), editar el diccionario `ADJUSTMENTS` en scale_images.py; allí ya están configurados los íconos seccionales (`seccion_*.png`) para sumar 5 px de padding inferior.
    - Después de confirmar que la vista previa se ve bien, se puede eliminar media_tmp/ para no duplicar archivos.
 5. **Aplicar formato final al Markdown**:
    - Reemplazar el encabezado inicial por la tabla HTML con el logo (ver sección superior del `.md` actual) para que el título/subtítulo queden alineados horizontalmente.
    - Convertir cada sección de herramienta al estilo `## ![](media_md/<icono>.png) Nombre de la herramienta`, asegurándose de que la imagen vaya primero y que el título quede en el mismo nivel que “Instalación”.
    - Mantener notas vinculadas a bullets (como la de `\_LGA_ToolPackLayout_Enabled.ini`) usando una barra invertida `\` al final de la línea para que queden dentro del mismo punto.
    - Revisar atajos/shortcut blocks para que continúen en texto plano con listas o blockquotes según corresponda.
+6. **Normalizar íconos de sección**:
+   - Usamos archivos canónicos en `media_md/`: `seccion_azul.png` (Add Dots), `seccion_amarilla.png` (Create/Label), `seccion_violeta.png` (Select Nodes), `seccion_verde.png` (Align/Distribute/Arrange/Scale), `seccion_naranja.png` (Push/Pull) y `seccion_rosa.png` (Easy Navigate/Toggle Zoom).
+   - En `media/media/` existen las versiones originales con el mismo nombre; `scale_images.py` incluye un mapa `ICON_ALIASES` para recuperar las medidas del DOCX (p. ej. `seccion_azul.png` ↔ `image15.png`). Si se agrega un nuevo ícono, recordar sumar su alias allí.
 
 ## Tabla de tamaños actuales
 | Archivo | Original (px) | Escalado (px) |
@@ -45,8 +48,8 @@
 | image12.png | 740x704 | 288x274 |
 | image13.png | 733x713 | 253x246 |
 | image14.png | 734x713 | 235x228 |
-| image15.png | 676x285 | 12x5 |
-| image16.png | 135x252 | 12x22 |
+| seccion_azul.png (ex image15) | 676x285 | 12x12 |
+| seccion_naranja.png (ex image16) | 135x252 | 12x12 |
 | image17.png | 734x709 | 243x235 |
 | image18.png | 733x710 | 248x240 |
 | image19.png | 736x713 | 257x249 |
@@ -59,15 +62,15 @@
 | image25.png | 973x528 | 237x129 |
 | image26.png | 901x479 | 242x129 |
 | image27.png | 734x708 | 285x275 |
-| image28.png | 78x149 | 12x23 |
+| seccion_violeta.png (ex image28) | 78x149 | 12x12 |
 | image29.png | 744x712 | 250x239 |
-| image3.png | 118x272 | 12x28 |
+| seccion_rosa.png (ex image3) | 118x272 | 12x12 |
 | image30.png | 733x715 | 246x240 |
 | image31.png | 736x708 | 236x227 |
 | image32.png | 730x710 | 248x241 |
-| image4.png | 109x228 | 12x25 |
+| seccion_amarilla.png (ex image4) | 109x228 | 12x12 |
 | image5.png | 738x705 | 256x245 |
-| image6.png | 102x168 | 12x20 |
+| seccion_verde.png (ex image6) | 102x168 | 12x12 |
 | image7.png | 733x707 | 268x258 |
 | image8.png | 1150x452 | 214x84 |
 | image9.png | 904x506 | 217x121 |

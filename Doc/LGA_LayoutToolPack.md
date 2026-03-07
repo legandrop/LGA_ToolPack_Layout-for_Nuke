@@ -31,7 +31,7 @@
   copiar el archivo a **\~/.nuke/\_LGA_ToolPackLayout_Enabled.ini**. Si
   existen ambos, tiene prioridad el de **\~/.nuke/.**
 
-## ![](media_md/image15.png) Add Dots before (aka Dots) v5.1 - Alexey Kuchinski <font color="#8a8a8a">| Mod Lega v2.2</font>
+## ![](media_md/seccion_azul.png) Add Dots before (aka Dots) v5.1 - Alexey Kuchinski <font color="#8a8a8a">| Mod Lega v2.2</font>
 
 [[https://www.nukepedia.com/python/nodegraph/dots]{.underline}](https://www.nukepedia.com/python/nodegraph/dots)
 
@@ -56,7 +56,7 @@ seleccionado.*
 
 Shortcut: ***,***
 
-## ![](media_md/image15.png) Add Dots after v1.6 - Lega
+## ![](media_md/seccion_azul.png) Add Dots after v1.6 - Lega
 
 Agrega un nodo Dot debajo del nodo seleccionado y luego otro Dot
 conectado a este hacia la derecha o hacia la izquierda según el
@@ -77,7 +77,7 @@ primero
 ***Ctrl + shift + .*** agrega el segundo Dot más a la derecha del
 primero
 
-## ![](media_md/image4.png) Create \| Edit StickyNote v1.0 - Lega
+## ![](media_md/seccion_amarilla.png) Create \| Edit StickyNote v1.0 - Lega
 
 Permite crear o editar un StickyNote seleccionado con algunas opciones
 extras.
@@ -89,7 +89,7 @@ Shortcut:
 ***Shift + N*** crea un nuevo StickyNote o edita el StickyNote
 seleccionado
 
-## ![](media_md/image4.png) Create LGA_Backdrop v1.0 - Lega
+## ![](media_md/seccion_amarilla.png) Create LGA_Backdrop v1.0 - Lega
 
 Reemplazo del autoBackdrop, con opciones extras:
 
@@ -111,7 +111,7 @@ Shortcuts:
 ***Ctrl + B*** reemplaza backdrops seleccionados (o todos) por
 LGA_Backdrop
 
-## ![](media_md/image4.png) Label Node v1.0 - Lega
+## ![](media_md/seccion_amarilla.png) Label Node v1.0 - Lega
 
 Permite cambiar el label de un nodo con una ventana emergente.
 
@@ -119,7 +119,7 @@ Permite cambiar el label de un nodo con una ventana emergente.
 
 Shortcut: ***Shift + L***
 
-## ![](media_md/image28.png) Select Nodes v1.3 - Lega
+## ![](media_md/seccion_violeta.png) Select Nodes v1.3 - Lega
 
 A partir del nodo seleccionado selecciona nodos en la dirección
 determinada por el shortcut.
@@ -153,7 +153,7 @@ determinada por el shortcut.
 ![](media_md/image12.png)
 ![](media_md/image27.png)
 
-## ![](media_md/image6.png) Align Nodes v1.2 - Lega
+## ![](media_md/seccion_verde.png) Align Nodes v1.2 - Lega
 
 Alinea los nodos seleccionados según el shortcut.\
 Si hay más de un backdrop seleccionado, en vez de alinear nodos, alinea
@@ -166,7 +166,7 @@ Shortcuts (usando el teclado numérico):
 
 > ***Ctrl + Flechas (2, 4, 6, 8)***
 
-## ![](media_md/image6.png) Distribute Nodes v1.1 - Lega
+## ![](media_md/seccion_verde.png) Distribute Nodes v1.1 - Lega
 
 Distribuye horizontalmente o verticalmente los nodos seleccionados según
 el shortcut. Cuando distribuye horizontalmente tiene en cuenta la altura
@@ -184,7 +184,7 @@ Shortcuts (usando el teclado numérico):
 >
 > ***Ctrl + .*** Vertical
 
-## ![](media_md/image6.png) Arrange Nodes v0.81 - Lega
+## ![](media_md/seccion_verde.png) Arrange Nodes v0.81 - Lega
 
 Alinea y distribuye los nodos seleccionados de múltiples columnas
 tomando en cuenta las conexiones de los nodos entre sí.\
@@ -195,7 +195,7 @@ Shortcut (usando el teclado numérico):
 
 > ***Ctrl + Flechas (2, 4, 6, 8)***
 
-## ![](media_md/image6.png) Scale Nodes v1.0 - Erwan Leroy
+## ![](media_md/seccion_verde.png) Scale Nodes v1.0 - Erwan Leroy
 
 Ajusta los espacios y la posición de los nodos seleccionados utilizando
 un widget de escala.\
@@ -206,7 +206,7 @@ Shortcut (usando el teclado numérico):
 
 > ***Ctrl + +***
 
-## ![](media_md/image16.png) Push Nodes v1.0 - Mitja Müller-Jend
+## ![](media_md/seccion_naranja.png) Push Nodes v1.0 - Mitja Müller-Jend
 
 [[http://www.nukepedia.com/python/nodegraph/push_nodes]{.underline}](http://www.nukepedia.com/python/nodegraph/push_nodes)
 
@@ -224,7 +224,7 @@ un sector sin espacio.
 >
 > ***Ctrl + Alt + Flechas (2, 4, 6, 8)***
 
-## ![](media_md/image16.png) Pull Nodes v1.0 - Mitja Müller-Jend \| Mod Lega
+## ![](media_md/seccion_naranja.png) Pull Nodes v1.0 - Mitja Müller-Jend \| Mod Lega
 
 [[http://www.nukepedia.com/python/nodegraph/push_nodes]{.underline}](http://www.nukepedia.com/python/nodegraph/push_nodes)
 
@@ -239,7 +239,7 @@ pivote el puntero del mouse.
 >
 > ***Ctrl + Alt + Shift + Flechas (2, 4, 6, 8)***
 
-## ![](media_md/image3.png) Easy Navigate v2.3 - Hossein Karamian
+## ![](media_md/seccion_rosa.png) Easy Navigate v2.3 - Hossein Karamian
 
 [[https://www.nukepedia.com/python/nodegraph/km-nodegraph-easy-navigate/]{.underline}](https://www.nukepedia.com/python/nodegraph/km-nodegraph-easy-navigate/)
 
@@ -252,7 +252,7 @@ de uno a otro. Util para scripts grandes.
 >
 > ***Shift + A*** Abre la GUI
 
-## ![](media_md/image3.png) Toggle Zoom v1.1 - Lega
+## ![](media_md/seccion_rosa.png) Toggle Zoom v1.1 - Lega
 
 Alterna entre el zoom actual y un zoom que muestra todos los nodos en el
 Node Graph.
@@ -262,3 +262,4 @@ como centro. Si pasan más de 9 segundos entre pulsaciones de la tecla H,
 se reinicia el ciclo.
 
 > Shortcut: ***H***
+
