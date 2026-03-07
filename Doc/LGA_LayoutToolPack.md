@@ -51,7 +51,7 @@ cuando varios nodos seleccionados están conectados al mismo nodo y
 permite agregar dots en cualquier input siempre y cuando el nodo
 conectado al input no esté en la misma fila o columna que el nodo
 seleccionado.*<br><br>
-<strong><font color="#8a8a8a">Shortcut:</font><font color="#8a8a8a">,</font></strong> 
+<strong><font color="#8a8a8a">Shortcut:</font> <font color="#8a8a8a">,</font></strong>
 
 ## ![](media_md/seccion_azul.png) Add Dots after v1.6 - Lega
 
@@ -75,8 +75,8 @@ extras.
 
 ![](media_md/image10.png)
 
-Shortcut:<br>
-***Shift + N*** crea un nuevo StickyNote o edita el StickyNote seleccionado<br>
+<strong><font color="#8a8a8a">Shortcut:</font></strong><br>
+<font color="#8a8a8a">***Shift + N*** crea un nuevo StickyNote o edita el StickyNote seleccionado</font><br>
 
 ## ![](media_md/seccion_amarilla.png) Create LGA_Backdrop v1.0 - Lega
 
@@ -88,9 +88,9 @@ Reemplazo del autoBackdrop, con opciones extras:<br>
 ![](media_md/image23.png)
 ![](media_md/image11.png)
 
-Shortcuts:<br>
-***Shift + B*** crea un nuevo LGA_Backdrop<br>
-***Ctrl + B*** reemplaza backdrops seleccionados (o todos) por LGA_Backdrop<br>
+<strong><font color="#8a8a8a">Shortcuts:</font></strong><br>
+<font color="#8a8a8a">***Shift + B*** crea un nuevo LGA_Backdrop<br>
+***Ctrl + B*** reemplaza backdrops seleccionados (o todos) por LGA_Backdrop</font><br>
 
 ## ![](media_md/seccion_amarilla.png) Label Node v1.0 - Lega
 
@@ -98,7 +98,8 @@ Permite cambiar el label de un nodo con una ventana emergente.
 
 ![](media_md/image21.png)
 
-Shortcut: ***Shift + L***
+<strong><font color="#8a8a8a">Shortcut:</font></strong><br>
+<font color="#8a8a8a">***Shift + L***</font><br>
 
 ## ![](media_md/seccion_violeta.png) Select Nodes v1.3 - Lega
 
