@@ -12,6 +12,11 @@ LOG_PATH = DOC_DIR / 'scale_images.log'
 ADJUSTMENTS = {
     # fine-tune specific icons (extra padding, etc.)
     'image15.png': {'bottom_pad': 5},
+    'image4.png': {'bottom_pad': 5},
+    'image6.png': {'bottom_pad': 5},
+    'image16.png': {'bottom_pad': 5},
+    'image28.png': {'bottom_pad': 5},
+    'image3.png': {'bottom_pad': 5},
 }
 ALWAYS_INCLUDE = {'image22.png'}
 
@@ -28,10 +33,10 @@ for match in pattern.finditer(text):
     filename = Path(path).name
     attrs = match.group(2)
     width = height = None
-    m_w = re.search(r'width="([0-9\.]+)in"', attrs)
+    m_w = re.search(r'width="([0-9eE\.\-]+)in"', attrs)
     if m_w:
         width = float(m_w.group(1))
-    m_h = re.search(r'height="([0-9\.]+)in"', attrs)
+    m_h = re.search(r'height="([0-9eE\.\-]+)in"', attrs)
     if m_h:
         height = float(m_h.group(1))
     entry = size_map.setdefault(filename, {})
@@ -61,11 +66,17 @@ for fname in unique_files:
         orig_w, orig_h = img.size
         entry = size_map.get(fname, {})
         width_in = entry.get('width_in')
-        if width_in is None:
-            target_w = orig_w
-        else:
+        height_in = entry.get('height_in')
+        if width_in is not None:
             target_w = max(1, int(round(width_in * 96)))
-        target_h = max(1, int(round(orig_h * target_w / orig_w)))
+        else:
+            target_w = orig_w
+        if height_in is not None:
+            target_h = max(1, int(round(height_in * 96)))
+            if width_in is None:
+                target_w = max(1, int(round(orig_w * target_h / orig_h)))
+        else:
+            target_h = max(1, int(round(orig_h * target_w / orig_w)))
         if (target_w, target_h) == (orig_w, orig_h):
             resized = img.copy()
         else:
