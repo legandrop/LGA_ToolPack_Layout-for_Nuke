@@ -33,7 +33,7 @@
 
 ## ![](media_md/seccion_azul.png) Add Dots before (aka Dots) v5.1 - Alexey Kuchinski <font color="#8a8a8a">| Mod Lega v2.2</font>
 
-[[https://www.nukepedia.com/python/nodegraph/dots]{.underline}](https://www.nukepedia.com/python/nodegraph/dots)
+[[https://www.nukepedia.com/python/nodegraph/dots]](https://www.nukepedia.com/python/nodegraph/dots)
 
 Agrega *Dots* antes del nodo seleccionado, generando líneas de conexión
 con los nodos previos a 90 grados.
@@ -208,7 +208,7 @@ Shortcut (usando el teclado numérico):
 
 ## ![](media_md/seccion_naranja.png) Push Nodes v1.0 - Mitja Müller-Jend
 
-[[http://www.nukepedia.com/python/nodegraph/push_nodes]{.underline}](http://www.nukepedia.com/python/nodegraph/push_nodes)
+[[http://www.nukepedia.com/python/nodegraph/push_nodes]](http://www.nukepedia.com/python/nodegraph/push_nodes)
 
 Empuja nodos para crear espacio en la dirección correspondiente all
 shortcut tomando como pivote la posición del puntero del mouse. Tiene en
@@ -226,7 +226,7 @@ un sector sin espacio.
 
 ## ![](media_md/seccion_naranja.png) Pull Nodes v1.0 - Mitja Müller-Jend \| Mod Lega
 
-[[http://www.nukepedia.com/python/nodegraph/push_nodes]{.underline}](http://www.nukepedia.com/python/nodegraph/push_nodes)
+[[http://www.nukepedia.com/python/nodegraph/push_nodes]](http://www.nukepedia.com/python/nodegraph/push_nodes)
 
 Mod simple del *Push Nodes* para hacer exactamente lo contrario: Achicar
 el espacio en la dirección correspondiente al shortcut tomando como
@@ -241,7 +241,7 @@ pivote el puntero del mouse.
 
 ## ![](media_md/seccion_rosa.png) Easy Navigate v2.3 - Hossein Karamian
 
-[[https://www.nukepedia.com/python/nodegraph/km-nodegraph-easy-navigate/]{.underline}](https://www.nukepedia.com/python/nodegraph/km-nodegraph-easy-navigate/)
+[[https://www.nukepedia.com/python/nodegraph/km-nodegraph-easy-navigate/]](https://www.nukepedia.com/python/nodegraph/km-nodegraph-easy-navigate/)
 
 Crea bookmarks de los nodos seleccionados y permite saltar rápidamente
 de uno a otro. Util para scripts grandes.
