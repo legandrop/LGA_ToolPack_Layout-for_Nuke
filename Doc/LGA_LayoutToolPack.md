@@ -111,13 +111,13 @@ determinada por el shortcut.
   arriba o hacia abajo, o en la misma fila si es hacia los costados.<br>
   ![](media_md/image12.png) ![](media_md/image31.png)<br>
   <strong><span style="color:#8a8a8a;">Shortcuts (usando el teclado numérico):</span></strong><br>
-  <span style="color:#8a8a8a;">***Alt + Flechas (2, 4, 6, 8)***</span><br>
+  <span style="color:#8a8a8a;">***Alt + Flechas (2, 4, 6, 8)***</span><br><br>
 - <span style="color:#914dcb;font-weight:600;">Select connected Nodes</span> hace lo mismo que *Select Nodes*, pero solo
   selecciona nodos que estén conectados con el nodo seleccionado, y
   recurrentemente con el nodo siguiente en la selección.<br>
   ![](media_md/image12.png) ![](media_md/image7.png)<br>
   <strong><span style="color:#8a8a8a;">Shortcuts (usando el teclado numérico):</span></strong><br>
-  <span style="color:#8a8a8a;">***Meta + Flechas (2, 4, 6, 8)*** \*Meta es la bandera en windows o la manzana en mac</span><br>
+  <span style="color:#8a8a8a;">***Meta + Flechas (2, 4, 6, 8)*** \*Meta es la bandera en windows o la manzana en mac</span><br><br>
 - <span style="color:#914dcb;font-weight:600;">Select all Nodes</span> selecciona todos los nodos en la dirección
   determinada por el shortcut.<br>
   ![](media_md/image12.png) ![](media_md/image27.png)
