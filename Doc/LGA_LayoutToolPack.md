@@ -50,8 +50,8 @@ anterior.
 cuando varios nodos seleccionados están conectados al mismo nodo y
 permite agregar dots en cualquier input siempre y cuando el nodo
 conectado al input no esté en la misma fila o columna que el nodo
-seleccionado.*<br>
-Shortcut: ***,***
+seleccionado.*<br><br>
+<strong><font color="#8a8a8a">Shortcut:</font><font color="#8a8a8a">,</font></strong> 
 
 ## ![](media_md/seccion_azul.png) Add Dots after v1.6 - Lega
 
@@ -62,11 +62,11 @@ shortcut.
 ![](media_md/image9.png)
 ![](media_md/image8.png)
 
-Shortcuts:<br>
-***Shift + ,*** agrega el segundo Dot a la izquierda del primero<br>
+<strong><font color="#8a8a8a">Shortcuts:</font></strong><br>
+<font color="#8a8a8a">***Shift + ,*** agrega el segundo Dot a la izquierda del primero<br>
 ***Ctrl + shift + ,*** agrega el segundo Dot más a la izquierda del primero<br>
 ***Shift + .*** agrega el segundo Dot a la derecha del primero<br>
-***Ctrl + shift + .*** agrega el segundo Dot más a la derecha del primero<br>
+***Ctrl + shift + .*** agrega el segundo Dot más a la derecha del primero</font><br>
 
 ## ![](media_md/seccion_amarilla.png) Create \| Edit StickyNote v1.0 - Lega
 
