@@ -139,8 +139,10 @@ backdrops.
 ![](media_md/image29.png)
 
 <strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
-
-> ***Ctrl + Flechas (2, 4, 6, 8)***
+<span style="color:#8a8a8a;">***Ctrl + ↓ (2)***</span><br>
+<span style="color:#8a8a8a;">***Ctrl + ↑ (8)***</span><br>
+<span style="color:#8a8a8a;">***Ctrl + ← (4)***</span><br>
+<span style="color:#8a8a8a;">***Ctrl + → (6)***</span><br><br>
 
 ## ![](media_md/seccion_verde.png) Distribute Nodes v1.1 - Lega
 
