@@ -1,0 +1,83 @@
+﻿# Google Doc → Markdown (LGA Layout Tool Pack)
+
+## Objetivos actuales
+- Mantener un único origen editable en Markdown dentro de Doc/ para que Codex pueda modificar documentación sin depender de Google Docs.
+- Seguir exportando a PDF/Google Doc cuando haga falta, pero con una representación .md que conserve la estructura, íconos y capturas.
+- Dejar registrado el proceso para repetir la conversión sin improvisar pasos ni crear carpetas fuera de Doc/.
+
+## Reglas y lineamientos pedidos por Lega
+- Trabajar siempre dentro de C:/Users/leg4-pc/.nuke/LGA_ToolPack-Layout/Doc/ y evitar "hacer un desastre" de carpetas; cualquier carpeta nueva debe explicarse (p. ej. media_md/).
+- Conservar el estilo visual del PDF original (colores, alineaciones básicas, logos) aun sabiendo que Markdown es más limitado.
+- El resultado debe verse correctamente en visores comunes como VS Code *y* GitHub; por eso no podemos depender de atributos Pandoc {width=...}.
+- Preferir herramientas CLI ya disponibles (Pandoc portátil en Doc/pandoc-3.9/) y documentar cada comando.
+
+## Flujo recomendado
+1. **Exportar desde Google Docs a DOCX** (ya guardado como Doc/LGA_LayoutToolPack.docx). Cada vez que haya cambios importantes en el Google Doc, descargar un DOCX actualizado y reemplazarlo.
+2. **Generar un volcado Pandoc para metadatos e imágenes a tamaño original**:
+   ```powershell
+   cd C:/Users/leg4-pc/.nuke/LGA_ToolPack-Layout/Doc
+   .\pandoc-3.9\pandoc-3.9\pandoc.exe LGA_LayoutToolPack.docx `
+       -o LGA_LayoutToolPack_pandoc.md `
+       --extract-media=media_tmp
+   ```
+   Esto crea media_tmp/ (copias originales) y LGA_LayoutToolPack_pandoc.md con los atributos width="…in" que usamos como referencia y que también nos sirven para spotear duplicados o errores de conversión.
+3. **Actualizar el Markdown principal (LGA_LayoutToolPack.md)** a mano copiando/pegando desde el volcado donde haga falta, ajustando encabezados, quotes, etc. Evitar guardar los atributos {width=…} porque GitHub los muestra como texto plano.
+4. **Escalar las imágenes para visores Markdown**:
+   - Instalar dependencias solo una vez (pip install pillow).
+   - Ejecutar python scale_images.py. El script valida que existan LGA_LayoutToolPack_pandoc.md y las imágenes originales en media/media/, calcula el ancho objetivo en píxeles (pulgadas * 96) y genera:
+     - Copias escaladas en media_md/.
+     - Cambios dentro de LGA_LayoutToolPack.md para que apunte a media_md/.
+     - Un log con el detalle de cada redimensionado en scale_images.log (ideal para revisiones rápidas).
+   - Después de confirmar que la vista previa se ve bien, se puede eliminar media_tmp/ para no duplicar archivos.
+5. **Aplicar formato final al Markdown**:
+   - Reemplazar el encabezado inicial por la tabla HTML con el logo (ver sección superior del `.md` actual) para que el título/subtítulo queden alineados horizontalmente.
+   - Convertir cada sección de herramienta al estilo `## ![](media_md/<icono>.png) Nombre de la herramienta`, asegurándose de que la imagen vaya primero y que el título quede en el mismo nivel que “Instalación”.
+   - Mantener notas vinculadas a bullets (como la de `\_LGA_ToolPackLayout_Enabled.ini`) usando una barra invertida `\` al final de la línea para que queden dentro del mismo punto.
+   - Revisar atajos/shortcut blocks para que continúen en texto plano con listas o blockquotes según corresponda.
+
+## Tabla de tamaños actuales
+| Archivo | Original (px) | Escalado (px) |
+| --- | --- | --- |
+| image1.png | 739x708 | 251x240 |
+| image10.png | 322x612 | 170x323 |
+| image11.png | 940x482 | 394x202 |
+| image12.png | 740x704 | 288x274 |
+| image13.png | 733x713 | 253x246 |
+| image14.png | 734x713 | 235x228 |
+| image15.png | 676x285 | 12x5 |
+| image16.png | 135x252 | 12x22 |
+| image17.png | 734x709 | 243x235 |
+| image18.png | 733x710 | 248x240 |
+| image19.png | 736x713 | 257x249 |
+| image2.png | 736x708 | 249x240 |
+| image20.png | 741x711 | 250x240 |
+| image21.png | 409x323 | 358x283 |
+| image22.png | 256x256 | 56x56 |
+| image23.png | 655x510 | 233x181 |
+| image24.png | 732x710 | 247x240 |
+| image25.png | 973x528 | 237x129 |
+| image26.png | 901x479 | 242x129 |
+| image27.png | 734x708 | 285x275 |
+| image28.png | 78x149 | 12x23 |
+| image29.png | 744x712 | 250x239 |
+| image3.png | 118x272 | 12x28 |
+| image30.png | 733x715 | 246x240 |
+| image31.png | 736x708 | 236x227 |
+| image32.png | 730x710 | 248x241 |
+| image4.png | 109x228 | 12x25 |
+| image5.png | 738x705 | 256x245 |
+| image6.png | 102x168 | 12x20 |
+| image7.png | 733x707 | 268x258 |
+| image8.png | 1150x452 | 214x84 |
+| image9.png | 904x506 | 217x121 |
+
+
+## Notas y descubrimientos
+- GitHub y la vista previa básica de VS Code no interpretan las extensiones Pandoc {width=... height=...}, por eso aparecía texto crudo debajo del logo original.
+- El encabezado con logo + título se resuelve usando una tabla HTML pequeña; es la única forma de alinear la imagen y las dos líneas en una sola fila dentro de visores como GitHub.
+- Los íconos pequeños del PDF estaban configurados a ~0.13" de ancho; al convertirlos a píxeles equivalentes (~12 px) se ven como en el DOCX. Para que GitHub respete ese tamaño, necesitamos las imágenes físicamente escaladas (no sólo CSS).
+- media/media/ conserva los bitmaps originales por si hace falta regenerar otra versión; media_md/ es la carpeta que usa el .md final.
+- scale_images.py sobrescribe media_md/, así que cualquier ajuste manual en esa carpeta debe hacerse después de correr el script.
+- Mantener LGA_LayoutToolPack_pandoc.md a mano facilita detectar diffs con la versión original del DOCX y volver a extraer medidas cuando el documento cambie.
+- Los encabezados de cada herramienta se formatean como `## ![](media_md/icon.png) Nombre`, así el icono queda alineado a la izquierda del título y GitHub respeta la jerarquía visual.
+- Si se necesita publicar un PDF desde el Markdown, usar Pandoc apuntando al .md ya limpio; las imágenes en media_md/ mantienen las proporciones esperadas en cualquier export.
