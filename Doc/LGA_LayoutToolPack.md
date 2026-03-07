@@ -225,9 +225,8 @@ de uno a otro. Util para scripts grandes.
 
 ![](media_md/image19.png)
 
-> <strong><span style="color:#8a8a8a;">Shortcuts:</span></strong>
->
-> ***Shift + A*** Abre la GUI
+<strong><span style="color:#8a8a8a;">Shortcuts</span></strong><br>
+<span style="color:#8a8a8a;">***Shift + A*** Abre la GUI</span><br><br>
 
 ## ![](media_md/seccion_rosa.png) Toggle Zoom v1.1 - Lega
 
@@ -237,5 +236,7 @@ Permite volver al nivel de zoom anterior usando la posición del cursor
 como centro. Si pasan más de 9 segundos entre pulsaciones de la tecla H,
 se reinicia el ciclo.
 
-> Shortcut: ***H***
+<strong><span style="color:#8a8a8a;">Shortcuts</span></strong><br>
+<span style="color:#8a8a8a;">***H***</span><br>
+<span style="color:#8a8a8a;">***Middle click***</span><br><br>
 
