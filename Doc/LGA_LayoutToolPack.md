@@ -166,9 +166,11 @@ tomando en cuenta las conexiones de los nodos entre sí.\
 ![](media_md/image30.png)
 ![](media_md/image24.png)
 
-<strong><span style="color:#8a8a8a;">Shortcut</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
-
-> ***Ctrl + Flechas (2, 4, 6, 8)***
+<strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
+<span style="color:#8a8a8a;">***Ctrl + ↓ (2)***</span><br>
+<span style="color:#8a8a8a;">***Ctrl + ↑ (8)***</span><br>
+<span style="color:#8a8a8a;">***Ctrl + ← (4)***</span><br>
+<span style="color:#8a8a8a;">***Ctrl + → (6)***</span><br><br>
 
 ## ![](media_md/seccion_verde.png) Scale Nodes v1.0 - Erwan Leroy
 
@@ -177,9 +179,8 @@ un widget de escala.\
 ![](media_md/image5.png)
 ![](media_md/image13.png)
 
-<strong><span style="color:#8a8a8a;">Shortcut</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
-
-> ***Ctrl + +***
+<strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
+<span style="color:#8a8a8a;">***Ctrl + +***</span><br><br>
 
 ## ![](media_md/seccion_naranja.png) Push Nodes v1.0 - Mitja Müller-Jend
 
@@ -194,9 +195,11 @@ un sector sin espacio.
 ![](media_md/image32.png)
 ![](media_md/image2.png)
 
-> <strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
->
-> ***Ctrl + Alt + Flechas (2, 4, 6, 8)***
+<strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
+<span style="color:#8a8a8a;">***Ctrl + Alt + ↓ (2)***</span><br>
+<span style="color:#8a8a8a;">***Ctrl + Alt + ↑ (8)***</span><br>
+<span style="color:#8a8a8a;">***Ctrl + Alt + ← (4)***</span><br>
+<span style="color:#8a8a8a;">***Ctrl + Alt + → (6)***</span><br><br>
 
 ## ![](media_md/seccion_naranja.png) Pull Nodes v1.0 - Mitja Müller-Jend \| Mod Lega
 
@@ -208,9 +211,11 @@ pivote el puntero del mouse.
 ![](media_md/image2.png)
 ![](media_md/image32.png)
 
-> <strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
->
-> ***Ctrl + Alt + Shift + Flechas (2, 4, 6, 8)***
+<strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
+<span style="color:#8a8a8a;">***Ctrl + Alt + Shift + ↓ (2)***</span><br>
+<span style="color:#8a8a8a;">***Ctrl + Alt + Shift + ↑ (8)***</span><br>
+<span style="color:#8a8a8a;">***Ctrl + Alt + Shift + ← (4)***</span><br>
+<span style="color:#8a8a8a;">***Ctrl + Alt + Shift + → (6)***</span><br><br>
 
 ## ![](media_md/seccion_rosa.png) Easy Navigate v2.3 - Hossein Karamian
 
