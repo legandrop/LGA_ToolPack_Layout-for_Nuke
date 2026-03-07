@@ -35,6 +35,12 @@
    - Convertir cada sección de herramienta al estilo `## ![](media_md/<icono>.png) Nombre de la herramienta`, asegurándose de que la imagen vaya primero y que el título quede en el mismo nivel que “Instalación”.
    - Mantener notas vinculadas a bullets (como la de `\_LGA_ToolPackLayout_Enabled.ini`) usando una barra invertida `\` al final de la línea para que queden dentro del mismo punto.
    - Revisar atajos/shortcut blocks para que continúen en texto plano con listas o blockquotes según corresponda.
+   - Para los bullets “Select …” u otros que describen varias variantes:
+     - Prefiere `- <span style="color:#914dcb;font-weight:600;">Nombre</span>` seguido del texto, con las dos capturas en la misma línea (`![](…) ![](…)`) y un `<br><br>` antes del siguiente bullet.
+   - **Reglas de shortcuts**:
+     - El encabezado debe verse como `Shortcuts` en gris y negrita + `(usando el teclado numérico)` en gris sin negrita.
+     - Cada combinación (Alt/Meta + flechas) se lista en una línea con las flechas reales (`↓`, `↑`, `←`, `→`) y el número entre paréntesis.
+     - Las aclaraciones (p. ej. “*Meta es la bandera…*”) van en una línea aparte, misma columna, con color gris claro (`#aaaaaa`) y `font-size` ligeramente menor (`0.9em`).
 6. **Normalizar íconos de sección**:
    - Usamos archivos canónicos en `media_md/`: `seccion_azul.png` (Add Dots), `seccion_amarilla.png` (Create/Label), `seccion_violeta.png` (Select Nodes), `seccion_verde.png` (Align/Distribute/Arrange/Scale), `seccion_naranja.png` (Push/Pull) y `seccion_rosa.png` (Easy Navigate/Toggle Zoom).
    - En `media/media/` existen las versiones originales con el mismo nombre; `scale_images.py` incluye un mapa `ICON_ALIASES` para recuperar las medidas del DOCX (p. ej. `seccion_azul.png` ↔ `image15.png`). Si se agrega un nuevo ícono, recordar sumar su alias allí.

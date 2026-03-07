@@ -145,7 +145,7 @@ backdrops.
 ## ![](media_md/seccion_verde.png) Distribute Nodes v1.1 - Lega
 
 Distribuye horizontalmente o verticalmente los nodos seleccionados según
-el shortcut. Cuando distribuye horizontalmente tiene en cuenta la altura
+el shortcut. Cuando distribuye verticalmente tiene en cuenta la altura
 de cada nodo para dejar el mismo espacio libre entre todos los nodos.\
 Si hay más de un backdrop seleccionado, en vez de distribuir nodos,
 distribuye backdrops.
