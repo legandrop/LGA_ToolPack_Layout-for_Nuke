@@ -1,11 +1,11 @@
 <table>
   <tr>
-    <td style="vertical-align:middle;padding-right:12px;">
+    <td style="vertical-align:top;padding-right:12px;padding-top:4px;">
       <img src="media_md/image22.png" alt="LGA Layout Tool Pack logo" width="56" height="56">
     </td>
-    <td style="vertical-align:top;padding-top:4px;">
-      <div style="font-size:1.6em;font-weight:700;margin:0;line-height:1.1;">LGA LAYOUT TOOL PACK</div>
-      <div style="font-style:italic;margin: -2px 0 0 0;line-height:1;">Lega | v2.51</div>
+    <td style="vertical-align:top;padding-top:6px;">
+      <div style="font-size:1.6em;font-weight:700;margin:0;line-height:1;">LGA LAYOUT TOOL PACK</div>
+      <div style="font-style:italic;margin:2px 0 0 0;line-height:1;">Lega | v2.51</div>
     </td>
   </tr>
 </table>
