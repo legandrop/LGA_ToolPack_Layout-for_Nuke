@@ -33,11 +33,9 @@
 
 ## ![](media_md/seccion_azul.png) Add Dots before (aka Dots) v5.1 - Alexey Kuchinski <font color="#8a8a8a">| Mod Lega v2.2</font>
 
-[[https://www.nukepedia.com/python/nodegraph/dots]](https://www.nukepedia.com/python/nodegraph/dots)
-
+[https://www.nukepedia.com/python/nodegraph/dots](https://www.nukepedia.com/python/nodegraph/dots)<br>
 Agrega *Dots* antes del nodo seleccionado, generando líneas de conexión
-con los nodos previos a 90 grados.
-
+con los nodos previos a 90 grados.<br>
 Si el nodo seleccionado está en la misma columna que el nodo conectado,
 los alinea. Util para cuando se crea un nuevo nodo y no está alineado al
 anterior.
@@ -52,8 +50,7 @@ anterior.
 cuando varios nodos seleccionados están conectados al mismo nodo y
 permite agregar dots en cualquier input siempre y cuando el nodo
 conectado al input no esté en la misma fila o columna que el nodo
-seleccionado.*
-
+seleccionado.*<br>
 Shortcut: ***,***
 
 ## ![](media_md/seccion_azul.png) Add Dots after v1.6 - Lega
@@ -65,17 +62,11 @@ shortcut.
 ![](media_md/image9.png)
 ![](media_md/image8.png)
 
-Shortcuts:
-
-***Shift + ,*** agrega el segundo Dot a la izquierda del primero
-
-***Ctrl + shift + ,*** agrega el segundo Dot más a la izquierda del
-primero
-
-***Shift + .*** agrega el segundo Dot a la derecha del primero
-
-***Ctrl + shift + .*** agrega el segundo Dot más a la derecha del
-primero
+Shortcuts:<br>
+***Shift + ,*** agrega el segundo Dot a la izquierda del primero<br>
+***Ctrl + shift + ,*** agrega el segundo Dot más a la izquierda del primero<br>
+***Shift + .*** agrega el segundo Dot a la derecha del primero<br>
+***Ctrl + shift + .*** agrega el segundo Dot más a la derecha del primero<br>
 
 ## ![](media_md/seccion_amarilla.png) Create \| Edit StickyNote v1.0 - Lega
 
@@ -84,10 +75,8 @@ extras.
 
 ![](media_md/image10.png)
 
-Shortcut:
-
-***Shift + N*** crea un nuevo StickyNote o edita el StickyNote
-seleccionado
+Shortcut:<br>
+***Shift + N*** crea un nuevo StickyNote o edita el StickyNote seleccionado<br>
 
 ## ![](media_md/seccion_amarilla.png) Create LGA_Backdrop v1.0 - Lega
 
@@ -104,12 +93,9 @@ Reemplazo del autoBackdrop, con opciones extras:
 ![](media_md/image23.png)
 ![](media_md/image11.png)
 
-Shortcuts:
-
-***Shift + B*** crea un nuevo LGA_Backdrop
-
-***Ctrl + B*** reemplaza backdrops seleccionados (o todos) por
-LGA_Backdrop
+Shortcuts:<br>
+***Shift + B*** crea un nuevo LGA_Backdrop<br>
+***Ctrl + B*** reemplaza backdrops seleccionados (o todos) por LGA_Backdrop<br>
 
 ## ![](media_md/seccion_amarilla.png) Label Node v1.0 - Lega
 
@@ -208,8 +194,7 @@ Shortcut (usando el teclado numérico):
 
 ## ![](media_md/seccion_naranja.png) Push Nodes v1.0 - Mitja Müller-Jend
 
-[[http://www.nukepedia.com/python/nodegraph/push_nodes]](http://www.nukepedia.com/python/nodegraph/push_nodes)
-
+[http://www.nukepedia.com/python/nodegraph/push_nodes](http://www.nukepedia.com/python/nodegraph/push_nodes)<br>
 Empuja nodos para crear espacio en la dirección correspondiente all
 shortcut tomando como pivote la posición del puntero del mouse. Tiene en
 cuenta los backdrops para generar espacios dentro sin mover los nodos de
@@ -226,8 +211,7 @@ un sector sin espacio.
 
 ## ![](media_md/seccion_naranja.png) Pull Nodes v1.0 - Mitja Müller-Jend \| Mod Lega
 
-[[http://www.nukepedia.com/python/nodegraph/push_nodes]](http://www.nukepedia.com/python/nodegraph/push_nodes)
-
+[http://www.nukepedia.com/python/nodegraph/push_nodes](http://www.nukepedia.com/python/nodegraph/push_nodes)<br>
 Mod simple del *Push Nodes* para hacer exactamente lo contrario: Achicar
 el espacio en la dirección correspondiente al shortcut tomando como
 pivote el puntero del mouse.
@@ -241,8 +225,7 @@ pivote el puntero del mouse.
 
 ## ![](media_md/seccion_rosa.png) Easy Navigate v2.3 - Hossein Karamian
 
-[[https://www.nukepedia.com/python/nodegraph/km-nodegraph-easy-navigate/]](https://www.nukepedia.com/python/nodegraph/km-nodegraph-easy-navigate/)
-
+[https://www.nukepedia.com/python/nodegraph/km-nodegraph-easy-navigate/](https://www.nukepedia.com/python/nodegraph/km-nodegraph-easy-navigate/)<br>
 Crea bookmarks de los nodos seleccionados y permite saltar rápidamente
 de uno a otro. Util para scripts grandes.
 
@@ -255,8 +238,7 @@ de uno a otro. Util para scripts grandes.
 ## ![](media_md/seccion_rosa.png) Toggle Zoom v1.1 - Lega
 
 Alterna entre el zoom actual y un zoom que muestra todos los nodos en el
-Node Graph.
-
+Node Graph.<br>
 Permite volver al nivel de zoom anterior usando la posición del cursor
 como centro. Si pasan más de 9 segundos entre pulsaciones de la tecla H,
 se reinicia el ciclo.
