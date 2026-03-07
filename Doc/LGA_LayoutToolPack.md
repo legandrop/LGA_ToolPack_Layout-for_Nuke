@@ -110,14 +110,21 @@ determinada por el shortcut.
   seleccionado. Es decir en la misma columna si la selección es hacia
   arriba o hacia abajo, o en la misma fila si es hacia los costados.<br>
   ![](media_md/image12.png) ![](media_md/image31.png)<br>
-  <strong><span style="color:#8a8a8a;">Shortcuts (usando el teclado numérico):</span></strong><br>
-  <span style="color:#8a8a8a;">***Alt + Flechas (2, 4, 6, 8)***</span><br><br>
+  <strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
+  <span style="color:#8a8a8a;">***Alt + ↓ (2)***</span><br>
+  <span style="color:#8a8a8a;">***Alt + ↑ (8)***</span><br>
+  <span style="color:#8a8a8a;">***Alt + ← (4)***</span><br>
+  <span style="color:#8a8a8a;">***Alt + → (6)***</span><br><br>
 - <span style="color:#914dcb;font-weight:600;">Select connected Nodes</span> hace lo mismo que *Select Nodes*, pero solo
   selecciona nodos que estén conectados con el nodo seleccionado, y
   recurrentemente con el nodo siguiente en la selección.<br>
   ![](media_md/image12.png) ![](media_md/image7.png)<br>
-  <strong><span style="color:#8a8a8a;">Shortcuts (usando el teclado numérico):</span></strong><br>
-  <span style="color:#8a8a8a;">***Meta + Flechas (2, 4, 6, 8)*** \*Meta es la bandera en windows o la manzana en mac</span><br><br>
+  <strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
+  <span style="color:#8a8a8a;">***Meta + ↓ (2)***</span><br>
+  <span style="color:#8a8a8a;">***Meta + ↑ (8)***</span><br>
+  <span style="color:#8a8a8a;">***Meta + ← (4)***</span><br>
+  <span style="color:#8a8a8a;">***Meta + → (6)***</span><br>
+  <span style="color:#aaaaaa;font-size:0.9em;">*Meta es la bandera en Windows o la manzana en macOS.</span><br><br>
 - <span style="color:#914dcb;font-weight:600;">Select all Nodes</span> selecciona todos los nodos en la dirección
   determinada por el shortcut.<br>
   ![](media_md/image12.png) ![](media_md/image27.png)
@@ -131,7 +138,7 @@ backdrops.
 ![](media_md/image18.png)
 ![](media_md/image29.png)
 
-Shortcuts (usando el teclado numérico):
+<strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
 
 > ***Ctrl + Flechas (2, 4, 6, 8)***
 
@@ -146,7 +153,7 @@ distribuye backdrops.
 ![](media_md/image1.png)
 ![](media_md/image20.png)
 
-Shortcuts (usando el teclado numérico):
+<strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
 
 > ***Ctrl + 0*** Horizontal \* El 0 es más ancho horizontalmente en el
 > teclado numérico que el punto
@@ -160,7 +167,7 @@ tomando en cuenta las conexiones de los nodos entre sí.\
 ![](media_md/image30.png)
 ![](media_md/image24.png)
 
-Shortcut (usando el teclado numérico):
+<strong><span style="color:#8a8a8a;">Shortcut</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
 
 > ***Ctrl + Flechas (2, 4, 6, 8)***
 
@@ -171,7 +178,7 @@ un widget de escala.\
 ![](media_md/image5.png)
 ![](media_md/image13.png)
 
-Shortcut (usando el teclado numérico):
+<strong><span style="color:#8a8a8a;">Shortcut</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
 
 > ***Ctrl + +***
 
@@ -188,7 +195,7 @@ un sector sin espacio.
 ![](media_md/image32.png)
 ![](media_md/image2.png)
 
-> Shortcuts (usando el teclado numérico):
+> <strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
 >
 > ***Ctrl + Alt + Flechas (2, 4, 6, 8)***
 
@@ -202,7 +209,7 @@ pivote el puntero del mouse.
 ![](media_md/image2.png)
 ![](media_md/image32.png)
 
-> Shortcuts (usando el teclado numérico):
+> <strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
 >
 > ***Ctrl + Alt + Shift + Flechas (2, 4, 6, 8)***
 
@@ -214,7 +221,7 @@ de uno a otro. Util para scripts grandes.
 
 ![](media_md/image19.png)
 
-> Shortcuts:
+> <strong><span style="color:#8a8a8a;">Shortcuts:</span></strong>
 >
 > ***Shift + A*** Abre la GUI
 
