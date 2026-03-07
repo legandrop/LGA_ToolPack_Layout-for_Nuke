@@ -28,6 +28,7 @@
      - Copias escaladas en media_md/.
      - Cambios dentro de LGA_LayoutToolPack.md para que apunte a media_md/.
      - Un log con el detalle de cada redimensionado en scale_images.log (ideal para revisiones rápidas).
+    - Si alguna imagen necesita ajustes extra (p. ej. agregar padding inferior para alinear íconos), editar el diccionario `ADJUSTMENTS` en scale_images.py; actualmente `image15.png` recibe 5 px adicionales en la parte inferior.
    - Después de confirmar que la vista previa se ve bien, se puede eliminar media_tmp/ para no duplicar archivos.
 5. **Aplicar formato final al Markdown**:
    - Reemplazar el encabezado inicial por la tabla HTML con el logo (ver sección superior del `.md` actual) para que el título/subtítulo queden alineados horizontalmente.
@@ -80,4 +81,5 @@
 - scale_images.py sobrescribe media_md/, así que cualquier ajuste manual en esa carpeta debe hacerse después de correr el script.
 - Mantener LGA_LayoutToolPack_pandoc.md a mano facilita detectar diffs con la versión original del DOCX y volver a extraer medidas cuando el documento cambie.
 - Los encabezados de cada herramienta se formatean como `## ![](media_md/icon.png) Nombre`, así el icono queda alineado a la izquierda del título y GitHub respeta la jerarquía visual.
+- Cuando se necesita reducir la presencia de parte del título (ej. “| Mod Lega v2.2”), se puede envolver esa porción en `<font color="#8a8a8a">...</font>` para que GitHub lo muestre con un gris suave.
 - Si se necesita publicar un PDF desde el Markdown, usar Pandoc apuntando al .md ya limpio; las imágenes en media_md/ mantienen las proporciones esperadas en cualquier export.

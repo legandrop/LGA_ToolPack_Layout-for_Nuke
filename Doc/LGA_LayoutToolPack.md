@@ -1,6 +1,6 @@
 <table>
   <tr>
-    <td style="vertical-align:top;padding-right:12px;padding-top:2px;">
+    <td style="vertical-align:top;padding-right:2px;padding-top:2px;">
       <img src="media_md/image22.png" alt="LGA Layout Tool Pack logo" width="56" height="56">
     </td>
     <td style="vertical-align:top;padding-top:10px;">
@@ -31,7 +31,7 @@
   copiar el archivo a **\~/.nuke/\_LGA_ToolPackLayout_Enabled.ini**. Si
   existen ambos, tiene prioridad el de **\~/.nuke/.**
 
-## ![](media_md/image15.png) Add Dots before (aka Dots) v5.1 - Alexey Kuchinski \| Mod Lega v2.2
+## ![](media_md/image15.png) Add Dots before (aka Dots) v5.1 - Alexey Kuchinski <font color="#8a8a8a">| Mod Lega v2.2</font>
 
 [[https://www.nukepedia.com/python/nodegraph/dots]{.underline}](https://www.nukepedia.com/python/nodegraph/dots)
 
