@@ -10,3 +10,4 @@ z_*.py
 Thumbs.db
 Km_NodeGraphEN/templates/
 fix_gitgraph.ps1
+Doc/pandoc-3.9/
