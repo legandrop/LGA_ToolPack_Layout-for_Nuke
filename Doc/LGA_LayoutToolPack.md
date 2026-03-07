@@ -106,34 +106,21 @@ Permite cambiar el label de un nodo con una ventana emergente.
 A partir del nodo seleccionado selecciona nodos en la dirección
 determinada por el shortcut.
 
-- Select Nodes selecciona los nodos que están alineados con el nodo
+- <span style="color:#914dcb;font-weight:600;">Select Nodes</span> selecciona los nodos que están alineados con el nodo
   seleccionado. Es decir en la misma columna si la selección es hacia
-  arriba o hacia abajo, o en la misma fila si es hacia los costados.
-
-![](media_md/image12.png)
-![](media_md/image31.png)
-
-> Shortcuts (usando el teclado numérico):
->
-> ***Alt + Flechas (2, 4, 6, 8)***
-
-- Select connected Nodes hace lo mismo que *Select Nodes*, pero solo
+  arriba o hacia abajo, o en la misma fila si es hacia los costados.<br>
+  ![](media_md/image12.png) ![](media_md/image31.png)<br>
+  <strong><span style="color:#8a8a8a;">Shortcuts (usando el teclado numérico):</span></strong><br>
+  <span style="color:#8a8a8a;">***Alt + Flechas (2, 4, 6, 8)***</span><br>
+- <span style="color:#914dcb;font-weight:600;">Select connected Nodes</span> hace lo mismo que *Select Nodes*, pero solo
   selecciona nodos que estén conectados con el nodo seleccionado, y
-  recurrentemente con el nodo siguiente en la selección.
-
-![](media_md/image12.png)
-![](media_md/image7.png)
-
-> Shortcuts (usando el teclado numérico):
->
-> ***Meta + Flechas (2, 4, 6, 8)*** \*Meta es la bandera en windows o la
-> manzana en mac
-
-- Select all Nodes selecciona todos los nodos en la dirección
-  determinada por el shortcut.
-
-![](media_md/image12.png)
-![](media_md/image27.png)
+  recurrentemente con el nodo siguiente en la selección.<br>
+  ![](media_md/image12.png) ![](media_md/image7.png)<br>
+  <strong><span style="color:#8a8a8a;">Shortcuts (usando el teclado numérico):</span></strong><br>
+  <span style="color:#8a8a8a;">***Meta + Flechas (2, 4, 6, 8)*** \*Meta es la bandera en windows o la manzana en mac</span><br>
+- <span style="color:#914dcb;font-weight:600;">Select all Nodes</span> selecciona todos los nodos en la dirección
+  determinada por el shortcut.<br>
+  ![](media_md/image12.png) ![](media_md/image27.png)
 
 ## ![](media_md/seccion_verde.png) Align Nodes v1.2 - Lega
 
