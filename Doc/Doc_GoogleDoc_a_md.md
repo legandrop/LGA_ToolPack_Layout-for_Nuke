@@ -93,3 +93,4 @@
 - Los encabezados de cada herramienta se formatean como `## ![](media_md/icon.png) Nombre`, así el icono queda alineado a la izquierda del título y GitHub respeta la jerarquía visual.
 - Cuando se necesita reducir la presencia de parte del título (ej. “| Mod Lega v2.2”), se puede envolver esa porción en `<font color="#8a8a8a">...</font>` para que GitHub lo muestre con un gris suave.
 - Si se necesita publicar un PDF desde el Markdown, usar Pandoc apuntando al .md ya limpio; las imágenes en media_md/ mantienen las proporciones esperadas en cualquier export.
+- Cuando un comportamiento conviene verse animado (p. ej. Add Dots), reemplazamos las capturas estáticas por GIFs manteniendo el mismo bloque de Markdown. Guardamos el original sin escalar dentro de `Doc/media/media/` y publicamos la copia escalada (por ejemplo `media_md/Dots_Before_1.gif`) en `Doc/media_md/`.

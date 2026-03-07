@@ -41,8 +41,7 @@ Si el nodo seleccionado está en la misma columna que el nodo conectado,
 los alinea. Util para cuando se crea un nuevo nodo y no está alineado al
 anterior.
 
-![](media_md/image17.png)
-![](media_md/image14.png)
+![](media_md/Dots_Before_1.gif)
 
 ![](media_md/image26.png)
 ![](media_md/image25.png)
