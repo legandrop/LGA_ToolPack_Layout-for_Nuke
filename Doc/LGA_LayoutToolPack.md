@@ -30,6 +30,7 @@
   Para conservar la configuración en futuras actualizaciones, se puede
   copiar el archivo a **\~/.nuke/\_LGA_ToolPackLayout_Enabled.ini**. Si
   existen ambos, tiene prioridad el de **\~/.nuke/.**
+<br><br>
 
 ## ![](media_md/seccion_azul.png) Add Dots before (aka Dots) v5.1 - Alexey Kuchinski <font color="#8a8a8a">| Mod Lega v2.2</font>
 
@@ -52,6 +53,7 @@ permite agregar dots en cualquier input siempre y cuando el nodo
 conectado al input no esté en la misma fila o columna que el nodo
 seleccionado.*<br><br>
 <strong><font color="#8a8a8a">Shortcut:</font> <font color="#8a8a8a">,</font></strong>
+<br><br>
 
 ## ![](media_md/seccion_azul.png) Add Dots after v1.6 - Lega
 
@@ -67,6 +69,7 @@ shortcut.
 ***Ctrl + shift + ,*** agrega el segundo Dot más a la izquierda del primero<br>
 ***Shift + .*** agrega el segundo Dot a la derecha del primero<br>
 ***Ctrl + shift + .*** agrega el segundo Dot más a la derecha del primero</font><br>
+<br>
 
 ## ![](media_md/seccion_amarilla.png) Create \| Edit StickyNote v1.0 - Lega
 
@@ -77,6 +80,7 @@ extras.
 
 <strong><font color="#8a8a8a">Shortcut:</font></strong><br>
 <font color="#8a8a8a">***Shift + N*** crea un nuevo StickyNote o edita el StickyNote seleccionado</font><br>
+<br>
 
 ## ![](media_md/seccion_amarilla.png) Create LGA_Backdrop v1.0 - Lega
 
@@ -91,6 +95,7 @@ Reemplazo del autoBackdrop, con opciones extras:<br>
 <strong><font color="#8a8a8a">Shortcuts:</font></strong><br>
 <font color="#8a8a8a">***Shift + B*** crea un nuevo LGA_Backdrop<br>
 ***Ctrl + B*** reemplaza backdrops seleccionados (o todos) por LGA_Backdrop</font><br>
+<br>
 
 ## ![](media_md/seccion_amarilla.png) Label Node v1.0 - Lega
 
@@ -100,6 +105,7 @@ Permite cambiar el label de un nodo con una ventana emergente.
 
 <strong><font color="#8a8a8a">Shortcut:</font></strong><br>
 <font color="#8a8a8a">***Shift + L***</font><br>
+<br>
 
 ## ![](media_md/seccion_violeta.png) Select Nodes v1.3 - Lega
 
@@ -129,6 +135,8 @@ determinada por el shortcut.
   determinada por el shortcut.<br>
   ![](media_md/image12.png) ![](media_md/image27.png)
 
+<br>
+
 ## ![](media_md/seccion_verde.png) Align Nodes v1.2 - Lega
 
 Alinea los nodos seleccionados según el shortcut.\
@@ -142,7 +150,8 @@ backdrops.
 <span style="color:#8a8a8a;">***Ctrl + ↓ (2)***</span><br>
 <span style="color:#8a8a8a;">***Ctrl + ↑ (8)***</span><br>
 <span style="color:#8a8a8a;">***Ctrl + ← (4)***</span><br>
-<span style="color:#8a8a8a;">***Ctrl + → (6)***</span><br><br>
+<span style="color:#8a8a8a;">***Ctrl + → (6)***</span><br>
+<br>
 
 ## ![](media_md/seccion_verde.png) Distribute Nodes v1.1 - Lega
 
@@ -157,7 +166,8 @@ distribuye backdrops.
 
 <strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
 <span style="color:#8a8a8a;">***Ctrl + 0*** Horizontal <span style="font-weight:400;color:#8a8a8a;">(El 0 es más ancho en el teclado numérico que el punto)</span></span><br>
-<span style="color:#8a8a8a;">***Ctrl + .*** Vertical</span><br><br>
+<span style="color:#8a8a8a;">***Ctrl + .*** Vertical</span><br>
+<br>
 
 ## ![](media_md/seccion_verde.png) Arrange Nodes v0.81 - Lega
 
@@ -170,7 +180,8 @@ tomando en cuenta las conexiones de los nodos entre sí.\
 <span style="color:#8a8a8a;">***Ctrl + ↓ (2)***</span><br>
 <span style="color:#8a8a8a;">***Ctrl + ↑ (8)***</span><br>
 <span style="color:#8a8a8a;">***Ctrl + ← (4)***</span><br>
-<span style="color:#8a8a8a;">***Ctrl + → (6)***</span><br><br>
+<span style="color:#8a8a8a;">***Ctrl + → (6)***</span><br>
+<br>
 
 ## ![](media_md/seccion_verde.png) Scale Nodes v1.0 - Erwan Leroy
 
@@ -181,6 +192,7 @@ un widget de escala.\
 
 <strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
 <span style="color:#8a8a8a;">***Ctrl + +***</span><br><br>
+
 
 ## ![](media_md/seccion_naranja.png) Push Nodes v1.0 - Mitja Müller-Jend
 
@@ -201,6 +213,7 @@ un sector sin espacio.
 <span style="color:#8a8a8a;">***Ctrl + Alt + ← (4)***</span><br>
 <span style="color:#8a8a8a;">***Ctrl + Alt + → (6)***</span><br><br>
 
+
 ## ![](media_md/seccion_naranja.png) Pull Nodes v1.0 - Mitja Müller-Jend \| Mod Lega
 
 [http://www.nukepedia.com/python/nodegraph/push_nodes](http://www.nukepedia.com/python/nodegraph/push_nodes)<br>
@@ -217,6 +230,7 @@ pivote el puntero del mouse.
 <span style="color:#8a8a8a;">***Ctrl + Alt + Shift + ← (4)***</span><br>
 <span style="color:#8a8a8a;">***Ctrl + Alt + Shift + → (6)***</span><br><br>
 
+
 ## ![](media_md/seccion_rosa.png) Easy Navigate v2.3 - Hossein Karamian
 
 [https://www.nukepedia.com/python/nodegraph/km-nodegraph-easy-navigate/](https://www.nukepedia.com/python/nodegraph/km-nodegraph-easy-navigate/)<br>
@@ -227,6 +241,7 @@ de uno a otro. Util para scripts grandes.
 
 <strong><span style="color:#8a8a8a;">Shortcuts</span></strong><br>
 <span style="color:#8a8a8a;">***Shift + A*** Abre la GUI</span><br><br>
+
 
 ## ![](media_md/seccion_rosa.png) Toggle Zoom v1.1 - Lega
 
