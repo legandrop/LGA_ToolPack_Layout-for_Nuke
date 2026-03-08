@@ -1,7 +1,7 @@
 """
 ________________________________________________________________________________
 
-  LGA_scriptChecker v0.86 | Lega
+  LGA_scriptChecker v0.87 | Lega
   Script para verificar si los inputs de los nodos estan correctamente posicionados
   segun las reglas de posicion definidas.
 ________________________________________________________________________________
@@ -10,7 +10,29 @@ ________________________________________________________________________________
 
 import nuke
 import time
-from LGA_QtAdapter_ToolPack_Layout import QtWidgets, QtGui, QtCore
+from LGA_QtAdapter_ToolPack_Layout import (
+    QtWidgets,
+    QtGui,
+    QtCore,
+    Qt,
+    QStyledItemDelegate,
+)
+
+# Alias Qt classes desde la capa de compatibilidad para mantener el API original
+QWidget = QtWidgets.QWidget
+QVBoxLayout = QtWidgets.QVBoxLayout
+QHBoxLayout = QtWidgets.QHBoxLayout
+QTableWidget = QtWidgets.QTableWidget
+QHeaderView = QtWidgets.QHeaderView
+QTableWidgetItem = QtWidgets.QTableWidgetItem
+QPushButton = QtWidgets.QPushButton
+
+QColor = QtGui.QColor
+QBrush = QtGui.QBrush
+QFontMetrics = QtGui.QFontMetrics
+
+QRect = QtCore.QRect
+QMargins = QtCore.QMargins
 
 # Variable global para activar o desactivar los prints
 DEBUG = False

@@ -8,7 +8,7 @@ try:  # PySide6 primero (Nuke 16)
     from PySide6 import QtWidgets, QtGui, QtCore
     from PySide6.QtGui import QAction, QGuiApplication
     from PySide6.QtCore import Qt
-    from PySide6.QtWidgets import QApplication
+    from PySide6.QtWidgets import QApplication, QStyledItemDelegate
 
     PYSIDE_VER = 6
 except ImportError:  # PySide2 (Nuke 15)
@@ -20,7 +20,7 @@ except ImportError:  # PySide2 (Nuke 15)
     except ImportError:
         from PySide2.QtWidgets import QAction  # fallback QtWidgets
     from PySide2.QtGui import QGuiApplication
-    from PySide2.QtWidgets import QApplication
+    from PySide2.QtWidgets import QApplication, QStyledItemDelegate
 
     PYSIDE_VER = 2
 
@@ -70,6 +70,7 @@ __all__ = [
     "QGuiApplication",
     "Qt",
     "QApplication",
+    "QStyledItemDelegate",
     "PYSIDE_VER",
     "horizontal_advance",
     "primary_screen_geometry",

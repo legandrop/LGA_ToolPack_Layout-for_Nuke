@@ -27,7 +27,7 @@
   existen ambos, tiene prioridad el de **\~/.nuke/.**
 <br><br>
 
-## ![](Doc_Media/seccion_azul.png) Add Dots before (aka Dots) v5.1 - Alexey Kuchinski <font color="#8a8a8a">| Mod Lega v2.2</font>
+## ![](Doc_Media/seccion_azul.png) Add Dots before (aka Dots) v5.1 | Alexey Kuchinski <font color="#8a8a8a">| Mod Lega v2.2</font>
 
 [https://www.nukepedia.com/python/nodegraph/dots](https://www.nukepedia.com/python/nodegraph/dots)<br>
 Agrega *Dots* antes del nodo seleccionado, generando líneas de conexión
@@ -47,7 +47,7 @@ seleccionado.*<br><br>
 <strong><font color="#8a8a8a">Shortcut:</font> <font color="#8a8a8a">,</font></strong>
 <br><br>
 
-## ![](Doc_Media/seccion_azul.png) Add Dots after v1.6 - Lega
+## ![](Doc_Media/seccion_azul.png) Add Dots after v1.6 | Lega
 
 Agrega un nodo Dot debajo del nodo seleccionado y luego otro Dot
 conectado a este hacia la derecha o hacia la izquierda según el
@@ -63,7 +63,7 @@ shortcut.
 ***Ctrl + shift + .*** agrega el segundo Dot más a la derecha del primero</font><br>
 <br>
 
-## ![](Doc_Media/seccion_amarilla.png) Script Checker v0.86 - Lega
+## ![](Doc_Media/seccion_amarilla.png) Script Checker v0.87 | Lega
 
 Escanea todos los nodos y verifica si cada conexion respeta ciertas reglas y convenciones
 Muestra los resultados de en una tabla coloreadas. 
@@ -78,7 +78,7 @@ vuelve a correr la verificacion despues de acomodar conexiones.
 <font color="#8a8a8a">***Ctrl + Alt + H*** abre la ventana con el listado de resultados</font><br>
 <br>
 
-## ![](Doc_Media/seccion_amarilla.png) Create \| Edit StickyNote v1.0 - Lega
+## ![](Doc_Media/seccion_amarilla.png) StickyNote v1.0 | Lega
 
 Permite crear o editar un StickyNote seleccionado con algunas opciones
 extras.
@@ -89,7 +89,7 @@ extras.
 <font color="#8a8a8a">***Shift + N*** crea un nuevo StickyNote o edita el StickyNote seleccionado</font><br>
 <br>
 
-## ![](Doc_Media/seccion_amarilla.png) Create LGA_Backdrop v1.0 - Lega
+## ![](Doc_Media/seccion_amarilla.png) Create LGA_Backdrop v1.0 | Lega
 
 Reemplazo del autoBackdrop, con opciones extras:<br>
 - Resize basado en un margen, tomando en cuenta los nodos dentro del backdrop.<br>
@@ -104,7 +104,7 @@ Reemplazo del autoBackdrop, con opciones extras:<br>
 ***Ctrl + B*** reemplaza backdrops seleccionados (o todos) por LGA_Backdrop</font><br>
 <br>
 
-## ![](Doc_Media/seccion_amarilla.png) Label Node v1.0 - Lega
+## ![](Doc_Media/seccion_amarilla.png) Label Node v1.0 | Lega
 
 Permite cambiar el label de un nodo con una ventana emergente.
 
@@ -114,7 +114,7 @@ Permite cambiar el label de un nodo con una ventana emergente.
 <font color="#8a8a8a">***Shift + L***</font><br>
 <br>
 
-## ![](Doc_Media/seccion_violeta.png) Select Nodes v1.3 - Lega
+## ![](Doc_Media/seccion_violeta.png) Select Nodes v1.3 | Lega
 
 A partir del nodo seleccionado selecciona nodos en la dirección
 determinada por el shortcut.
@@ -144,7 +144,7 @@ determinada por el shortcut.
 
 <br>
 
-## ![](Doc_Media/seccion_verde.png) Align Nodes v1.2 - Lega
+## ![](Doc_Media/seccion_verde.png) Align Nodes v1.2 | Lega
 
 Alinea los nodos seleccionados según el shortcut.\
 Si hay más de un backdrop seleccionado, en vez de alinear nodos, alinea
@@ -160,7 +160,7 @@ backdrops.
 <span style="color:#8a8a8a;">***Ctrl + → (6)***</span><br>
 <br>
 
-## ![](Doc_Media/seccion_verde.png) Distribute Nodes v1.1 - Lega
+## ![](Doc_Media/seccion_verde.png) Distribute Nodes v1.1 | Lega
 
 Distribuye horizontalmente o verticalmente los nodos seleccionados según
 el shortcut. Cuando distribuye verticalmente tiene en cuenta la altura
