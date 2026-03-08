@@ -214,8 +214,7 @@ otros backdrop, con lo cual es recomendable no dejar nodos sin un
 backdrops. Útil para hacer lugar cuando hay que agregar nuevos nodos en
 un sector sin espacio.
 
-![](Doc_Media/image32.png)
-![](Doc_Media/image2.png)
+![](Doc_Media/Push_v01.gif)
 
 <strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
 <span style="color:#8a8a8a;">***Ctrl + Alt + ↓ (2)***</span><br>
@@ -231,8 +230,7 @@ Mod simple del *Push Nodes* para hacer exactamente lo contrario: Achicar
 el espacio en la dirección correspondiente al shortcut tomando como
 pivote el puntero del mouse.
 
-![](Doc_Media/image2.png)
-![](Doc_Media/image32.png)
+![](Doc_Media/Pull_v01.gif)
 
 <strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
 <span style="color:#8a8a8a;">***Ctrl + Alt + Shift + ↓ (2)***</span><br>
