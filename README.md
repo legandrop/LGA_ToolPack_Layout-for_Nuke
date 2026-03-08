@@ -157,8 +157,7 @@ Alinea los nodos seleccionados según el shortcut.\
 Si hay más de un backdrop seleccionado, en vez de alinear nodos, alinea
 backdrops.
 
-![](Doc_Media/image18.png)
-![](Doc_Media/image29.png)
+![](Doc_Media/Align_v01.gif)
 
 <strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
 <span style="color:#8a8a8a;">***Ctrl + ↓ (2)***</span><br>
