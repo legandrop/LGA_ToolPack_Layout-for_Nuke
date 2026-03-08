@@ -116,7 +116,7 @@ Reemplazo del autoBackdrop, con opciones extras:<br>
 
 Permite cambiar el label de un nodo con una ventana emergente.
 
-![](Doc_Media/image21.png)
+![](Doc_Media/LabelNode_v01.gif)
 
 <strong><font color="#8a8a8a">Shortcut:</font></strong><br>
 <font color="#8a8a8a">***Shift + L***</font><br>
