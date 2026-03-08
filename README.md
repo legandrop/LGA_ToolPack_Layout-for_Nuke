@@ -128,9 +128,8 @@ A partir del nodo seleccionado selecciona nodos en la dirección
 determinada por el shortcut.
 
 - <span style="color:#914dcb;font-weight:600;">Select Nodes</span> selecciona los nodos que están alineados con el nodo
-  seleccionado. Es decir en la misma columna si la selección es hacia
-  arriba o hacia abajo, o en la misma fila si es hacia los costados.<br>
-  ![](Doc_Media/image12.png) ![](Doc_Media/image31.png)<br>
+  seleccionado sin importar si están o no conectados entre sí.<br>
+  ![](Doc_Media/Select_Nodes.gif)<br>
   <strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
   <span style="color:#8a8a8a;">***Alt + ? (2)***</span><br>
   <span style="color:#8a8a8a;">***Alt + ? (8)***</span><br>
@@ -139,7 +138,7 @@ determinada por el shortcut.
 - <span style="color:#914dcb;font-weight:600;">Select connected Nodes</span> hace lo mismo que *Select Nodes*, pero solo
   selecciona nodos que están conectados con el nodo seleccionado, y
   recurrentemente con el nodo siguiente en la selección.<br>
-  ![](Doc_Media/image12.png) ![](Doc_Media/image7.png)<br>
+  ![](Doc_Media/Select_conected_nodes.gif)<br>
   <strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
   <span style="color:#8a8a8a;">***Meta + ? (2)***</span><br>
   <span style="color:#8a8a8a;">***Meta + ? (8)***</span><br>
