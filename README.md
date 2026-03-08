@@ -131,19 +131,19 @@ determinada por el shortcut.
   seleccionado sin importar si están o no conectados entre sí.<br>
   ![](Doc_Media/Select_Nodes.gif)<br>
   <strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
-  <span style="color:#8a8a8a;">***Alt + ? (2)***</span><br>
-  <span style="color:#8a8a8a;">***Alt + ? (8)***</span><br>
-  <span style="color:#8a8a8a;">***Alt + ? (4)***</span><br>
-  <span style="color:#8a8a8a;">***Alt + ? (6)***</span><br><br>
+  <span style="color:#8a8a8a;">***Alt + ↓ (2)***</span><br>
+  <span style="color:#8a8a8a;">***Alt + ↑ (8)***</span><br>
+  <span style="color:#8a8a8a;">***Alt + ← (4)***</span><br>
+  <span style="color:#8a8a8a;">***Alt + → (6)***</span><br><br>
 - <span style="color:#914dcb;font-weight:600;">Select connected Nodes</span> hace lo mismo que *Select Nodes*, pero solo
   selecciona nodos que están conectados con el nodo seleccionado, y
   recurrentemente con el nodo siguiente en la selección.<br>
   ![](Doc_Media/Select_conected_nodes.gif)<br>
   <strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
-  <span style="color:#8a8a8a;">***Meta + ? (2)***</span><br>
-  <span style="color:#8a8a8a;">***Meta + ? (8)***</span><br>
-  <span style="color:#8a8a8a;">***Meta + ? (4)***</span><br>
-  <span style="color:#8a8a8a;">***Meta + ? (6)***</span><br>
+  <span style="color:#8a8a8a;">***Meta + ↓ (2)***</span><br>
+  <span style="color:#8a8a8a;">***Meta + ↑ (8)***</span><br>
+  <span style="color:#8a8a8a;">***Meta + ← (4)***</span><br>
+  <span style="color:#8a8a8a;">***Meta + → (6)***</span><br>
   <span style="color:#aaaaaa;font-size:0.9em;">*Meta es la bandera en Windows o la manzana en macOS.</span><br><br>
 - <span style="color:#914dcb;font-weight:600;">Select all Nodes</span> selecciona todos los nodos en la dirección
   determinada por el shortcut.<br>
@@ -161,10 +161,10 @@ backdrops.
 ![](Doc_Media/image29.png)
 
 <strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
-<span style="color:#8a8a8a;">***Ctrl + ? (2)***</span><br>
-<span style="color:#8a8a8a;">***Ctrl + ? (8)***</span><br>
-<span style="color:#8a8a8a;">***Ctrl + ? (4)***</span><br>
-<span style="color:#8a8a8a;">***Ctrl + ? (6)***</span><br>
+<span style="color:#8a8a8a;">***Ctrl + ↓ (2)***</span><br>
+<span style="color:#8a8a8a;">***Ctrl + ↑ (8)***</span><br>
+<span style="color:#8a8a8a;">***Ctrl + ← (4)***</span><br>
+<span style="color:#8a8a8a;">***Ctrl + → (6)***</span><br>
 <br>
 
 ## ![](Doc_Media/seccion_verde.png) Distribute Nodes v1.1 | Lega
@@ -191,10 +191,10 @@ tomando en cuenta las conexiones de los nodos entre sí.\
 ![](Doc_Media/image24.png)
 
 <strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
-<span style="color:#8a8a8a;">***Ctrl + ? (2)***</span><br>
-<span style="color:#8a8a8a;">***Ctrl + ? (8)***</span><br>
-<span style="color:#8a8a8a;">***Ctrl + ? (4)***</span><br>
-<span style="color:#8a8a8a;">***Ctrl + ? (6)***</span><br>
+<span style="color:#8a8a8a;">***Ctrl + ↓ (2)***</span><br>
+<span style="color:#8a8a8a;">***Ctrl + ↑ (8)***</span><br>
+<span style="color:#8a8a8a;">***Ctrl + ← (4)***</span><br>
+<span style="color:#8a8a8a;">***Ctrl + → (6)***</span><br>
 <br>
 
 ## ![](Doc_Media/seccion_verde.png) Scale Nodes v1.0 - Erwan Leroy
@@ -222,10 +222,10 @@ un sector sin espacio.
 ![](Doc_Media/image2.png)
 
 <strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
-<span style="color:#8a8a8a;">***Ctrl + Alt + ? (2)***</span><br>
-<span style="color:#8a8a8a;">***Ctrl + Alt + ? (8)***</span><br>
-<span style="color:#8a8a8a;">***Ctrl + Alt + ? (4)***</span><br>
-<span style="color:#8a8a8a;">***Ctrl + Alt + ? (6)***</span><br><br>
+<span style="color:#8a8a8a;">***Ctrl + Alt + ↓ (2)***</span><br>
+<span style="color:#8a8a8a;">***Ctrl + Alt + ↑ (8)***</span><br>
+<span style="color:#8a8a8a;">***Ctrl + Alt + ← (4)***</span><br>
+<span style="color:#8a8a8a;">***Ctrl + Alt + → (6)***</span><br><br>
 
 
 ## ![](Doc_Media/seccion_naranja.png) Pull Nodes v1.0 - Mitja Müller-Jend \| Mod Lega
@@ -239,10 +239,10 @@ pivote el puntero del mouse.
 ![](Doc_Media/image32.png)
 
 <strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
-<span style="color:#8a8a8a;">***Ctrl + Alt + Shift + ? (2)***</span><br>
-<span style="color:#8a8a8a;">***Ctrl + Alt + Shift + ? (8)***</span><br>
-<span style="color:#8a8a8a;">***Ctrl + Alt + Shift + ? (4)***</span><br>
-<span style="color:#8a8a8a;">***Ctrl + Alt + Shift + ? (6)***</span><br><br>
+<span style="color:#8a8a8a;">***Ctrl + Alt + Shift + ↓ (2)***</span><br>
+<span style="color:#8a8a8a;">***Ctrl + Alt + Shift + ↑ (8)***</span><br>
+<span style="color:#8a8a8a;">***Ctrl + Alt + Shift + ← (4)***</span><br>
+<span style="color:#8a8a8a;">***Ctrl + Alt + Shift + → (6)***</span><br><br>
 
 
 ## ![](Doc_Media/seccion_rosa.png) Easy Navigate v2.3 - Hossein Karamian
