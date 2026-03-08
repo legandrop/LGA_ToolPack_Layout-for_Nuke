@@ -198,8 +198,7 @@ tomando en cuenta las conexiones de los nodos entre sí.\
 
 Ajusta los espacios y la posición de los nodos seleccionados utilizando
 un widget de escala.\
-![](Doc_Media/image5.png)
-![](Doc_Media/image13.png)
+![](Doc_Media/Scale_v01.gif)
 
 <strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
 <span style="color:#8a8a8a;">***Ctrl + +***</span><br><br>
