@@ -31,7 +31,7 @@
     - Si alguna imagen necesita ajustes extra (p. ej. agregar padding inferior para alinear íconos), editar el diccionario `ADJUSTMENTS` en scale_images.py; allí ya están configurados los íconos seccionales (`seccion_*.png`) para sumar 5 px de padding inferior.
    - Después de confirmar que la vista previa se ve bien, se puede eliminar media_tmp/ para no duplicar archivos.
 5. **Aplicar formato final al Markdown**:
-   - Reemplazar el encabezado inicial por la tabla HTML con el logo (ver sección superior del `.md` actual) para que el título/subtítulo queden alineados horizontalmente.
+   - Reemplazar el encabezado inicial por un bloque `<div>` con `display:flex` (ver comienzo del README) para alinear en una fila el logo, el título y el subtítulo sin bordes adicionales.
    - Convertir cada sección de herramienta al estilo `## ![](Doc_Media/<icono>.png) Nombre de la herramienta`, asegurándose de que la imagen vaya primero y que el título quede en el mismo nivel que “Instalación”.
    - Mantener notas vinculadas a bullets (como la de `\_LGA_ToolPackLayout_Enabled.ini`) usando una barra invertida `\` al final de la línea para que queden dentro del mismo punto.
    - Revisar atajos/shortcut blocks para que continúen en texto plano con listas o blockquotes según corresponda.
@@ -85,7 +85,7 @@
 
 ## Notas y descubrimientos
 - GitHub y la vista previa básica de VS Code no interpretan las extensiones Pandoc {width=... height=...}, por eso aparecía texto crudo debajo del logo original.
-- El encabezado con logo + título se resuelve usando una tabla HTML pequeña; es la única forma de alinear la imagen y las dos líneas en una sola fila dentro de visores como GitHub.
+- El encabezado con logo + título se resuelve usando un `<div style="display:flex">` pequeño; GitHub respeta `flex` y evita el borde gris que aplica a las tablas HTML.
 - Los íconos pequeños del PDF estaban configurados a ~0.13" de ancho; al convertirlos a píxeles equivalentes (~12 px) se ven como en el DOCX. Para que GitHub respete ese tamaño, necesitamos las imágenes físicamente escaladas (no sólo CSS).
 - Doc_Media/Originals/ conserva los bitmaps originales por si hace falta regenerar otra versión; Doc_Media/ es la carpeta que usa el .md final.
 - scale_images.py sobrescribe Doc_Media/, así que cualquier ajuste manual en esa carpeta debe hacerse después de correr el script.
