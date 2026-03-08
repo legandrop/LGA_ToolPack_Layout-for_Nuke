@@ -1,10 +1,9 @@
-<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:18px;">
-  <img src="Doc_Media/image22.png" alt="LGA Layout Tool Pack logo" width="56" height="56">
-  <div style="display:flex;flex-direction:column;justify-content:flex-start;">
-    <span style="font-size:1.6em;font-weight:700;line-height:1;">LGA LAYOUT TOOL PACK</span>
-    <span style="font-style:italic;line-height:1;margin-top:4px;">Lega | v2.51</span>
-  </div>
-</div>
+<p>
+  <img src="Doc_Media/image22.png" alt="LGA Layout Tool Pack logo" width="56" height="56" align="left" style="margin-right:8px;">
+  <span style="font-size:1.6em;font-weight:700;line-height:1;">LGA LAYOUT TOOL PACK</span><br>
+  <span style="font-style:italic;line-height:1;">Lega | v2.51</span>
+</p>
+<br clear="left">
 
 ## Instalación
 
