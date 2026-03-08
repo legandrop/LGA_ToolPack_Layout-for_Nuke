@@ -36,10 +36,8 @@ Si el nodo seleccionado está en la misma columna que el nodo conectado,
 los alinea. Util para cuando se crea un nuevo nodo y no está alineado al
 anterior.
 
-![](Doc_Media/Dots_Before_1.gif)
-
-![](Doc_Media/image26.png)
-![](Doc_Media/image25.png)
+![](Doc_Media/Dots_Before_A_v01.gif)
+![](Doc_Media/Dots_Before_B_v01.gif)
 
 *La mod del pack tiene varios fixes y suma la función de armar un árbol
 cuando varios nodos seleccionados están conectados al mismo nodo y

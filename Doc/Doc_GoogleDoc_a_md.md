@@ -1,52 +1,52 @@
-Ôªø# Google Doc ‚Üí Markdown (LGA Layout Tool Pack)
+# Google Doc ? Markdown (LGA Layout Tool Pack)
 
 ## Objetivos actuales
-- Mantener un √∫nico origen editable en Markdown dentro de Doc/ para que Codex pueda modificar documentaci√≥n sin depender de Google Docs.
-- Seguir exportando a PDF/Google Doc cuando haga falta, pero con una representaci√≥n .md que conserve la estructura, √≠conos y capturas.
-- Dejar registrado el proceso para repetir la conversi√≥n sin improvisar pasos ni crear carpetas fuera de Doc/.
+- Mantener un ˙nico origen editable en Markdown dentro de Doc/ para que Codex pueda modificar documentaciÛn sin depender de Google Docs.
+- Seguir exportando a PDF/Google Doc cuando haga falta, pero con una representaciÛn .md que conserve la estructura, Ìconos y capturas.
+- Dejar registrado el proceso para repetir la conversiÛn sin improvisar pasos ni crear carpetas fuera de Doc/.
 
 ## Reglas y lineamientos pedidos por Lega
 - Trabajar siempre dentro de C:/Users/leg4-pc/.nuke/LGA_ToolPack-Layout/Doc/ y evitar "hacer un desastre" de carpetas; cualquier carpeta nueva debe explicarse (p. ej. Doc_Media/).
-- Conservar el estilo visual del PDF original (colores, alineaciones b√°sicas, logos) aun sabiendo que Markdown es m√°s limitado.
+- Conservar el estilo visual del PDF original (colores, alineaciones b·sicas, logos) aun sabiendo que Markdown es m·s limitado.
 - El resultado debe verse correctamente en visores comunes como VS Code *y* GitHub; por eso no podemos depender de atributos Pandoc {width=...}.
-- Preferir herramientas CLI ya disponibles (Pandoc port√°til en Doc/pandoc-3.9/) y documentar cada comando.
+- Preferir herramientas CLI ya disponibles (Pandoc port·til en Doc/pandoc-3.9/) y documentar cada comando.
 
 ## Flujo recomendado
 1. **Exportar desde Google Docs a DOCX** (ya guardado como Doc/LGA_LayoutToolPack.docx). Cada vez que haya cambios importantes en el Google Doc, descargar un DOCX actualizado y reemplazarlo.
-2. **Generar un volcado Pandoc para metadatos e im√°genes a tama√±o original**:
+2. **Generar un volcado Pandoc para metadatos e im·genes a tamaÒo original**:
    ```powershell
    cd C:/Users/leg4-pc/.nuke/LGA_ToolPack-Layout/Doc
    .\pandoc-3.9\pandoc-3.9\pandoc.exe LGA_LayoutToolPack.docx `
        -o LGA_LayoutToolPack_pandoc.md `
        --extract-media=media_tmp
    ```
-   Esto crea media_tmp/ (copias originales) y LGA_LayoutToolPack_pandoc.md con los atributos width="‚Ä¶in" que usamos como referencia y que tambi√©n nos sirven para spotear duplicados o errores de conversi√≥n.
-3. **Actualizar el Markdown principal (LGA_LayoutToolPack.md)** a mano copiando/pegando desde el volcado donde haga falta, ajustando encabezados, quotes, etc. Evitar guardar los atributos {width=‚Ä¶} porque GitHub los muestra como texto plano.
-4. **Escalar las im√°genes para visores Markdown**:
+   Esto crea media_tmp/ (copias originales) y LGA_LayoutToolPack_pandoc.md con los atributos width="Öin" que usamos como referencia y que tambiÈn nos sirven para spotear duplicados o errores de conversiÛn.
+3. **Actualizar el Markdown principal (LGA_LayoutToolPack.md)** a mano copiando/pegando desde el volcado donde haga falta, ajustando encabezados, quotes, etc. Evitar guardar los atributos {width=Ö} porque GitHub los muestra como texto plano.
+4. **Escalar las im·genes para visores Markdown**:
    - Instalar dependencias solo una vez (pip install pillow).
-   - Ejecutar python scale_images.py. El script valida que existan LGA_LayoutToolPack_pandoc.md y las im√°genes originales en Doc_Media/Originals/, calcula el ancho objetivo en p√≠xeles (pulgadas * 96) y genera:
+   - Ejecutar python scale_images.py. El script valida que existan LGA_LayoutToolPack_pandoc.md y las im·genes originales en Doc_Media/Originals/, calcula el ancho objetivo en pÌxeles (pulgadas * 96) y genera:
      - Copias escaladas en Doc_Media/.
      - Cambios dentro de LGA_LayoutToolPack.md para que apunte a Doc_Media/.
-     - Un log con el detalle de cada redimensionado en scale_images.log (ideal para revisiones r√°pidas).
-    - Si alguna imagen necesita ajustes extra (p. ej. agregar padding inferior para alinear √≠conos), editar el diccionario `ADJUSTMENTS` en scale_images.py; all√≠ ya est√°n configurados los √≠conos seccionales (`seccion_*.png`) para sumar 5‚ÄØpx de padding inferior.
-   - Despu√©s de confirmar que la vista previa se ve bien, se puede eliminar media_tmp/ para no duplicar archivos.
+     - Un log con el detalle de cada redimensionado en scale_images.log (ideal para revisiones r·pidas).
+    - Si alguna imagen necesita ajustes extra (p. ej. agregar padding inferior para alinear Ìconos), editar el diccionario `ADJUSTMENTS` en scale_images.py; allÌ ya est·n configurados los Ìconos seccionales (`seccion_*.png`) para sumar 5?px de padding inferior.
+   - DespuÈs de confirmar que la vista previa se ve bien, se puede eliminar media_tmp/ para no duplicar archivos.
 5. **Aplicar formato final al Markdown**:
-   - Reemplazar el encabezado inicial por un bloque `<p>` con la imagen usando `align="left"` y un `<br clear="left">` (como en README) para que GitHub mantenga logo + texto en la misma l√≠nea sin aplicar bordes.
-   - Convertir cada secci√≥n de herramienta al estilo `## ![](Doc_Media/<icono>.png) Nombre de la herramienta`, asegur√°ndose de que la imagen vaya primero y que el t√≠tulo quede en el mismo nivel que ‚ÄúInstalaci√≥n‚Äù.
-   - Mantener notas vinculadas a bullets (como la de `\_LGA_ToolPackLayout_Enabled.ini`) usando una barra invertida `\` al final de la l√≠nea para que queden dentro del mismo punto.
-   - Revisar atajos/shortcut blocks para que contin√∫en en texto plano con listas o blockquotes seg√∫n corresponda.
-   - Dejar dos l√≠neas en blanco antes de cada encabezado `## ![](‚Ä¶)` (excepto `## Instalaci√≥n`) para que cada bloque tenga el mismo aire que en el PDF.
-   - Para los bullets ‚ÄúSelect ‚Ä¶‚Äù u otros que describen varias variantes:
-     - Prefiere `- <span style="color:#914dcb;font-weight:600;">Nombre</span>` seguido del texto, con las dos capturas en la misma l√≠nea (`![](‚Ä¶) ![](‚Ä¶)`) y un `<br><br>` antes del siguiente bullet.
+   - Reemplazar el encabezado inicial por un bloque `<p>` con la imagen usando `align="left"` y un `<br clear="left">` (como en README) para que GitHub mantenga logo + texto en la misma lÌnea sin aplicar bordes.
+   - Convertir cada secciÛn de herramienta al estilo `## ![](Doc_Media/<icono>.png) Nombre de la herramienta`, asegur·ndose de que la imagen vaya primero y que el tÌtulo quede en el mismo nivel que ìInstalaciÛnî.
+   - Mantener notas vinculadas a bullets (como la de `\_LGA_ToolPackLayout_Enabled.ini`) usando una barra invertida `\` al final de la lÌnea para que queden dentro del mismo punto.
+   - Revisar atajos/shortcut blocks para que contin˙en en texto plano con listas o blockquotes seg˙n corresponda.
+   - Dejar dos lÌneas en blanco antes de cada encabezado `## ![](Ö)` (excepto `## InstalaciÛn`) para que cada bloque tenga el mismo aire que en el PDF.
+   - Para los bullets ìSelect Öî u otros que describen varias variantes:
+     - Prefiere `- <span style="color:#914dcb;font-weight:600;">Nombre</span>` seguido del texto, con las dos capturas en la misma lÌnea (`![](Ö) ![](Ö)`) y un `<br><br>` antes del siguiente bullet.
    - **Reglas de shortcuts**:
-     - El encabezado debe verse como `Shortcuts` en gris y negrita + `(usando el teclado num√©rico)` en gris sin negrita.
-     - Cada combinaci√≥n (Alt/Meta + flechas) se lista en una l√≠nea con las flechas reales (`‚Üì`, `‚Üë`, `‚Üê`, `‚Üí`) y el n√∫mero entre par√©ntesis.
-     - Las aclaraciones (p. ej. ‚Äú*Meta es la bandera‚Ä¶*‚Äù) van en una l√≠nea aparte, misma columna, con color gris claro (`#aaaaaa`) y `font-size` ligeramente menor (`0.9em`).
-6. **Normalizar √≠conos de secci√≥n**:
-   - Usamos archivos can√≥nicos en `Doc_Media/`: `seccion_azul.png` (Add Dots), `seccion_amarilla.png` (Create/Label), `seccion_violeta.png` (Select Nodes), `seccion_verde.png` (Align/Distribute/Arrange/Scale), `seccion_naranja.png` (Push/Pull) y `seccion_rosa.png` (Easy Navigate/Toggle Zoom).
-   - En `Doc_Media/Originals/` existen las versiones originales con el mismo nombre; `scale_images.py` incluye un mapa `ICON_ALIASES` para recuperar las medidas del DOCX (p. ej. `seccion_azul.png` ‚Üî `image15.png`). Si se agrega un nuevo √≠cono, recordar sumar su alias all√≠.
+     - El encabezado debe verse como `Shortcuts` en gris y negrita + `(usando el teclado numÈrico)` en gris sin negrita.
+     - Cada combinaciÛn (Alt/Meta + flechas) se lista en una lÌnea con las flechas reales (`?`, `?`, `?`, `?`) y el n˙mero entre parÈntesis.
+     - Las aclaraciones (p. ej. ì*Meta es la banderaÖ*î) van en una lÌnea aparte, misma columna, con color gris claro (`#aaaaaa`) y `font-size` ligeramente menor (`0.9em`).
+6. **Normalizar Ìconos de secciÛn**:
+   - Usamos archivos canÛnicos en `Doc_Media/`: `seccion_azul.png` (Add Dots), `seccion_amarilla.png` (Create/Label), `seccion_violeta.png` (Select Nodes), `seccion_verde.png` (Align/Distribute/Arrange/Scale), `seccion_naranja.png` (Push/Pull) y `seccion_rosa.png` (Easy Navigate/Toggle Zoom).
+   - En `Doc_Media/Originals/` existen las versiones originales con el mismo nombre; `scale_images.py` incluye un mapa `ICON_ALIASES` para recuperar las medidas del DOCX (p. ej. `seccion_azul.png` ? `image15.png`). Si se agrega un nuevo Ìcono, recordar sumar su alias allÌ.
 
-## Tabla de tama√±os actuales
+## Tabla de tamaÒos actuales
 | Archivo | Original (px) | Escalado (px) |
 | --- | --- | --- |
 | image1.png | 739x708 | 251x240 |
@@ -84,13 +84,13 @@
 
 
 ## Notas y descubrimientos
-- GitHub y la vista previa b√°sica de VS Code no interpretan las extensiones Pandoc {width=... height=...}, por eso aparec√≠a texto crudo debajo del logo original.
-- El encabezado con logo + t√≠tulo se resuelve usando un `<p>` con la imagen alineada a la izquierda (`align="left"`) y un `<br clear="left">`; GitHub respeta ese atributo heredado, mantiene todo en la misma fila y no agrega bordes extra.
-- Los √≠conos peque√±os del PDF estaban configurados a ~0.13" de ancho; al convertirlos a p√≠xeles equivalentes (~12‚ÄØpx) se ven como en el DOCX. Para que GitHub respete ese tama√±o, necesitamos las im√°genes f√≠sicamente escaladas (no s√≥lo CSS).
-- Doc_Media/Originals/ conserva los bitmaps originales por si hace falta regenerar otra versi√≥n; Doc_Media/ es la carpeta que usa el .md final.
-- scale_images.py sobrescribe Doc_Media/, as√≠ que cualquier ajuste manual en esa carpeta debe hacerse despu√©s de correr el script.
-- Mantener LGA_LayoutToolPack_pandoc.md a mano facilita detectar diffs con la versi√≥n original del DOCX y volver a extraer medidas cuando el documento cambie.
-- Los encabezados de cada herramienta se formatean como `## ![](Doc_Media/icon.png) Nombre`, as√≠ el icono queda alineado a la izquierda del t√≠tulo y GitHub respeta la jerarqu√≠a visual.
-- Cuando se necesita reducir la presencia de parte del t√≠tulo (ej. ‚Äú| Mod Lega v2.2‚Äù), se puede envolver esa porci√≥n en `<font color="#8a8a8a">...</font>` para que GitHub lo muestre con un gris suave.
-- Si se necesita publicar un PDF desde el Markdown, usar Pandoc apuntando al .md ya limpio; las im√°genes en Doc_Media/ mantienen las proporciones esperadas en cualquier export.
-- Cuando un comportamiento conviene verse animado (p. ej. Add Dots), reemplazamos las capturas est√°ticas por GIFs manteniendo el mismo bloque de Markdown. Guardamos el original sin escalar dentro de `Doc_Media/Originals/` y publicamos la copia escalada (por ejemplo `Doc_Media/Dots_Before_1.gif`) en `Doc_Media/`.
+- GitHub y la vista previa b·sica de VS Code no interpretan las extensiones Pandoc {width=... height=...}, por eso aparecÌa texto crudo debajo del logo original.
+- El encabezado con logo + tÌtulo se resuelve usando un `<p>` con la imagen alineada a la izquierda (`align="left"`) y un `<br clear="left">`; GitHub respeta ese atributo heredado, mantiene todo en la misma fila y no agrega bordes extra.
+- Los Ìconos pequeÒos del PDF estaban configurados a ~0.13" de ancho; al convertirlos a pÌxeles equivalentes (~12?px) se ven como en el DOCX. Para que GitHub respete ese tamaÒo, necesitamos las im·genes fÌsicamente escaladas (no sÛlo CSS).
+- Doc_Media/Originals/ conserva los bitmaps originales por si hace falta regenerar otra versiÛn; Doc_Media/ es la carpeta que usa el .md final.
+- scale_images.py sobrescribe Doc_Media/, asÌ que cualquier ajuste manual en esa carpeta debe hacerse despuÈs de correr el script.
+- Mantener LGA_LayoutToolPack_pandoc.md a mano facilita detectar diffs con la versiÛn original del DOCX y volver a extraer medidas cuando el documento cambie.
+- Los encabezados de cada herramienta se formatean como `## ![](Doc_Media/icon.png) Nombre`, asÌ el icono queda alineado a la izquierda del tÌtulo y GitHub respeta la jerarquÌa visual.
+- Cuando se necesita reducir la presencia de parte del tÌtulo (ej. ì| Mod Lega v2.2î), se puede envolver esa porciÛn en `<font color="#8a8a8a">...</font>` para que GitHub lo muestre con un gris suave.
+- Si se necesita publicar un PDF desde el Markdown, usar Pandoc apuntando al .md ya limpio; las im·genes en Doc_Media/ mantienen las proporciones esperadas en cualquier export.
+- Cuando un comportamiento conviene verse animado (p. ej. Add Dots), reemplazamos las capturas est·ticas por GIFs manteniendo el mismo bloque de Markdown. Guardamos el original sin escalar dentro de `Doc_Media/Originals/` y publicamos la copia escalada (por ejemplo `Doc_Media/Dots_Before_A_v01.gif`) en `Doc_Media/`.
