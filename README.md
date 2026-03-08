@@ -174,8 +174,7 @@ de cada nodo para dejar el mismo espacio libre entre todos los nodos.\
 Si hay más de un backdrop seleccionado, en vez de distribuir nodos,
 distribuye backdrops.
 
-![](Doc_Media/image1.png)
-![](Doc_Media/image20.png)
+![](Doc_Media/Distribute_v01.gif)
 
 <strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
 <span style="color:#8a8a8a;">***Ctrl + 0*** Horizontal <span style="font-weight:400;color:#8a8a8a;">(El 0 es más ancho en el teclado numérico que el punto)</span></span><br>
@@ -186,8 +185,7 @@ distribuye backdrops.
 
 Alinea y distribuye los nodos seleccionados de múltiples columnas
 tomando en cuenta las conexiones de los nodos entre sí.\
-![](Doc_Media/image30.png)
-![](Doc_Media/image24.png)
+![](Doc_Media/Arrange_v01.gif)
 
 <strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
 <span style="color:#8a8a8a;">***Ctrl + ↓ (2)***</span><br>
