@@ -1,4 +1,4 @@
-<p>
+﻿<p>
   <img src="Doc_Media/image22.png" alt="LGA Layout Tool Pack logo" width="56" height="56" align="left" style="margin-right:8px;">
   <span style="font-size:1.6em;font-weight:700;line-height:1;">LGA LAYOUT TOOL PACK</span><br>
   <span style="font-style:italic;line-height:1;">Lega | v2.55</span>
@@ -65,29 +65,24 @@ shortcut.
 
 ## ![](Doc_Media/seccion_amarilla.png) Script Checker v0.87 | Lega
 
-Analiza todos los nodos del script y detecta conexiones que no respetan ciertas reglas de orden y convenciones de layout.
-
-La herramienta lista en una tabla unicamente los nodos que no cumplen estas reglas. Para cada nodo muestra:
-- **Node:** nombre del nodo detectado.
-- **Input A / Input B / Input Mask:** que nodo esta conectado en cada entrada.
-- **Posicion actual:** la direccion donde se encuentra cada conexion (left, right, top, etc.).
-- **Posicion esperada:** en rojo, la ubicacion correcta segun las reglas definidas.
-
-Esto permite identificar rapidamente conexiones incorrectas o desordenadas dentro del script.
-
-Al hacer clic en una fila:
-- Selecciona el nodo en el Node Graph.
-- Ejecuta zoom to fit.
-- Abre el panel de propiedades del nodo.
-
+Analiza todos los nodos del script y detecta conexiones que no respetan ciertas reglas de orden y convenciones de layout.<br>
+La herramienta lista en una tabla unicamente los nodos que no cumplen estas reglas. Para cada nodo muestra:<br>
+<strong>Node:</strong> nombre del nodo detectado.<br>
+<strong>Input A / Input B / Input Mask:</strong> que nodo esta conectado en cada entrada.<br>
+<strong>Posicion actual:</strong> la direccion donde se encuentra cada conexion (left, right, top, etc.).<br>
+<strong>Posicion esperada:</strong> en rojo, la ubicacion correcta segun las reglas definidas.<br>
+Esto permite identificar rapidamente conexiones incorrectas o desordenadas dentro del script.<br>
+<br>
+<strong>Al hacer clic en una fila:</strong><br>
+&bull; Selecciona el nodo en el Node Graph.<br>
+&bull; Ejecuta zoom to fit.<br>
+&bull; Abre el panel de propiedades del nodo.<br>
 De esta forma se puede corregir el problema rapidamente. El boton Refresh vuelve a ejecutar el analisis despues de ajustar las conexiones.
-
 ![](Doc_Media/ScriptChecker_v01.gif)
 ![](Doc_Media/ScriptChecker_v02.gif)
 
 ![](Doc_Media/Script_checker.png)
 
-C:\Users\leg4-pc\.nuke\LGA_ToolPack-Layout\Doc_Media\Originals\Script_checker.png
 
 <strong><font color="#8a8a8a">Shortcut:</font></strong><br>
 <font color="#8a8a8a">***Ctrl + Alt + H*** abre la ventana con el listado de resultados</font><br>
