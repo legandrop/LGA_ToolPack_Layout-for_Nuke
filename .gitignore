@@ -10,6 +10,4 @@ z_*.py
 Thumbs.db
 Km_NodeGraphEN/templates/
 fix_gitgraph.ps1
-git-safe-merge.ps1
-git-safe-merge.bat
 Doc/pandoc-3.9/
