@@ -147,7 +147,7 @@ determinada por el shortcut.
   <span style="color:#aaaaaa;font-size:0.9em;">*Meta es la bandera en Windows o la manzana en macOS.</span><br><br>
 - <span style="color:#914dcb;font-weight:600;">Select all Nodes</span> selecciona todos los nodos en la dirección
   determinada por el shortcut.<br>
-  ![](Doc_Media/image12.png) ![](Doc_Media/image27.png)
+  ![](Doc_Media/Select_all_nodes.gif)
 
 <br>
 
