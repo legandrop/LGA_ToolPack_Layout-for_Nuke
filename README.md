@@ -259,6 +259,8 @@ Permite volver al nivel de zoom anterior usando la posición del cursor
 como centro. Si pasan más de 9 segundos entre pulsaciones de la tecla H,
 se reinicia el ciclo.
 
+![](Doc_Media/Toggle_Zoom.gif)
+
 <strong><span style="color:#8a8a8a;">Shortcuts</span></strong><br>
 <span style="color:#8a8a8a;">***H***</span><br>
 <span style="color:#8a8a8a;">***Middle click***</span><br><br>
