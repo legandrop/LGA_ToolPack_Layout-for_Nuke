@@ -4,10 +4,11 @@ import shutil
 from PIL import Image
 
 DOC_DIR = Path(__file__).resolve().parent
+ROOT_DIR = DOC_DIR.parent
 PANDOC_MD = DOC_DIR / 'LGA_LayoutToolPack_pandoc.md'
-FINAL_MD = DOC_DIR / 'LGA_LayoutToolPack.md'
-SRC_MEDIA = DOC_DIR / 'media' / 'media'
-DEST_MEDIA = DOC_DIR / 'media_md'
+FINAL_MD = ROOT_DIR / 'README.md'
+SRC_MEDIA = ROOT_DIR / 'Doc_Media' / 'Originals'
+DEST_MEDIA = ROOT_DIR / 'Doc_Media'
 LOG_PATH = DOC_DIR / 'scale_images.log'
 ADJUSTMENTS = {
     # fine-tune specific icons (extra padding, etc.)
@@ -31,7 +32,7 @@ ICON_ALIASES = {
 if not PANDOC_MD.exists():
     raise SystemExit("Missing LGA_LayoutToolPack_pandoc.md. Run pandoc with --extract-media=media_tmp to regenerate metadata before scaling.")
 if not SRC_MEDIA.exists():
-    raise SystemExit("Missing media/media/ with the high-res exports. Run pandoc with --extract-media=media first.")
+    raise SystemExit("Missing Doc_Media/Originals/ with the high-res exports. Run pandoc with --extract-media then copy the assets there.")
 
 text = PANDOC_MD.read_text(encoding='utf-8')
 size_map = {}
@@ -54,10 +55,13 @@ for match in pattern.finditer(text):
         entry['height_in'] = height
 
 final_text = FINAL_MD.read_text(encoding='utf-8')
-img_pattern = re.compile(r'!\[[^\]]*\]\((media(?:_md)?/([^\)]+))\)')
 files = []
+img_pattern = re.compile(r'!\[[^\]]*\]\((Doc_Media/([^\)]+))\)')
 for match in img_pattern.finditer(final_text):
     files.append(match.group(2))
+html_pattern = re.compile(r'src="Doc_Media/([^"]+)"')
+for match in html_pattern.finditer(final_text):
+    files.append(match.group(1))
 unique_files = sorted(set(files) | ALWAYS_INCLUDE)
 
 if DEST_MEDIA.exists():
@@ -104,6 +108,5 @@ for fname in unique_files:
         resized.save(dest)
         report_lines.append(f"{fname}: {orig_w}x{orig_h} -> {final_w}x{final_h}")
 
-FINAL_MD.write_text(final_text.replace('media/media/', 'media_md/'), encoding='utf-8')
 LOG_PATH.write_text('\n'.join(report_lines), encoding='utf-8')
 print(f"Scaled {len(unique_files)} images. Details -> {LOG_PATH.name}")
