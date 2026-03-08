@@ -160,9 +160,13 @@ if ($diffStat) {
 
 # -- 6. Confirmation -------------------------------------------------------
 
-Write-Host "  >>> TEST: all checks passed. Would ask confirmation here. <<<" -ForegroundColor Magenta
-Write-Host ""
-Write-Host "  Now testing checkout + abort (no merge)..." -ForegroundColor Magenta
+$answer = Read-Host "  Merge $currentBranch -> $TargetBranch ? (y/n)"
+if ($answer -ne "y") {
+    Write-Host ""
+    Write-Host "  Cancelled." -ForegroundColor Yellow
+    Write-Host ""
+    exit 0
+}
 
 # -- 7. Execute merge ------------------------------------------------------
 
@@ -172,15 +176,27 @@ $r = Invoke-Git "checkout $TargetBranch"
 if ($r.ExitCode -ne 0) {
     Write-Abort "failed to checkout $TargetBranch"
 }
-Write-Ok "checkout to $TargetBranch succeeded (script survived from temp!)"
 
-Write-Host "  >>> TEST: skipping merge and push <<<" -ForegroundColor Magenta
+Write-Info "merging $currentBranch..."
+$r = Invoke-Git "merge $currentBranch"
+if ($r.ExitCode -ne 0) {
+    Write-Host "  $($r.Output)" -ForegroundColor Red
+    Invoke-Git "checkout $currentBranch" | Out-Null
+    Write-Abort "merge failed -- switched back to $currentBranch"
+}
+
+Write-Info "pushing to origin/$TargetBranch..."
+$r = Invoke-Git "push origin $TargetBranch"
+if ($r.ExitCode -ne 0) {
+    Write-Host "  $($r.Output)" -ForegroundColor Red
+    Write-Abort "push failed -- you are now on $TargetBranch with the merge applied locally"
+}
 
 Write-Info "switching back to $currentBranch..."
 Invoke-Git "checkout $currentBranch" | Out-Null
-Write-Ok "back on $currentBranch"
 
 Write-Host ""
 Write-Host $separator -ForegroundColor DarkGray
-Write-Host "  TEST COMPLETE - everything works" -ForegroundColor Green
+Write-Host "  DONE" -ForegroundColor Green
+Write-Host "  $currentBranch merged into $TargetBranch and pushed to origin" -ForegroundColor White
 Write-Host ""
