@@ -63,6 +63,21 @@ shortcut.
 ***Ctrl + shift + .*** agrega el segundo Dot más a la derecha del primero</font><br>
 <br>
 
+## ![](Doc_Media/seccion_amarilla.png) Script Checker v0.86 - Lega
+
+Escanea todos los nodos y verifica si cada conexion respeta ciertas reglas y convenciones
+Muestra los resultados de en una tabla coloreadas. 
+Al hacer clic en una fila selecciona el nodo en el Node Graph, hace
+zoom to fit y abre su panel para corregirlo rapido; el boton Refresh
+vuelve a correr la verificacion despues de acomodar conexiones.
+
+![](Doc_Media/ScriptChecker_v01.gif)
+![](Doc_Media/ScriptChecker_v02.gif)
+
+<strong><font color="#8a8a8a">Shortcut:</font></strong><br>
+<font color="#8a8a8a">***Ctrl + Alt + H*** abre la ventana con el listado de resultados</font><br>
+<br>
+
 ## ![](Doc_Media/seccion_amarilla.png) Create \| Edit StickyNote v1.0 - Lega
 
 Permite crear o editar un StickyNote seleccionado con algunas opciones
