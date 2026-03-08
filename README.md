@@ -181,7 +181,7 @@ distribuye backdrops.
 <span style="color:#8a8a8a;">***Ctrl + .*** Vertical</span><br>
 <br>
 
-## ![](Doc_Media/seccion_verde.png) Arrange Nodes v0.81 - Lega
+## ![](Doc_Media/seccion_verde.png) Arrange Nodes v0.81 | Lega
 
 Alinea y distribuye los nodos seleccionados de múltiples columnas
 tomando en cuenta las conexiones de los nodos entre sí.\
@@ -194,7 +194,7 @@ tomando en cuenta las conexiones de los nodos entre sí.\
 <span style="color:#8a8a8a;">***Ctrl + → (6)***</span><br>
 <br>
 
-## ![](Doc_Media/seccion_verde.png) Scale Nodes v1.0 - Erwan Leroy
+## ![](Doc_Media/seccion_verde.png) Scale Nodes v1.0 | Erwan Leroy
 
 Ajusta los espacios y la posición de los nodos seleccionados utilizando
 un widget de escala.\
@@ -204,7 +204,7 @@ un widget de escala.\
 <span style="color:#8a8a8a;">***Ctrl + +***</span><br><br>
 
 
-## ![](Doc_Media/seccion_naranja.png) Push Nodes v1.0 - Mitja Müller-Jend
+## ![](Doc_Media/seccion_naranja.png) Push Nodes v1.0 | Mitja Müller-Jend
 
 [http://www.nukepedia.com/python/nodegraph/push_nodes](http://www.nukepedia.com/python/nodegraph/push_nodes)<br>
 Empuja nodos para crear espacio en la dirección correspondiente al
@@ -223,7 +223,7 @@ un sector sin espacio.
 <span style="color:#8a8a8a;">***Ctrl + Alt + → (6)***</span><br><br>
 
 
-## ![](Doc_Media/seccion_naranja.png) Pull Nodes v1.0 - Mitja Müller-Jend \| Mod Lega
+## ![](Doc_Media/seccion_naranja.png) Pull Nodes v1.0 | Mitja Müller-Jend \| Mod Lega
 
 [http://www.nukepedia.com/python/nodegraph/push_nodes](http://www.nukepedia.com/python/nodegraph/push_nodes)<br>
 Mod simple del *Push Nodes* para hacer exactamente lo contrario: Achicar
@@ -239,7 +239,7 @@ pivote el puntero del mouse.
 <span style="color:#8a8a8a;">***Ctrl + Alt + Shift + → (6)***</span><br><br>
 
 
-## ![](Doc_Media/seccion_rosa.png) Easy Navigate v2.3 - Hossein Karamian
+## ![](Doc_Media/seccion_rosa.png) Easy Navigate v2.3 | Hossein Karamian
 
 [https://www.nukepedia.com/python/nodegraph/km-nodegraph-easy-navigate/](https://www.nukepedia.com/python/nodegraph/km-nodegraph-easy-navigate/)<br>
 Crea bookmarks de los nodos seleccionados y permite saltar rápidamente
@@ -251,7 +251,7 @@ de uno a otro. Útil para scripts grandes.
 <span style="color:#8a8a8a;">***Shift + A*** Abre la GUI</span><br><br>
 
 
-## ![](Doc_Media/seccion_rosa.png) Toggle Zoom v1.1 - Lega
+## ![](Doc_Media/seccion_rosa.png) Toggle Zoom v1.1 | Lega
 
 Alterna entre el zoom actual y un zoom que muestra todos los nodos en el
 Node Graph.<br>
