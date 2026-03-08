@@ -245,7 +245,7 @@ pivote el puntero del mouse.
 Crea bookmarks de los nodos seleccionados y permite saltar rápidamente
 de uno a otro. Útil para scripts grandes.
 
-![](Doc_Media/image19.png)
+![](Doc_Media/EasyNavigate.gif)
 
 <strong><span style="color:#8a8a8a;">Shortcuts</span></strong><br>
 <span style="color:#8a8a8a;">***Shift + A*** Abre la GUI</span><br><br>
