@@ -271,29 +271,6 @@ class CustomItemDelegate(QStyledItemDelegate):
             base_text_color = QColor(255, 255, 255)  # Blanco
             error_text_color = QColor(255, 150, 150)  # Rojo claro
 
-        # Manejo especial para la columna de Status (columna 4)
-        if index.column() == 4:
-            painter.setPen(base_text_color)
-            status_text = item.text()
-            metrics = QFontMetrics(painter.font())
-
-            # Calcular la posicion para centrar el texto manualmente
-            text_width = metrics.horizontalAdvance(status_text)
-            x_centered = option.rect.x() + (option.rect.width() - text_width) / 2
-
-            # Ajustar para centrado vertical
-            text_y = (
-                option.rect.top()
-                + (option.rect.height() - metrics.height()) / 2
-                + metrics.ascent()
-            )
-
-            debug_print(
-                f"Columna 4 - Item: {status_text}, Rect: {option.rect}, Calc X: {x_centered:.2f}, Calc Y: {text_y:.2f}"
-            )
-            painter.drawText(x_centered, text_y, status_text)
-            return  # Salir del metodo paint para esta columna
-
         metrics = QFontMetrics(painter.font())
 
         # Ajustar el rectangulo para crear padding izquierdo
@@ -372,15 +349,15 @@ class ScriptCheckerWindow(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.setWindowTitle("Script Checker Results")
+        self.setWindowTitle("Script Checker - Check This Nodes")
         # Asegura que la ventana permanezca en primer plano
         self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
         layout = QVBoxLayout(self)
 
-        # Crear la tabla con 5 columnas
-        self.table = QTableWidget(len(self.results), 5, self)
+        # Crear la tabla con 4 columnas
+        self.table = QTableWidget(len(self.results), 4, self)
         self.table.setHorizontalHeaderLabels(
-            ["Node", "Input A", "Input B", "Input Mask", "Status"]
+            ["Node", "Input A", "Input B", "Input Mask"]
         )
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.table.verticalHeader().setVisible(False)
@@ -485,17 +462,6 @@ class ScriptCheckerWindow(QWidget):
             input_mask_item.setBackground(node_qcolor)
             input_mask_item.setForeground(QBrush(text_color))  # Mantener para fallback
             self.table.setItem(row, 3, input_mask_item)
-
-            # Columna 4: Status
-            status_item = QTableWidgetItem(result["status"])
-            status_item.setTextAlignment(Qt.AlignCenter)  # Centrar el texto
-            if result["status"] == "OK":
-                status_item.setBackground(QColor(0, 255, 0))  # Verde
-                status_item.setForeground(QBrush(QColor(0, 0, 0)))  # Texto negro
-            else:
-                status_item.setBackground(QColor(125, 0, 0))  # Rojo
-                status_item.setForeground(QBrush(QColor(255, 255, 255)))  # Texto blanco
-            self.table.setItem(row, 4, status_item)
 
         self.table.resizeColumnsToContents()
 

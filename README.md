@@ -65,14 +65,29 @@ shortcut.
 
 ## ![](Doc_Media/seccion_amarilla.png) Script Checker v0.87 | Lega
 
-Escanea todos los nodos y verifica si cada conexion respeta ciertas reglas y convenciones
-Muestra los resultados de en una tabla coloreadas. 
-Al hacer clic en una fila selecciona el nodo en el Node Graph, hace
-zoom to fit y abre su panel para corregirlo rapido; el boton Refresh
-vuelve a correr la verificacion despues de acomodar conexiones.
+Analiza todos los nodos del script y detecta conexiones que no respetan ciertas reglas de orden y convenciones de layout.
+
+La herramienta lista en una tabla unicamente los nodos que no cumplen estas reglas. Para cada nodo muestra:
+- **Node:** nombre del nodo detectado.
+- **Input A / Input B / Input Mask:** que nodo esta conectado en cada entrada.
+- **Posicion actual:** la direccion donde se encuentra cada conexion (left, right, top, etc.).
+- **Posicion esperada:** en rojo, la ubicacion correcta segun las reglas definidas.
+
+Esto permite identificar rapidamente conexiones incorrectas o desordenadas dentro del script.
+
+Al hacer clic en una fila:
+- Selecciona el nodo en el Node Graph.
+- Ejecuta zoom to fit.
+- Abre el panel de propiedades del nodo.
+
+De esta forma se puede corregir el problema rapidamente. El boton Refresh vuelve a ejecutar el analisis despues de ajustar las conexiones.
 
 ![](Doc_Media/ScriptChecker_v01.gif)
 ![](Doc_Media/ScriptChecker_v02.gif)
+
+![](Doc_Media/Script_checker.png)
+
+C:\Users\leg4-pc\.nuke\LGA_ToolPack-Layout\Doc_Media\Originals\Script_checker.png
 
 <strong><font color="#8a8a8a">Shortcut:</font></strong><br>
 <font color="#8a8a8a">***Ctrl + Alt + H*** abre la ventana con el listado de resultados</font><br>
