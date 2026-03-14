@@ -16,12 +16,20 @@ import os
 import configparser, importlib
 
 
+ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
+PY_DIR = os.path.join(ROOT_DIR, "py")
+DOCS_DIR = os.path.join(ROOT_DIR, "docs")
+
+# Carga los modulos runtime desde py/
+nuke.pluginAddPath(PY_DIR.replace("\\", "/"))
+
+
 def _ini_paths():
     # user-level
     home = os.path.expanduser("~")
     user_ini = os.path.join(home, ".nuke", "_LGA_LayoutToolPack_Enabled.ini")
     # package-level (junto a este archivo)
-    pkg_ini = os.path.join(os.path.dirname(__file__), "_LGA_LayoutToolPack_Enabled.ini")
+    pkg_ini = os.path.join(ROOT_DIR, "_LGA_LayoutToolPack_Enabled.ini")
     return user_ini, pkg_ini
 
 
@@ -134,7 +142,7 @@ def any_enabled(keys):
 
 
 def _get_icon(name):
-    icons_root = os.path.join(os.path.dirname(__file__), "icons")
+    icons_root = os.path.join(PY_DIR, "icons")
     path = os.path.join(icons_root, name) + ".png"
     return path.replace("\\", "/")
 
@@ -232,7 +240,7 @@ add_tool(
 
 if is_enabled("LGA_Backdrop_System"):
     # Importar el LGA_backdrop
-    nuke.pluginAddPath("./LGA_backdrop")
+    nuke.pluginAddPath(os.path.join(PY_DIR, "LGA_backdrop").replace("\\", "/"))
     import LGA_backdrop
 
     nukescripts.autoBackdrop = LGA_backdrop.autoBackdrop  # type: ignore
@@ -576,7 +584,7 @@ icon_LTPF = _get_icon("LTPF")
 
 if is_enabled("Easy_Navigate"):
     # Km_NodeGraph
-    nuke.pluginAddPath("./Km_NodeGraphEN")
+    nuke.pluginAddPath(os.path.join(PY_DIR, "Km_NodeGraphEN").replace("\\", "/"))
 
     # Importar Easy Navigate
     import Km_NodeGraph_Easy_Navigate
@@ -637,7 +645,6 @@ n.addSeparator()
 import webbrowser
 import nuke
 
-LTP_script_dir = os.path.dirname(os.path.realpath(__file__))
-LTP_pdf_path = os.path.join(LTP_script_dir, "LGA_LayoutToolPack.pdf")
+LTP_pdf_path = os.path.join(DOCS_DIR, "LGA_LayoutToolPack.pdf")
 
 n.addCommand("Documentation v2.51", lambda: webbrowser.open("file://" + LTP_pdf_path))
