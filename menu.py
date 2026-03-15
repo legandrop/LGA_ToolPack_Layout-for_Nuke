@@ -645,6 +645,9 @@ n.addSeparator()
 import webbrowser
 import nuke
 
-LTP_pdf_path = os.path.join(DOCS_DIR, "LGA_LayoutToolPack.pdf")
-
-n.addCommand("Documentation v2.51", lambda: webbrowser.open("file://" + LTP_pdf_path))
+n.addCommand(
+    "Documentation v2.55",
+    lambda: webbrowser.open(
+        "https://github.com/legandrop/LGA_ToolPack_Layout-for_Nuke"
+    ),
+)
