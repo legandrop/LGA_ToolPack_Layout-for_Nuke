@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="116" viewBox="0 0 760 116" role="img" aria-label="Add Dots after shortcuts">
+  <text x="0" y="18" fill="#8a8a8a" font-size="16" font-weight="700" font-family="Segoe UI, Arial, Helvetica, sans-serif">Shortcuts:</text>
+  <text x="0" y="42" fill="#8a8a8a" font-size="16" font-family="Segoe UI, Arial, Helvetica, sans-serif">
+    <tspan font-weight="700" font-style="italic">Shift + ,</tspan>
+    <tspan> agrega el segundo Dot a la izquierda del primero</tspan>
+  </text>
+  <text x="0" y="66" fill="#8a8a8a" font-size="16" font-family="Segoe UI, Arial, Helvetica, sans-serif">
+    <tspan font-weight="700" font-style="italic">Ctrl + Shift + ,</tspan>
+    <tspan> agrega el segundo Dot m&#225;s a la izquierda del primero</tspan>
+  </text>
+  <text x="0" y="90" fill="#8a8a8a" font-size="16" font-family="Segoe UI, Arial, Helvetica, sans-serif">
+    <tspan font-weight="700" font-style="italic">Shift + .</tspan>
+    <tspan> agrega el segundo Dot a la derecha del primero</tspan>
+  </text>
+  <text x="0" y="114" fill="#8a8a8a" font-size="16" font-family="Segoe UI, Arial, Helvetica, sans-serif">
+    <tspan font-weight="700" font-style="italic">Ctrl + Shift + .</tspan>
+    <tspan> agrega el segundo Dot m&#225;s a la derecha del primero</tspan>
+  </text>
+</svg>

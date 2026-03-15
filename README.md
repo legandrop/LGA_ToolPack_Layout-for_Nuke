@@ -60,6 +60,7 @@ shortcut.
 ***Ctrl + shift + ,*** agrega el segundo Dot más a la izquierda del primero<br>
 ***Shift + .*** agrega el segundo Dot a la derecha del primero<br>
 ***Ctrl + shift + .*** agrega el segundo Dot más a la derecha del primero</font><br>
+<img src="Doc_Media/add_dots_after_shortcuts.svg" alt="Add Dots after shortcuts" width="760" height="116"><br>
 <br>
 
 ## ![](Doc_Media/seccion_amarilla.png) Script Checker v0.87 | Lega
