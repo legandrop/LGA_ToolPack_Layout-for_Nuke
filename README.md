@@ -94,7 +94,7 @@ extras.
 
 ## ![](Doc_Media/seccion_amarilla.png) Create LGA_Backdrop v1.0 | Lega
 
-Reemplazo del autoBackdrop, con opciones extras:<br>
+Reemplazo del autoBackdrop, con opciones extras:
 - Resize basado en un margen, tomando en cuenta los nodos dentro del backdrop.<br>
 - Z order automatico.<br>
 - Dos filas de colores random y predeterminados, la segunda es con menos saturación.
