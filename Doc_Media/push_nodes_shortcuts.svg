@@ -3,16 +3,16 @@
     <tspan font-weight="700">Shortcuts</tspan>
     <tspan> (usando el teclado num&#233;rico):</tspan>
   </text>
-  <text x="0" y="42" fill="#8a8a8a" font-size="16" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-style="italic">
-    <tspan font-weight="700">Ctrl + Alt + </tspan><tspan font-family="Segoe UI Symbol, Segoe UI, Arial, Helvetica, sans-serif" font-weight="900">&#8595;</tspan><tspan font-weight="700"> (2)</tspan>
-  </text>
-  <text x="0" y="66" fill="#8a8a8a" font-size="16" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-style="italic">
-    <tspan font-weight="700">Ctrl + Alt + </tspan><tspan font-family="Segoe UI Symbol, Segoe UI, Arial, Helvetica, sans-serif" font-weight="900">&#8593;</tspan><tspan font-weight="700"> (8)</tspan>
-  </text>
-  <text x="0" y="90" fill="#8a8a8a" font-size="16" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-style="italic">
-    <tspan font-weight="700">Ctrl + Alt + </tspan><tspan font-family="Segoe UI Symbol, Segoe UI, Arial, Helvetica, sans-serif" font-weight="900">&#8592;</tspan><tspan font-weight="700"> (4)</tspan>
-  </text>
-  <text x="0" y="114" fill="#8a8a8a" font-size="16" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-style="italic">
-    <tspan font-weight="700">Ctrl + Alt + </tspan><tspan font-family="Segoe UI Symbol, Segoe UI, Arial, Helvetica, sans-serif" font-weight="900">&#8594;</tspan><tspan font-weight="700"> (6)</tspan>
-  </text>
+  <text x="0" y="42" fill="#8a8a8a" font-size="16" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-style="italic" font-weight="700">Ctrl + Alt + </text>
+  <text x="89.2" y="42" fill="#8a8a8a" font-size="16" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-style="italic" font-weight="700">↓</text>
+  <text x="109.2" y="42" fill="#8a8a8a" font-size="16" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-style="italic" font-weight="700"> (2)</text>
+  <text x="0" y="66" fill="#8a8a8a" font-size="16" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-style="italic" font-weight="700">Ctrl + Alt + </text>
+  <text x="89.2" y="66" fill="#8a8a8a" font-size="16" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-style="italic" font-weight="700">↑</text>
+  <text x="109.2" y="66" fill="#8a8a8a" font-size="16" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-style="italic" font-weight="700"> (8)</text>
+  <text x="0" y="90" fill="#8a8a8a" font-size="16" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-style="italic" font-weight="700">Ctrl + Alt + </text>
+  <text x="87.2" y="90" fill="#8a8a8a" font-size="16" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-style="italic" font-weight="700">←</text>
+  <text x="107.2" y="90" fill="#8a8a8a" font-size="16" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-style="italic" font-weight="700"> (4)</text>
+  <text x="0" y="114" fill="#8a8a8a" font-size="16" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-style="italic" font-weight="700">Ctrl + Alt + </text>
+  <text x="87.2" y="114" fill="#8a8a8a" font-size="16" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-style="italic" font-weight="700">→</text>
+  <text x="107.2" y="114" fill="#8a8a8a" font-size="16" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-style="italic" font-weight="700"> (6)</text>
 </svg>

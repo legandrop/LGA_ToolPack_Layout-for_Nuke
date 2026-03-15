@@ -44,7 +44,6 @@ cuando varios nodos seleccionados están conectados al mismo nodo y
 permite agregar dots en cualquier input siempre y cuando el nodo
 conectado al input no está en la misma fila o columna que el nodo
 seleccionado.*<br><br>
-<strong><font color="#8a8a8a">Shortcut:</font> <font color="#8a8a8a">,</font></strong>
 <img src="Doc_Media/add_dots_before_shortcut.svg" alt="Add Dots before shortcut" width="140" height="22"><br>
 <br><br>
 
@@ -81,8 +80,6 @@ De esta forma se puede corregir el problema rapidamente. El boton Refresh vuelve
 ![](Doc_Media/Script_checker.png)
 
 
-<strong><font color="#8a8a8a">Shortcut:</font></strong><br>
-<font color="#8a8a8a">***Ctrl + Alt + H*** abre la ventana con el listado de resultados</font><br>
 <img src="Doc_Media/script_checker_shortcut.svg" alt="Script Checker shortcut" width="450" height="43"><br>
 <br>
 
@@ -93,8 +90,6 @@ extras.
 
 ![](Doc_Media/Stickynote_v01.gif)
 
-<strong><font color="#8a8a8a">Shortcut:</font></strong><br>
-<font color="#8a8a8a">***Shift + N*** crea un nuevo StickyNote o edita el StickyNote seleccionado</font><br>
 <img src="Doc_Media/stickynote_shortcut.svg" alt="StickyNote shortcut" width="490" height="43"><br>
 <br>
 
@@ -107,9 +102,6 @@ Reemplazo del autoBackdrop, con opciones extras:<br>
 
 ![](Doc_Media/BackDrop_v01.gif)
 
-<strong><font color="#8a8a8a">Shortcuts:</font></strong><br>
-<font color="#8a8a8a">***Shift + B*** crea un nuevo LGA_Backdrop<br>
-***Ctrl + B*** reemplaza backdrops seleccionados (o todos) por LGA_Backdrop</font><br>
 <img src="Doc_Media/create_lga_backdrop_shortcuts.svg" alt="Create LGA Backdrop shortcuts" width="520" height="63"><br>
 <br>
 
@@ -119,8 +111,6 @@ Permite cambiar el label de un nodo con una ventana emergente.
 
 ![](Doc_Media/LabelNode_v01.gif)
 
-<strong><font color="#8a8a8a">Shortcut:</font></strong><br>
-<font color="#8a8a8a">***Shift + L***</font><br>
 <img src="Doc_Media/label_node_shortcut.svg" alt="Label Node shortcut" width="130" height="43"><br>
 <br>
 
@@ -132,22 +122,11 @@ determinada por el shortcut.
 - <span style="color:#914dcb;font-weight:600;">Select Nodes</span> selecciona los nodos que están alineados con el nodo
   seleccionado sin importar si están o no conectados entre sí.<br>
   ![](Doc_Media/Select_Nodes.gif)<br>
-  <strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
-  <span style="color:#8a8a8a;">***Alt + ↓ (2)***</span><br>
-  <span style="color:#8a8a8a;">***Alt + ↑ (8)***</span><br>
-  <span style="color:#8a8a8a;">***Alt + ← (4)***</span><br>
-  <span style="color:#8a8a8a;">***Alt + → (6)***</span><br>
   <img src="Doc_Media/select_nodes_shortcuts.svg" alt="Select Nodes shortcuts" width="290" height="105"><br><br>
 - <span style="color:#914dcb;font-weight:600;">Select connected Nodes</span> hace lo mismo que *Select Nodes*, pero solo
   selecciona nodos que están conectados con el nodo seleccionado, y
   recurrentemente con el nodo siguiente en la selección.<br>
   ![](Doc_Media/Select_conected_nodes.gif)<br>
-  <strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
-  <span style="color:#8a8a8a;">***Meta + ↓ (2)***</span><br>
-  <span style="color:#8a8a8a;">***Meta + ↑ (8)***</span><br>
-  <span style="color:#8a8a8a;">***Meta + ← (4)***</span><br>
-  <span style="color:#8a8a8a;">***Meta + → (6)***</span><br>
-  <span style="color:#aaaaaa;font-size:0.9em;">*Meta es la bandera en Windows o la manzana en macOS.</span><br>
   <img src="Doc_Media/select_connected_nodes_shortcuts.svg" alt="Select connected Nodes shortcuts" width="345" height="123"><br><br>
 - <span style="color:#914dcb;font-weight:600;">Select all Nodes</span> selecciona todos los nodos en la dirección
   determinada por el shortcut.<br>
@@ -163,11 +142,6 @@ backdrops.
 
 ![](Doc_Media/Align_v01.gif)
 
-<strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
-<span style="color:#8a8a8a;">***Ctrl + ↓ (2)***</span><br>
-<span style="color:#8a8a8a;">***Ctrl + ↑ (8)***</span><br>
-<span style="color:#8a8a8a;">***Ctrl + ← (4)***</span><br>
-<span style="color:#8a8a8a;">***Ctrl + → (6)***</span><br>
 <img src="Doc_Media/align_nodes_shortcuts.svg" alt="Align Nodes shortcuts" width="300" height="105"><br>
 <br>
 
@@ -181,9 +155,6 @@ distribuye backdrops.
 
 ![](Doc_Media/Distribute_v01.gif)
 
-<strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
-<span style="color:#8a8a8a;">***Ctrl + 0*** Horizontal <span style="font-weight:400;color:#8a8a8a;">(El 0 es más ancho en el teclado numérico que el punto)</span></span><br>
-<span style="color:#8a8a8a;">***Ctrl + .*** Vertical</span><br>
 <img src="Doc_Media/distribute_nodes_shortcuts.svg" alt="Distribute Nodes shortcuts" width="520" height="62"><br>
 <br>
 
@@ -193,11 +164,6 @@ Alinea y distribuye los nodos seleccionados de múltiples columnas
 tomando en cuenta las conexiones de los nodos entre sí.\
 ![](Doc_Media/Arrange_v01.gif)
 
-<strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
-<span style="color:#8a8a8a;">***Ctrl + ↓ (2)***</span><br>
-<span style="color:#8a8a8a;">***Ctrl + ↑ (8)***</span><br>
-<span style="color:#8a8a8a;">***Ctrl + ← (4)***</span><br>
-<span style="color:#8a8a8a;">***Ctrl + → (6)***</span><br>
 <img src="Doc_Media/arrange_nodes_shortcuts.svg" alt="Arrange Nodes shortcuts" width="300" height="105"><br>
 <br>
 
@@ -207,8 +173,6 @@ Ajusta los espacios y la posición de los nodos seleccionados utilizando
 un widget de escala.\
 ![](Doc_Media/Scale_v01.gif)
 
-<strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
-<span style="color:#8a8a8a;">***Ctrl + +***</span><br><br>
 <img src="Doc_Media/scale_nodes_shortcuts.svg" alt="Scale Nodes shortcuts" width="300" height="43"><br><br>
 
 
@@ -224,11 +188,6 @@ un sector sin espacio.
 
 ![](Doc_Media/Push_v01.gif)
 
-<strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
-<span style="color:#8a8a8a;">***Ctrl + Alt + ↓ (2)***</span><br>
-<span style="color:#8a8a8a;">***Ctrl + Alt + ↑ (8)***</span><br>
-<span style="color:#8a8a8a;">***Ctrl + Alt + ← (4)***</span><br>
-<span style="color:#8a8a8a;">***Ctrl + Alt + → (6)***</span><br>
 <img src="Doc_Media/push_nodes_shortcuts.svg" alt="Push Nodes shortcuts" width="360" height="105"><br><br>
 
 
@@ -241,11 +200,6 @@ pivote el puntero del mouse.
 
 ![](Doc_Media/Pull_v01.gif)
 
-<strong><span style="color:#8a8a8a;">Shortcuts</span></strong> <span style="color:#8a8a8a;">(usando el teclado numérico):</span><br>
-<span style="color:#8a8a8a;">***Ctrl + Alt + Shift + ↓ (2)***</span><br>
-<span style="color:#8a8a8a;">***Ctrl + Alt + Shift + ↑ (8)***</span><br>
-<span style="color:#8a8a8a;">***Ctrl + Alt + Shift + ← (4)***</span><br>
-<span style="color:#8a8a8a;">***Ctrl + Alt + Shift + → (6)***</span><br>
 <img src="Doc_Media/pull_nodes_shortcuts.svg" alt="Pull Nodes shortcuts" width="420" height="105"><br><br>
 
 
@@ -257,8 +211,6 @@ de uno a otro. Útil para scripts grandes.
 
 ![](Doc_Media/EasyNavigate.gif)
 
-<strong><span style="color:#8a8a8a;">Shortcuts</span></strong><br>
-<span style="color:#8a8a8a;">***Shift + A*** Abre la GUI</span><br>
 <img src="Doc_Media/easy_navigate_shortcuts.svg" alt="Easy Navigate shortcuts" width="235" height="42"><br><br>
 
 
@@ -272,8 +224,5 @@ se reinicia el ciclo.
 
 ![](Doc_Media/Toggle_Zoom.gif)
 
-<strong><span style="color:#8a8a8a;">Shortcuts</span></strong><br>
-<span style="color:#8a8a8a;">***H***</span><br>
-<span style="color:#8a8a8a;">***Middle click***</span><br>
 <img src="Doc_Media/toggle_zoom_shortcuts.svg" alt="Toggle Zoom shortcuts" width="160" height="60"><br><br>
 
