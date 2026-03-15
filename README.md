@@ -25,7 +25,7 @@
   Para conservar la configuración en futuras actualizaciones, se puede
   copiar el archivo a **\~/.nuke/\_LGA_ToolPackLayout_Enabled.ini**. Si
   existen ambos, tiene prioridad el de **\~/.nuke/.**
-<br><br>
+<br><br><br>
 
 ## ![](Doc_Media/seccion_azul.png) Add Dots before (aka Dots) v5.1 | Alexey Kuchinski <font color="#8a8a8a">| Mod Lega v2.2</font>
 
@@ -37,8 +37,7 @@ los alinea. Útil para cuando se crea un nuevo nodo y no está alineado al
 anterior.
 
 ![](Doc_Media/Dots_Before_A_v01.gif)
-![](Doc_Media/Dots_Before_B_v01.gif)
-
+![](Doc_Media/Dots_Before_B_v01.gif)<br>
 *La mod del pack tiene varios fixes y suma la función de armar un árbol
 cuando varios nodos seleccionados están conectados al mismo nodo y
 permite agregar dots en cualquier input siempre y cuando el nodo
