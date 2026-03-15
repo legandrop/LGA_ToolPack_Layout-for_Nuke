@@ -7,24 +7,25 @@
 
 ## Instalación
 
-- Copiar la carpeta **LGA_ToolPack-Layout** que contiene todos los
-  archivos **.py** a **%USERPROFILE%/.nuke**.
+- Copiar la carpeta **LGA_ToolPack-Layout** que contiene todos los archivos del ToolPack a **%USERPROFILE%/.nuke**.<br> Debería quedar así:
+   ```
+   .nuke/
+   └─ LGA_ToolPack-Layout/
+      ├─ menu.py
+      ├─ py/
+      └─ ...
+  ```
 
-- Con un editor de texto, agregar esta línea de código al archivo
-  **init.py** que está dentro de la carpeta **.nuke**:
+- Con un editor de texto, agregar esta línea de código al archivo **init.py** que está dentro de la carpeta **.nuke**:
 
   ```
   nuke.pluginAddPath('./LGA_ToolPack-Layout')
   ```
 
-- El ToolPack permite **activar/desactivar** herramientas sin tocar
-  código editando el archivo **\_LGA_ToolPackLayout_Enabled.ini**
-  (dentro de **LGA_ToolPack-Layout**/).\
-  Por defecto todas las herramientas están en **True**. Cambiar a
-  **False** las oculta y evita cargar su script.\
-  Para conservar la configuración en futuras actualizaciones, se puede
-  copiar el archivo a **\~/.nuke/\_LGA_ToolPackLayout_Enabled.ini**. Si
-  existen ambos, tiene prioridad el de **\~/.nuke/.**
+- El ToolPack permite **activar/desactivar** herramientas editando el archivo **\_LGA_LayoutToolPack_Enabled.ini**<br>
+  Por defecto todas las herramientas están en **True**. Las que se cambian a **False**, se ocultan y evitan cargarse.<br>
+  Para conservar la configuración en futuras actualizaciones, se puede copiar el archivo **.ini** a la carpeta **\~/.nuke/**
+
 <br><br><br>
 
 ## ![](Doc_Media/seccion_azul.png) Add Dots before (aka Dots) v5.1 | Alexey Kuchinski <font color="#8a8a8a">| Mod Lega v2.2</font>
