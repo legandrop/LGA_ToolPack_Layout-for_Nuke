@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="116" viewBox="0 0 320 116" role="img" aria-label="Select Nodes shortcuts">
+  <text x="0" y="18" fill="#8a8a8a" font-size="16" font-family="Segoe UI, Arial, Helvetica, sans-serif">
+    <tspan font-weight="700">Shortcuts</tspan>
+    <tspan> (usando el teclado num&#233;rico):</tspan>
+  </text>
+  <text x="0" y="42" fill="#8a8a8a" font-size="16" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-weight="700" font-style="italic">Alt + &#8595; (2)</text>
+  <text x="0" y="66" fill="#8a8a8a" font-size="16" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-weight="700" font-style="italic">Alt + &#8593; (8)</text>
+  <text x="0" y="90" fill="#8a8a8a" font-size="16" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-weight="700" font-style="italic">Alt + &#8592; (4)</text>
+  <text x="0" y="114" fill="#8a8a8a" font-size="16" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-weight="700" font-style="italic">Alt + &#8594; (6)</text>
+</svg>

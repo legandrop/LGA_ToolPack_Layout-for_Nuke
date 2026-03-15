@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="46" viewBox="0 0 480 46" role="img" aria-label="Script Checker shortcut">
+  <text x="0" y="18" fill="#8a8a8a" font-size="16" font-weight="700" font-family="Segoe UI, Arial, Helvetica, sans-serif">Shortcut:</text>
+  <text x="0" y="42" fill="#8a8a8a" font-size="16" font-family="Segoe UI, Arial, Helvetica, sans-serif">
+    <tspan font-weight="700" font-style="italic">Ctrl + Alt + H</tspan>
+    <tspan> abre la ventana con el listado de resultados</tspan>
+  </text>
+</svg>
