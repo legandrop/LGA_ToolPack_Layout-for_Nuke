@@ -1,7 +1,7 @@
 """
 __________________________________________
 
-  LGA Layout ToolPack v2.51 | Lega
+  LGA Layout ToolPack v2.56 | Lega
 __________________________________________
 
 """
@@ -646,7 +646,7 @@ import webbrowser
 import nuke
 
 n.addCommand(
-    "Documentation v2.55",
+    "Documentation v2.56",
     lambda: webbrowser.open(
         "https://github.com/legandrop/LGA_ToolPack_Layout-for_Nuke"
     ),
