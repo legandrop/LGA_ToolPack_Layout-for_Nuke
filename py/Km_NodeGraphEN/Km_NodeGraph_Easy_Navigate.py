@@ -42,7 +42,7 @@ Data managment :
                                     "zoomEffect": "Disable",
                                     "shakeEffect": "Enable",
                                     "mainWindowFadeInEffect": "Enable",
-                                    "shortcut": "shift+e",
+        "shortcut": "shift+a",
                                     "nodeGraphZoomScale": "1.2",
                                     "templateGlobalOverride": "Disable",
                                     "templateNameForGlobalOverride": "Template1",
@@ -731,7 +731,7 @@ class SettingsWindow(QMainWindow,Ui_SettingsWindowUI):
         self.settings["shakeEffect"] = "Disable"
         self.settings["zoomEffect"] = "Disable"
         self.settings["mainWindowFadeInEffect"] = "Enable"
-        self.settings["shortcut"] = "shift+e"
+        self.settings["shortcut"] = "shift+a"
         self.settings["nodeGraphZoomScale"] = "1"
         self.settings["bookmarksGridColumns"] = "3"
         self.settings["bookmarksGridRows"] = "3"

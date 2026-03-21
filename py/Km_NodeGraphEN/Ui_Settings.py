@@ -420,7 +420,7 @@ class Ui_SettingsWindowUI(object):
         self.lineEdit_shortcut.setGeometry(QRect(107, 147, 91, 30))
         self.lineEdit_shortcut.setFont(font)
         self.lineEdit_shortcut.setStyleSheet(u"")
-        self.lineEdit_shortcut.setText(u"shift+e")
+        self.lineEdit_shortcut.setText(u"shift+a")
         self.lineEdit_shortcut.setAlignment(Qt.AlignCenter)
         self.label_6 = QLabel(self.frame_2)
         self.label_6.setObjectName(u"label_6")
