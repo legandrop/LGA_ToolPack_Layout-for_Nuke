@@ -17,6 +17,8 @@ Encontrar y reemplazar por Stamps:
 4. **Confirmacion por grupo** antes de dejar cada Stamp (cartel con nombre +
    Reemplazar/Cancelar, con zoom al grupo). *(v0.04 - hecho)*
 5. **Zoom al contexto** (source + destinos) y **cartel no bloqueante**. *(v0.05 - hecho)*
+6. **Two-phase** (preview con undo off + apply limpio): cancelar no ensucia el
+   historial y un Ctrl+Z deshace sin avalancha de errores. *(v0.06 - hecho)*
 
 El desarrollo es **incremental**: empezamos por lo mas simple y vamos sumando casos.
 
@@ -53,9 +55,24 @@ El modulo `stamps` ya esta importado en la sesion de Nuke (se carga desde
 
 **Archivo:** `py/LGA_AutoStamps.py` — funcion principal `main()`.
 
-`main()` corre tres pases dentro de un unico bloque `nuke.Undo()`. **Cada grupo
-(1 Anchor + sus Wireds) se confirma con un cartel** antes de quedar (ver
-"Confirmacion por grupo" mas abajo):
+`main()` usa una arquitectura **two-phase** (v0.06):
+
+1. **Fase 1 — `preview_all()` con `nuke.Undo().disable()`:** corre los tres pases;
+   por cada grupo construye los Stamps (`build_*`), hace zoom, muestra el cartel,
+   guarda la decision (`{clave: titulo}`) y **revierte** el grupo (`GroupTx.revert`).
+   Al terminar, el grafo quedo igual que al inicio y **nada entro al historial de
+   undo**.
+2. **Fase 2 — `apply_all()` dentro de un unico `nuke.Undo().begin()/end()`:**
+   re-detecta los grupos (el grafo volvio al original) y **re-aplica solo los
+   aceptados** (por `clave`), sin cartel, seteando el titulo elegido. Como solo hay
+   creaciones limpias, **un solo Ctrl+Z deshace todo sin disparar la avalancha** de
+   errores de los callbacks de stamps.
+
+Claves de grupo (para casar preview <-> apply): `H|<source>` (hidden),
+`D|<source>` (dots), `L|<src>|<dst>|<idx>` (largas). Usan nombres de nodo, que no
+cambian al revertir.
+
+Los tres pases (su deteccion y la construccion de cada grupo) son:
 
 ### Pase 0 — Hidden inputs (v0.03)
 
@@ -94,9 +111,10 @@ Recorre las conexiones directas (ignorando Dots y Stamps en ambos extremos) y,
 si la **distancia euclidea** entre centros supera `DISTANCE_THRESHOLD`, reemplaza
 la conexion por Anchor (debajo del padre) + Wired (arriba del hijo).
 
-### Confirmacion por grupo (v0.04)
+### Confirmacion por grupo + two-phase (v0.04-v0.06)
 
-Cada grupo (1 Anchor + sus Wireds) pasa por `confirm_group()`:
+En la **fase preview**, cada grupo (1 Anchor + sus Wireds) se construye y pasa por
+`preview_confirm()`:
 
 1. Los Stamps **ya estan creados** (el reemplazo ya ocurrio), asi el usuario los ve.
 2. **Zoom-to-fit al CONTEXTO** (`zoom_to_nodes`): no encuadra los Stamps solos sino
@@ -109,15 +127,18 @@ Cada grupo (1 Anchor + sus Wireds) pasa por `confirm_group()`:
    siempre arriba (`WindowStaysOnTopHint`). Se espera la respuesta con un
    **`QtCore.QEventLoop` anidado**, que bloquea el flujo del script pero deja la UI
    de Nuke navegable (pan/zoom/seleccion en el DAG).
-4. **Reemplazar:** si cambio el nombre, se aplica al Anchor y a todos sus Wireds
-   (`apply_title`).
-5. **Cancelar:** `GroupTx.revert()` deshace SOLO ese grupo (borra los Stamps
-   creados, restaura inputs/knobs y **recrea los Dots borrados** con sus
-   conexiones y nombres).
 
-**Undo unico:** todo (incluido el revert de los cancelados) ocurre dentro de un
-solo `nuke.Undo().begin()/end()`. Los grupos cancelados quedan en neto cero, y un
-solo Ctrl+Z revierte todos los aceptados a la vez.
+Tras el cartel, en la **fase preview siempre se revierte** el grupo (`GroupTx.revert`)
+y se guarda la decision. En la **fase apply** se re-crea solo lo aceptado y se aplica
+el titulo elegido (`apply_title` al Anchor + Wireds).
+
+**Por que two-phase (v0.06):** antes todo (incluido el revert de los cancelados)
+ocurria dentro de un unico `nuke.Undo()`. Aunque el neto de un cancelado era cero,
+el "churn" (crear -> revertir, que recrea nodos) quedaba grabado, y al hacer Ctrl+Z
+Nuke recreaba esos Wireds disparando los `knobChanged` de stamps sobre nodos
+detached -> **avalancha de errores**. Con two-phase, la fase preview corre con
+`nuke.Undo().disable()` (no graba nada) y la fase apply solo graba creaciones
+limpias de los aceptados -> **un Ctrl+Z deshace todo sin errores**.
 
 #### `GroupTx` (transaccion por grupo)
 
@@ -222,11 +243,17 @@ LGA_AutoStamps.main()
 - **Las creaciones de Wired no splicean** porque cada `create_wired_above` hace
   `deselect_all()` al final, dejando la seleccion limpia para la siguiente.
 - **Undo del usuario + callbacks de Stamps:** al hacer Ctrl+Z, Nuke recrea nodos y
-  dispara `knobChanged`; con el lock ya restaurado (False) eso puede tirar el error
-  `n.inputs()` sobre nodos detached. La avalancha que vio el usuario venia de un
-  undo manual extra (que hizo para arreglar el cancel roto). Pendiente: two-phase
-  (preview con undo deshabilitado + apply limpio) para que los grupos cancelados
-  no dejen "basura" en el historial de undo.
+  dispara `knobChanged`; con el lock ya restaurado (False) eso tira el error
+  `n.inputs()` sobre nodos detached. Pasa cuando el historial tiene "churn" de
+  crear/revertir (recrear Wireds = setear knobs = disparar callbacks). **Solucion
+  (v0.06):** two-phase. La fase preview corre con `nuke.Undo().disable()` (no graba)
+  y revierte cada grupo; la fase apply graba solo creaciones limpias de los
+  aceptados en un unico `nuke.Undo()`. Asi el Ctrl+Z deshace creaciones (= deletes,
+  que no setean knobs) sin disparar la avalancha.
+- **`nuke.Undo().disable()` / `.enable()`** desactivan el registro del historial.
+  Hay que balancearlos con try/finally. Las decisiones del preview se casan con los
+  grupos del apply por una clave estable basada en nombres de nodo (no cambian al
+  revertir): `H|<source>`, `D|<source>`, `L|<src>|<dst>|<idx>`.
 - **Cancel sin romper el Undo:** NO usar undo nativo por grupo. Se revierte a mano
   (`GroupTx.revert`) dentro del mismo `nuke.Undo`. Asi un solo Ctrl+Z deshace todo
   lo aceptado y los cancelados quedan en neto cero.
@@ -255,9 +282,8 @@ LGA_AutoStamps.main()
       duplicar Anchor si la misma fuente aparece en varios casos).
 - [ ] Restaurar la vista (zoom/scroll) original al terminar (hoy queda en el ultimo grupo).
 - [ ] Hacer el cartel mas lindo (estilo, atajos).
-- [ ] Two-phase (preview con undo deshabilitado + apply limpio) para que los grupos
-      cancelados no dejen churn en el historial y un Ctrl+Z no tire la avalancha de
-      errores de `wiredKnobChanged` de stamps.
+- [x] Two-phase (preview con undo deshabilitado + apply limpio): los grupos
+      cancelados no dejan churn y un Ctrl+Z no tira la avalancha de errores — v0.06.
 - [ ] Caso ruteo por Dots con **1 solo destino** (codos de ruteo largo).
 - [ ] Hidden input en input distinto de 0 (ej. mask): hoy asumimos `input(0)`.
 - [ ] Multi-input al mismo destino (origen llega por input 0 y 1): hoy crea 2

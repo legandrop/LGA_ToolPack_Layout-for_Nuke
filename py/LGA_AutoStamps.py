@@ -1,7 +1,7 @@
 """
 __________________________________________________________
 
-  LGA_AutoStamps v0.05 | Lega
+  LGA_AutoStamps v0.06 | Lega
   Encuentra conexiones "sucias" entre nodos y las reemplaza
   automaticamente por Stamps (Anchor + Wired) de Adrian Pueyo.
 
@@ -38,6 +38,16 @@ __________________________________________________________
     - ZOOM_OUT_FACTOR: variable para alejar mas el zoom y dar contexto.
     - El cartel es NO bloqueante: el usuario puede navegar el DAG
       mientras decide (event loop anidado).
+
+  v0.06:
+    - Arquitectura two-phase:
+        * Fase 1 (preview, con undo DESHABILITADO): crea Stamps, zoom,
+          cartel, junta decisiones y revierte cada grupo.
+        * Fase 2 (apply, con un unico nuke.Undo): re-aplica solo los
+          aceptados, sin cartel.
+      Asi los grupos cancelados no dejan "basura" en el historial y un
+      solo Ctrl+Z deshace todo sin disparar la avalancha de errores de
+      los callbacks de stamps.
 __________________________________________________________
 
 """
@@ -72,7 +82,7 @@ ZOOM_MARGIN = 0.9
 # Cuanto MAS zoom out hacer para dar contexto al usuario.
 #   1.0 = encuadre justo a los nodos (padre del padre + hijos de los hijos).
 #   >1.0 = mas alejado / mas contexto alrededor (ej. 1.5 = 50% mas lejos).
-ZOOM_OUT_FACTOR = 1.0
+ZOOM_OUT_FACTOR = 1.1
 
 # Clases de nodos que NO participan (ni como origen ni como destino).
 SKIP_CLASSES = ["Viewer", "BackdropNode", "Root"]
@@ -505,10 +515,10 @@ def apply_title(anchor, wireds, name):
             pass
 
 
-def confirm_group(tx, anchor, wireds, suggested_name, dests=None):
+def preview_confirm(anchor, wireds, dests, suggested_name):
     """Zoom al CONTEXTO (el padre del padre = source, y los hijos de los hijos =
-    destinos), muestra el cartel y aplica/revierte segun la respuesta.
-    Devuelve True si se acepta, False si se cancela."""
+    destinos) y muestra el cartel. Devuelve (accepted, name). NO aplica ni
+    revierte: de eso se encargan las fases preview/apply."""
     context = list(wireds) + [anchor]
     try:
         src = anchor.input(0)
@@ -519,17 +529,7 @@ def confirm_group(tx, anchor, wireds, suggested_name, dests=None):
     if dests:
         context.extend(dests)
     zoom_to_nodes(context)
-    accepted, name = show_replace_dialog(suggested_name, len(wireds))
-    if accepted:
-        try:
-            current = anchor["title"].value()
-        except Exception:
-            current = ""
-        if name and name != current:
-            apply_title(anchor, wireds, name)
-        return True
-    tx.revert()
-    return False
+    return show_replace_dialog(suggested_name, len(wireds))
 
 
 # ----------------------------------------------------------------------
@@ -556,9 +556,10 @@ def find_hidden_inputs(stamps):
     return pickups
 
 
-def process_hidden_group(stamps, source, pickups, children):
-    """Procesa todos los hidden inputs que apuntan al mismo 'source' como un
-    unico grupo (1 Anchor, N Wireds). Devuelve True si se acepta."""
+def build_hidden_group(stamps, source, pickups, children):
+    """Construye los Stamps para todos los hidden inputs que apuntan al mismo
+    'source' (1 Anchor, N Wireds). NO muestra cartel ni revierte.
+    Devuelve (tx, anchor, wireds, dests, title)."""
     tx = GroupTx()
 
     # Titulo: primer label disponible entre los pickups, si no derivado del source.
@@ -608,16 +609,15 @@ def process_hidden_group(stamps, source, pickups, children):
             wireds.append(wired)
             dests.append(node)
 
-    return confirm_group(tx, anchor, wireds, title, dests)
+    return tx, anchor, wireds, dests, title
 
 
-def process_hidden_inputs(stamps):
-    """Releva y procesa todos los hidden inputs, agrupados por nodo origen.
-    Devuelve la cantidad de grupos aceptados."""
+def hidden_groups(stamps):
+    """Releva los hidden inputs agrupados por nodo origen.
+    Devuelve (children_map, [(source, pickups), ...]) en orden de aparicion."""
     children = build_children_map()
     pickups = find_hidden_inputs(stamps)
 
-    # Agrupar por origen, preservando el orden de aparicion.
     groups = {}
     order = []
     for node in pickups:
@@ -633,16 +633,11 @@ def process_hidden_inputs(stamps):
         groups[key]["pickups"].append(node)
 
     debug_print(
-        "Pase 0 (hidden inputs): {0} pickup/s -> {1} grupo/s a procesar.".format(
+        "Pase 0 (hidden inputs): {0} pickup/s -> {1} grupo/s.".format(
             len(pickups), len(order)
         )
     )
-    accepted = 0
-    for key in order:
-        g = groups[key]
-        if process_hidden_group(stamps, g["source"], g["pickups"], children):
-            accepted += 1
-    return accepted
+    return children, [(groups[k]["source"], groups[k]["pickups"]) for k in order]
 
 
 # ----------------------------------------------------------------------
@@ -722,9 +717,9 @@ def find_dot_distributions(stamps, children, min_destinations):
     return results
 
 
-def replace_dot_distribution_with_stamps(stamps, source, dots, leaves, children):
+def build_dot_distribution(stamps, source, dots, leaves, children):
     """Colapsa un arbol de Dots: 1 Anchor + N Wireds, y borra los Dots.
-    Devuelve True si se acepta."""
+    NO muestra cartel ni revierte. Devuelve (tx, anchor, wireds, dests, title)."""
     tx = GroupTx()
     anchor = create_anchor_below(stamps, source)
     tx.created(anchor)
@@ -743,20 +738,7 @@ def replace_dot_distribution_with_stamps(stamps, source, dots, leaves, children)
         dests.append(dst)
 
     tx.snapshot_and_delete_dots(dots, children)
-    return confirm_group(tx, anchor, wireds, title, dests)
-
-
-def process_dot_distributions(stamps):
-    """Releva y colapsa todas las distribuciones por Dots. Devuelve cuantas
-    se aceptaron."""
-    children = build_children_map()
-    trees = find_dot_distributions(stamps, children, MIN_DESTINATIONS)
-    debug_print("Pase 1 (distribuciones por Dots): {0} arbol/es.".format(len(trees)))
-    accepted = 0
-    for (source, dots, leaves) in trees:
-        if replace_dot_distribution_with_stamps(stamps, source, dots, leaves, children):
-            accepted += 1
-    return accepted
+    return tx, anchor, wireds, dests, title
 
 
 # ----------------------------------------------------------------------
@@ -793,9 +775,9 @@ def find_long_connections(stamps, threshold):
     return pairs
 
 
-def replace_connection_with_stamps(stamps, src, dst, input_index):
+def build_long_connection(stamps, src, dst, input_index):
     """Reemplaza una conexion directa larga por Anchor + Wired.
-    Devuelve True si se acepta."""
+    NO muestra cartel ni revierte. Devuelve (tx, anchor, wireds, dests, title)."""
     tx = GroupTx()
     anchor = create_anchor_below(stamps, src)
     tx.created(anchor)
@@ -808,19 +790,116 @@ def replace_connection_with_stamps(stamps, src, dst, input_index):
     tx.created(wired)
     tx.change_input(dst, input_index, wired)  # old = src (sobrevive)
 
-    return confirm_group(tx, anchor, [wired], title, [dst])
+    return tx, anchor, [wired], [dst], title
 
 
-def process_long_connections(stamps):
-    """Releva y reemplaza todas las conexiones largas directas. Devuelve
-    cuantas se aceptaron."""
+# ----------------------------------------------------------------------
+# KEYS / CLAVES DE GRUPO  (para casar decisiones entre preview y apply)
+# ----------------------------------------------------------------------
+
+def key_hidden(source):
+    return "H|" + source.name()
+
+
+def key_dots(source):
+    return "D|" + source.name()
+
+
+def key_long(src, dst, idx):
+    return "L|{0}|{1}|{2}".format(src.name(), dst.name(), idx)
+
+
+# ----------------------------------------------------------------------
+# FASE 1: PREVIEW  (con undo deshabilitado) -> junta decisiones
+# ----------------------------------------------------------------------
+
+def preview_all(stamps):
+    """Para cada grupo: construye los Stamps, hace zoom, muestra el cartel,
+    registra la decision y REVIERTE (vuelve al original). No se graba en el
+    historial de undo (el llamador lo deshabilita).
+    Devuelve un dict {clave: titulo_elegido} solo para los aceptados."""
+    decisions = {}
+
+    def handle(gkey, tx, anchor, wireds, dests, title):
+        accepted, name = preview_confirm(anchor, wireds, dests, title)
+        if accepted:
+            decisions[gkey] = name if name else title
+        tx.revert()
+
+    # Pase 0: hidden inputs.
+    children, hgroups = hidden_groups(stamps)
+    for (source, pickups) in hgroups:
+        tx, anchor, wireds, dests, title = build_hidden_group(
+            stamps, source, pickups, children
+        )
+        handle(key_hidden(source), tx, anchor, wireds, dests, title)
+
+    # Pase 1: distribuciones por Dots.
+    children = build_children_map()
+    trees = find_dot_distributions(stamps, children, MIN_DESTINATIONS)
+    debug_print("Pase 1 (distribuciones por Dots): {0} arbol/es.".format(len(trees)))
+    for (source, dots, leaves) in trees:
+        tx, anchor, wireds, dests, title = build_dot_distribution(
+            stamps, source, dots, leaves, children
+        )
+        handle(key_dots(source), tx, anchor, wireds, dests, title)
+
+    # Pase 2: conexiones largas directas.
     pairs = find_long_connections(stamps, DISTANCE_THRESHOLD)
     debug_print("Pase 2 (conexiones largas): {0} conexion/es.".format(len(pairs)))
-    accepted = 0
     for (src, dst, input_index, dist) in pairs:
-        if replace_connection_with_stamps(stamps, src, dst, input_index):
-            accepted += 1
-    return accepted
+        tx, anchor, wireds, dests, title = build_long_connection(
+            stamps, src, dst, input_index
+        )
+        handle(key_long(src, dst, input_index), tx, anchor, wireds, dests, title)
+
+    return decisions
+
+
+# ----------------------------------------------------------------------
+# FASE 2: APPLY  (con undo habilitado) -> re-aplica solo los aceptados
+# ----------------------------------------------------------------------
+
+def apply_all(stamps, accepted):
+    """Re-detecta los grupos (el grafo volvio al original tras el preview) y
+    aplica SOLO los que el usuario acepto, sin cartel. Devuelve la cantidad."""
+    total = 0
+
+    # Pase 0: hidden inputs.
+    children, hgroups = hidden_groups(stamps)
+    for (source, pickups) in hgroups:
+        gkey = key_hidden(source)
+        if gkey in accepted:
+            tx, anchor, wireds, dests, title = build_hidden_group(
+                stamps, source, pickups, children
+            )
+            apply_title(anchor, wireds, accepted[gkey])
+            total += 1
+
+    # Pase 1: distribuciones por Dots.
+    children = build_children_map()
+    trees = find_dot_distributions(stamps, children, MIN_DESTINATIONS)
+    for (source, dots, leaves) in trees:
+        gkey = key_dots(source)
+        if gkey in accepted:
+            tx, anchor, wireds, dests, title = build_dot_distribution(
+                stamps, source, dots, leaves, children
+            )
+            apply_title(anchor, wireds, accepted[gkey])
+            total += 1
+
+    # Pase 2: conexiones largas directas.
+    pairs = find_long_connections(stamps, DISTANCE_THRESHOLD)
+    for (src, dst, input_index, dist) in pairs:
+        gkey = key_long(src, dst, input_index)
+        if gkey in accepted:
+            tx, anchor, wireds, dests, title = build_long_connection(
+                stamps, src, dst, input_index
+            )
+            apply_title(anchor, wireds, accepted[gkey])
+            total += 1
+
+    return total
 
 
 # ----------------------------------------------------------------------
@@ -833,31 +912,35 @@ def main():
         return
 
     # Silenciar los callbacks de Stamps durante toda la corrida: nosotros
-    # manejamos las conexiones/titulos explicitamente. Esto evita que un
-    # knobChanged dispare sobre un Wired ya borrado (crash dentro de stamps.py
-    # al procesar eventos en el event loop no bloqueante) y tambien los popups
-    # "update linked stamps title?" al renombrar.
+    # manejamos las conexiones/titulos explicitamente.
     prev_lock = getattr(stamps, "Stamps_LockCallbacks", False)
     stamps.Stamps_LockCallbacks = True
 
-    nuke.Undo().begin("LGA_AutoStamps")
-    total = 0
     try:
-        # Pase 0: hidden inputs (conexiones ocultas). Va primero para que los
-        # otros pases no los pisen (los Wireds nuevos ya son Stamps).
-        total += process_hidden_inputs(stamps)
-        # Pase 1: distribuciones por Dots (un origen -> muchos destinos).
-        total += process_dot_distributions(stamps)
-        # Pase 2: conexiones largas directas (sin Dots).
-        total += process_long_connections(stamps)
-    finally:
-        nuke.Undo().end()
-        stamps.Stamps_LockCallbacks = prev_lock
+        # FASE 1: preview con undo DESHABILITADO. Todo lo que se crea/revierte
+        # aca NO entra al historial de undo (asi los grupos cancelados no dejan
+        # "basura" que luego, al hacer Ctrl+Z, dispara la avalancha de errores
+        # de los callbacks de stamps al recrear nodos).
+        nuke.Undo().disable()
+        try:
+            decisions = preview_all(stamps)
+        finally:
+            nuke.Undo().enable()
 
-    if total == 0:
-        debug_print("LGA_AutoStamps: no se aplico ningun reemplazo.")
-        nuke.message("LGA_AutoStamps: no se aplico ningun reemplazo.")
-        return
+        if not decisions:
+            debug_print("LGA_AutoStamps: no se aplico ningun reemplazo.")
+            nuke.message("LGA_AutoStamps: no se aplico ningun reemplazo.")
+            return
+
+        # FASE 2: apply con un unico nuke.Undo(). Solo creaciones limpias de los
+        # grupos aceptados -> un solo Ctrl+Z deshace todo sin avalancha.
+        nuke.Undo().begin("LGA_AutoStamps")
+        try:
+            total = apply_all(stamps, decisions)
+        finally:
+            nuke.Undo().end()
+    finally:
+        stamps.Stamps_LockCallbacks = prev_lock
 
     debug_print("LGA_AutoStamps: {0} grupo/s reemplazado/s.".format(total))
 
