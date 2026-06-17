@@ -10,9 +10,9 @@ Node Graph mas limpio y legible.
 
 Encontrar y reemplazar por Stamps:
 
-1. **Conexiones muy largas** entre dos nodos lejanos. *(en desarrollo)*
+1. **Conexiones muy largas** entre dos nodos lejanos. *(v0.01 - hecho)*
 2. **Conexiones desde un nodo a un Dot y de ahi a multiples lugares** (un Dot que
-   distribuye una misma salida a varios destinos). *(pendiente)*
+   distribuye una misma salida a varios destinos). *(v0.02 - hecho)*
 3. **Conexiones con hidden inputs** (inputs ocultos / clones a distancia). *(pendiente)*
 
 El desarrollo es **incremental**: empezamos por lo mas simple y vamos sumando casos.
@@ -46,24 +46,36 @@ El modulo `stamps` ya esta importado en la sesion de Nuke (se carga desde
 
 ---
 
-## Estado actual: v0.1 (simple)
+## Estado actual
 
 **Archivo:** `py/LGA_AutoStamps.py` — funcion principal `main()`.
 
-### Que hace
+`main()` corre dos pases dentro de un unico bloque `nuke.Undo()`:
 
-1. Recorre **todas** las conexiones del script (`node.input(i)` de cada nodo).
-2. Mide la **distancia euclidea** entre los centros del nodo padre (fuente) y el
-   hijo (destino).
-3. Si la distancia supera `DISTANCE_THRESHOLD`:
-   - Crea un **Anchor** justo debajo del padre y lo conecta a el.
-   - Crea un **Wired** justo arriba del hijo.
-   - Reconecta el input del hijo al Wired (lo que desconecta del padre).
-4. Todo dentro de un bloque `nuke.Undo()` para poder deshacer en un paso.
+### Pase 1 — Distribuciones por Dots (v0.02)
+
+Para cada nodo origen (no-Dot, no-Stamp) recorre **solo a traves de Dots** su
+arbol de salida y junta los destinos finales (nodos reales alimentados por algun
+Dot del arbol). Si hay `>= MIN_DESTINATIONS` destinos:
+
+1. Crea **1 Anchor** justo debajo del origen, conectado a el.
+2. Crea **1 Wired por destino**, justo arriba de cada uno, y reconecta el input
+   correspondiente del destino al Wired.
+3. **Borra todos los Dots** del arbol.
+
+Los arboles de Dots son **disjuntos** (un Dot tiene un solo input), por eso se
+pueden relevar todos primero y procesar despues sin pisarse.
+
+### Pase 2 — Conexiones largas directas (v0.01)
+
+Recorre las conexiones directas (ignorando Dots y Stamps en ambos extremos) y,
+si la **distancia euclidea** entre centros supera `DISTANCE_THRESHOLD`, reemplaza
+la conexion por Anchor (debajo del padre) + Wired (arriba del hijo).
 
 ### Variables de configuracion (arriba del archivo)
 
-- `DISTANCE_THRESHOLD = 250` — umbral de distancia en px.
+- `DISTANCE_THRESHOLD = 250` — umbral de distancia en px (pase 2).
+- `MIN_DESTINATIONS = 2` — minimo de destinos para colapsar un arbol de Dots (pase 1).
 - `ANCHOR_GAP_Y = 40` — separacion vertical padre → Anchor.
 - `WIRED_GAP_Y = 40` — separacion vertical Wired → hijo.
 - `SKIP_CLASSES` — clases ignoradas (`Viewer`, `BackdropNode`, `Root`).
@@ -89,20 +101,30 @@ LGA_AutoStamps.main()
   depender de la seleccion.)
 - **`stamps.wired()` ya posiciona** el nodo relativo al Anchor y setea
   `hide_input`. Lo reposicionamos despues sobre el hijo.
+- **El pase de distancia DEBE ignorar Dots y Stamps.** Si no, despues de crear
+  los Stamps detecta el cable oculto Wired→Anchor (que es largo) e intenta
+  estamparlo de nuevo. Filtramos con `stamps.isAnchor` / `stamps.isWired`.
+- **No hashear nodos directamente:** para deduplicar Dots/destinos usamos
+  `node.name()` (string) como clave, mas seguro que poner objetos Node en un set.
 - Medimos distancia entre **centros** (`xpos + screenWidth/2`, `ypos + screenHeight/2`),
   no entre esquinas.
 - `setInput(i, nuevoNodo)` reemplaza el input anterior: no hace falta desconectar
   a mano antes de reconectar.
+- Recorremos el grafo con un mapa `{nodo: [(downstream, input_index), ...]}`
+  construido una sola vez (mas robusto que `node.dependent()`).
 
 ---
 
 ## Pendientes / Roadmap
 
-- [ ] Confirmar que el caso simple (2 nodos) funciona bien en Nuke real.
-- [ ] Decidir el criterio de distancia (¿euclidea, solo vertical, solo horizontal?).
-- [ ] Reusar Anchor existente si la fuente ya tiene uno (evitar duplicados).
-- [ ] Caso Dot → multiples destinos: 1 Anchor en la fuente + 1 Wired por destino.
+- [x] Caso simple (2 nodos lejanos) — v0.01.
+- [x] Caso Dot → multiples destinos: 1 Anchor en la fuente + 1 Wired por destino — v0.02.
+- [x] Filtrar para no actuar sobre nodos que ya son Stamps/Dots.
 - [ ] Caso hidden inputs / clones.
-- [ ] Filtrar para no actuar sobre nodos que ya son Stamps/Dots.
+- [ ] Caso ruteo por Dots con **1 solo destino** (codos de ruteo largo).
+- [ ] Reusar Anchor existente si la fuente ya tiene uno (evitar duplicados).
+- [ ] Multi-input al mismo destino (origen llega por input 0 y 1): hoy crea 2
+      Wireds que pueden solaparse arriba del destino.
+- [ ] Decidir el criterio de distancia (¿euclidea, solo vertical, solo horizontal?).
 - [ ] Opcion de trabajar solo sobre la seleccion vs. todo el script.
 - [ ] Registro en `menu.py` (atajo + icono) cuando este maduro.
