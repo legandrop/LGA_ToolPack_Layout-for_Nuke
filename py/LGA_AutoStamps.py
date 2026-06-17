@@ -1,7 +1,7 @@
 """
 __________________________________________________________
 
-  LGA_AutoStamps v0.02 | Lega
+  LGA_AutoStamps v0.03 | Lega
   Encuentra conexiones "sucias" entre nodos y las reemplaza
   automaticamente por Stamps (Anchor + Wired) de Adrian Pueyo.
 
@@ -13,6 +13,15 @@ __________________________________________________________
     - Distribuciones por Dots: cuando un nodo reparte su salida a
       traves de un arbol de Dots hacia varios destinos, se borran
       los Dots y se crea 1 Anchor en el origen + 1 Wired por destino.
+
+  v0.03:
+    - Hidden inputs: nodos con 'hide_input' (conexion oculta a un
+      origen lejano).
+        * Si es un Dot: se borra y se reemplaza por un Wired.
+        * Si es otro nodo: no se toca, solo se le alimenta un Wired.
+        * Naming: si el nodo oculto tiene 'label', Anchor y Wired
+          toman ese label; si no, el nombre derivado del origen.
+        * Reuse: un solo Anchor por nodo origen (1 padre, N hijos).
 __________________________________________________________
 
 """
@@ -132,11 +141,13 @@ def derive_title(stamps, src):
     return title
 
 
-def create_anchor_below(stamps, source):
-    """Crea un Anchor conectado a 'source' y lo posiciona justo debajo."""
+def create_anchor_below(stamps, source, title=None):
+    """Crea un Anchor conectado a 'source' y lo posiciona justo debajo.
+    Si 'title' es None, se deriva del nodo origen."""
     deselect_all()
     source.setSelected(True)
-    title = derive_title(stamps, source)
+    if title is None:
+        title = derive_title(stamps, source)
     node_type = stamps.nodeType(stamps.realInput(source))
 
     anchor = stamps.anchor(
@@ -165,6 +176,142 @@ def create_wired_above(stamps, anchor, dst):
 
 
 # ----------------------------------------------------------------------
+# PASE 0: HIDDEN INPUTS (v0.03)
+# ----------------------------------------------------------------------
+
+def has_hidden_input(n):
+    """True si el nodo tiene el knob hide_input activo y un input(0) real."""
+    k = n.knob("hide_input")
+    return bool(k and k.value() and n.input(0) is not None)
+
+
+def node_label(n):
+    """Devuelve la primera linea del label del nodo, limpia, o ''."""
+    k = n.knob("label")
+    if not k:
+        return ""
+    return k.value().split("\n")[0].strip()
+
+
+def pickup_title(stamps, pickup, source):
+    """Titulo para los Stamps de un hidden input.
+    Regla del label: si el nodo oculto tiene label, se usa ese; si no, se
+    deriva del nodo origen."""
+    label = node_label(pickup)
+    if label:
+        return label
+    return derive_title(stamps, source)
+
+
+def existing_anchor_for_source(stamps, source):
+    """Busca un Anchor ya existente cuyo input(0) sea 'source'. None si no hay."""
+    try:
+        for a in stamps.allAnchors():
+            ai = a.input(0)
+            if ai is not None and ai.name() == source.name():
+                return a
+    except Exception:
+        pass
+    return None
+
+
+def get_or_create_anchor(stamps, source, title, registry):
+    """Reuse: un solo Anchor por nodo origen. Devuelve el Anchor (lo crea si
+    hace falta) usando 'title' solo cuando se crea por primera vez."""
+    key = source.name()
+    if key in registry:
+        return registry[key]
+    anchor = existing_anchor_for_source(stamps, source)
+    if anchor is None:
+        anchor = create_anchor_below(stamps, source, title=title)
+    registry[key] = anchor
+    return anchor
+
+
+def find_hidden_inputs(stamps):
+    """Devuelve la lista de nodos con hidden input (excluyendo Stamps, que
+    tambien usan hide_input por diseno)."""
+    pickups = []
+    for n in nuke.allNodes():
+        if n.Class() in SKIP_CLASSES:
+            continue
+        if is_stamp(stamps, n):
+            continue
+        if has_hidden_input(n):
+            pickups.append(n)
+    return pickups
+
+
+def replace_hidden_dot(stamps, dot, anchor, children):
+    """Borra un Dot con hidden input y lo reemplaza por un Wired (en la misma
+    posicion). Los nodos que colgaban del Dot se reconectan al Wired."""
+    dot_name = dot.name()  # capturar antes de borrar
+    wired = stamps.wired(anchor)
+    wx = int(dot.xpos() + dot.screenWidth() / 2 - wired.screenWidth() / 2)
+    wy = int(dot.ypos() + dot.screenHeight() / 2 - wired.screenHeight() / 2)
+    wired.setXYpos(wx, wy)
+    deselect_all()
+
+    for (dep, idx) in children.get(dot, []):
+        dep.setInput(idx, wired)
+        debug_print(
+            "Reconectado: {0}.input({1}) -> {2}".format(dep.name(), idx, wired.name())
+        )
+
+    nuke.delete(dot)
+    debug_print("Dot oculto '{0}' borrado y reemplazado por Wired.".format(dot_name))
+
+
+def feed_wired_into_node(stamps, node, anchor):
+    """Para un nodo no-Dot con hidden input: NO se borra. Se crea un Wired
+    arriba y se conecta a su input(0). Se muestra el input (hide_input=False)
+    para que la conexion corta sea visible."""
+    wired = create_wired_above(stamps, anchor, node)
+    node.setInput(0, wired)
+    try:
+        node["hide_input"].setValue(False)
+    except Exception:
+        pass
+    debug_print(
+        "Nodo '{0}' (hidden input) alimentado por Wired '{1}'.".format(
+            node.name(), wired.name()
+        )
+    )
+
+
+def process_hidden_inputs(stamps):
+    """Releva y procesa todos los hidden inputs. Devuelve la cantidad.
+    Reuse de Anchor por nodo origen via 'registry'."""
+    children = build_children_map()
+    pickups = find_hidden_inputs(stamps)
+    registry = {}  # source.name() -> Anchor
+    count = 0
+
+    for node in pickups:
+        source = node.input(0)
+        if source is None:
+            continue
+        # No tiene sentido anclar a un Stamp o a clases ignoradas.
+        if is_stamp(stamps, source) or source.Class() in SKIP_CLASSES:
+            continue
+
+        is_dot = node.Class() == "Dot"
+        # Nota: un Dot oculto sin nada colgando igual se convierte; es un
+        # pickup que el compositor coloco a proposito (preservamos el punto).
+
+        title = pickup_title(stamps, node, source)
+        anchor = get_or_create_anchor(stamps, source, title, registry)
+
+        if is_dot:
+            replace_hidden_dot(stamps, node, anchor, children)
+        else:
+            feed_wired_into_node(stamps, node, anchor)
+        count += 1
+
+    return count
+
+
+# ----------------------------------------------------------------------
 # PASE 1: DISTRIBUCIONES POR DOTS (v0.02)
 # ----------------------------------------------------------------------
 
@@ -190,16 +337,24 @@ def collect_dot_tree(source, children):
       - leaves: lista de (destino, input_index) de los nodos reales (no Dot)
                 alimentados por algun Dot del arbol.
     Los hijos directos no-Dot de 'source' NO se consideran (no son ruteo).
+    Los Dots con hidden input se ignoran: son pickups remotos que maneja
+    el pase de hidden inputs, no ruteo visible.
     """
     dots = []
     leaves = []
     seen_dots = set()       # por nombre
     seen_leaves = set()     # por (nombre, idx)
 
+    def is_routing_dot(n):
+        if n.Class() != "Dot":
+            return False
+        k = n.knob("hide_input")
+        return not (k and k.value())
+
     stack = []
-    # Arranque: solo seguimos los Dots colgados directamente del source.
+    # Arranque: solo seguimos los Dots (de ruteo) colgados del source.
     for (dep, idx) in children.get(source, []):
-        if dep.Class() == "Dot" and dep.name() not in seen_dots:
+        if is_routing_dot(dep) and dep.name() not in seen_dots:
             seen_dots.add(dep.name())
             dots.append(dep)
             stack.append(dep)
@@ -208,6 +363,8 @@ def collect_dot_tree(source, children):
         cur = stack.pop()
         for (dep, idx) in children.get(cur, []):
             if dep.Class() == "Dot":
+                if not is_routing_dot(dep):
+                    continue  # pickup oculto: lo ignora este pase
                 if dep.name() not in seen_dots:
                     seen_dots.add(dep.name())
                     dots.append(dep)
@@ -346,6 +503,9 @@ def main():
     nuke.Undo().begin("LGA_AutoStamps")
     total = 0
     try:
+        # Pase 0: hidden inputs (conexiones ocultas). Va primero para que los
+        # otros pases no los pisen (los Wireds nuevos ya son Stamps).
+        total += process_hidden_inputs(stamps)
         # Pase 1: distribuciones por Dots (un origen -> muchos destinos).
         total += process_dot_distributions(stamps)
         # Pase 2: conexiones largas directas (sin Dots).
