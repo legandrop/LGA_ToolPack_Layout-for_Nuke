@@ -1,22 +1,18 @@
 """
 __________________________________________________________
 
-  LGA_AutoStamps v0.80 | Lega
+  LGA_AutoStamps v0.90 | Lega
   Encuentra conexiones "sucias" entre nodos y las reemplaza
   automaticamente por Stamps (Anchor + Wired) de Adrian Pueyo.
 
   v0.10:
-    - Conexiones largas directas (padre -> hijo) mas alla de un
-      threshold de distancia: se reemplazan por Anchor + Wired.
+    - Conexiones largas directas (padre -> hijo) mas alla de un DISTANCE_THRESHOLD de distancia: se reemplazan por Anchor + Wired.
 
   v0.20:
-    - Distribuciones por Dots: cuando un nodo reparte su salida a
-      traves de un arbol de Dots hacia varios destinos, se borran
-      los Dots y se crea 1 Anchor en el origen + 1 Wired por destino.
+    - Distribuciones por Dots: cuando un nodo reparte su salida a traves de un arbol de Dots hacia varios destinos, se borran los Dots y se crea 1 Anchor en el origen + 1 Wired por destino.
 
   v0.30:
-    - Hidden inputs: nodos con 'hide_input' (conexion oculta a un
-      origen lejano).
+    - Hidden inputs: nodos con 'hide_input' (conexion oculta a un origen lejano).
         * Si es un Dot: se borra y se reemplaza por un Wired.
         * Si es otro nodo: no se toca, solo se le alimenta un Wired.
         * Naming: si el nodo oculto tiene 'label', Anchor y Wired
@@ -24,42 +20,32 @@ __________________________________________________________
         * Reuse: un solo Anchor por nodo origen (1 padre, N hijos).
 
   v0.40:
-    - Confirmacion por grupo: antes de dejar cada Stamp (padre + sus
-      hijos), se crean los Stamps, se hace zoom a ellos y se muestra un
-      cartel con el nombre sugerido (editable) y botones Reemplazar /
-      Cancelar.
+    - Confirmacion por grupo: antes de dejar cada Stamp (padre + sus hijos), se crean los Stamps, se hace zoom a ellos y se muestra un cartel con el nombre sugerido (editable) y botones Reemplazar / Cancelar.
         * Cancelar revierte SOLO ese grupo (manual, sin tocar el Undo).
         * Todo corre dentro de un unico nuke.Undo(): un solo Ctrl+Z
           revierte todos los grupos aceptados.
 
   v0.50:
-    - El zoom encuadra el CONTEXTO (el padre del padre = nodo origen, y
-      los hijos de los hijos = nodos destino), no los Stamps solos.
+    - El zoom encuadra el CONTEXTO (el padre del padre = nodo origen, y los hijos de los hijos = nodos destino), no los Stamps solos.
     - ZOOM_OUT_FACTOR: variable para alejar mas el zoom y dar contexto.
-    - El cartel es NO bloqueante: el usuario puede navegar el DAG
-      mientras decide (event loop anidado).
+    - El cartel es NO bloqueante: el usuario puede navegar el DAG mientras decide (event loop anidado).
 
   v0.60:
     - Arquitectura two-phase:
-        * Fase 1 (preview, con undo DESHABILITADO): crea Stamps, zoom,
-          cartel, junta decisiones y revierte cada grupo.
-        * Fase 2 (apply, con un unico nuke.Undo): re-aplica solo los
-          aceptados, sin cartel.
-      Asi los grupos cancelados no dejan "basura" en el historial y un
-      solo Ctrl+Z deshace todo sin disparar la avalancha de errores de
-      los callbacks de stamps.
+        * Fase 1 (preview, con undo DESHABILITADO): crea Stamps, zoom, cartel, junta decisiones y revierte cada grupo.
+        * Fase 2 (apply, con un unico nuke.Undo): re-aplica solo los aceptados, sin cartel.
+      Asi los grupos cancelados no dejan "basura" en el historial y un solo Ctrl+Z deshace todo sin disparar la avalancha de errores de los callbacks de stamps.
 
   v0.70:
-    - Cartel con estilo LGA_NodeLabel: frameless, fondo translucido,
-      sombra, borde redondeado, barra de titulo arrastrable (drag & drop)
-      y botones estilizados. Aparece centrado en el DAG.
+    - Cartel con estilo LGA_NodeLabel: frameless, fondo translucido, sombra, borde redondeado, barra de titulo arrastrable (drag & drop) y botones estilizados. Aparece centrado en el DAG.
 
   v0.80:
-    - Hold-to-peek: manteniendo apretado el boton "Mantené apretado para
-      ver lo que había" el cartel muestra las conexiones ORIGINALES; al
-      soltarlo vuelve a mostrar los Stamps. Mismo encuadre para comparar
-      A/B. Como la preview corre con undo deshabilitado, el toggle
-      revierte/reconstruye libremente sin ensuciar el historial.
+    - Hold-to-peek: manteniendo apretado el boton "Mantené apretado para ver lo que había" el cartel muestra las conexiones ORIGINALES; al soltarlo vuelve a mostrar los Stamps. Mismo encuadre para comparar A/B. Como la preview corre con undo deshabilitado, el toggle  revierte/reconstruye libremente sin ensuciar el historial.
+
+  v0.90:
+    - Ventana inicial de opciones para elegir que pases correr antes del preview.
+    - Dialog de confirmacion en ingles con acciones explicitas: Skip, Apply y Apply & Stop.
+    - Padding configurable por ventana y sin mensaje final cuando no se aplican cambios.
 __________________________________________________________
 
 """
@@ -319,6 +305,10 @@ DIALOG_SHADOW_BLUR = 25
 DIALOG_SHADOW_OPACITY = 60
 DIALOG_SHADOW_OFFSET = 3
 DIALOG_SHADOW_MARGIN = 25
+OPTIONS_DIALOG_PADDING_X = 18
+OPTIONS_DIALOG_PADDING_Y = 14
+REPLACE_DIALOG_PADDING_X = 18
+REPLACE_DIALOG_PADDING_Y = 14
 
 DIALOG_BUTTON_STYLE = """
     QPushButton {
@@ -336,6 +326,197 @@ DIALOG_BUTTON_STYLE = """
         background-color: #303030;
     }
 """
+
+
+ACTION_SKIP = "skip"
+ACTION_APPLY = "apply"
+ACTION_APPLY_AND_STOP = "apply_and_stop"
+
+PASS_HIDDEN_INPUTS = "hidden_inputs"
+PASS_DOT_DISTRIBUTIONS = "dot_distributions"
+PASS_LONG_CONNECTIONS = "long_connections"
+
+
+class AutoStampsOptionsDialog(QtWidgets.QDialog):
+    """Initial options dialog. Reuses the existing frameless dark style."""
+
+    def __init__(self, parent=None):
+        super(AutoStampsOptionsDialog, self).__init__(parent)
+        self.drag_position = None
+
+        self.setWindowFlags(
+            QtCore.Qt.FramelessWindowHint
+            | QtCore.Qt.Window
+            | QtCore.Qt.WindowStaysOnTopHint
+        )
+        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+        self.setStyleSheet("background-color: transparent;")
+        self.setModal(False)
+
+        main_layout = QtWidgets.QVBoxLayout()
+        main_layout.setContentsMargins(
+            DIALOG_SHADOW_MARGIN, DIALOG_SHADOW_MARGIN,
+            DIALOG_SHADOW_MARGIN, DIALOG_SHADOW_MARGIN,
+        )
+        main_layout.setSpacing(0)
+
+        self.main_frame = QtWidgets.QFrame()
+        self.main_frame.setStyleSheet(
+            """
+            QFrame {
+                background-color: #1f1f1f;
+                border: 1px solid #555555;
+                border-radius: 10px;
+                color: #CCCCCC;
+            }
+            """
+        )
+        shadow = QtWidgets.QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(DIALOG_SHADOW_BLUR)
+        shadow.setColor(QtGui.QColor(0, 0, 0, DIALOG_SHADOW_OPACITY))
+        shadow.setOffset(DIALOG_SHADOW_OFFSET, DIALOG_SHADOW_OFFSET)
+        self.main_frame.setGraphicsEffect(shadow)
+
+        frame_layout = QtWidgets.QVBoxLayout(self.main_frame)
+        frame_layout.setContentsMargins(0, 0, 0, 0)
+        frame_layout.setSpacing(0)
+
+        self.title_bar = QtWidgets.QLabel("Auto Stamps")
+        self.title_bar.setFixedHeight(30)
+        self.title_bar.setStyleSheet(
+            """
+            QLabel {
+                background-color: #1f1f1f;
+                color: #cccccc;
+                padding-left: 10px;
+                border-top-left-radius: 10px;
+                border-top-right-radius: 10px;
+                border: none;
+                font-weight: bold;
+            }
+            """
+        )
+        self.title_bar.setAlignment(QtCore.Qt.AlignCenter)
+        self.title_bar.mousePressEvent = self.start_move
+        self.title_bar.mouseMoveEvent = self.move_window
+        self.title_bar.mouseReleaseEvent = self.stop_move
+        frame_layout.addWidget(self.title_bar)
+
+        content_widget = QtWidgets.QWidget()
+        content_widget.setStyleSheet(
+            """
+            QWidget {
+                background-color: #1f1f1f;
+                border: none;
+                border-bottom-left-radius: 10px;
+                border-bottom-right-radius: 10px;
+            }
+            QCheckBox {
+                background: transparent;
+                border: none;
+                color: #CCCCCC;
+                font-size: 12px;
+                spacing: 8px;
+            }
+            QCheckBox::indicator {
+                width: 14px;
+                height: 14px;
+            }
+            """
+        )
+        content_layout = QtWidgets.QVBoxLayout(content_widget)
+        content_layout.setContentsMargins(
+            OPTIONS_DIALOG_PADDING_X, OPTIONS_DIALOG_PADDING_Y,
+            OPTIONS_DIALOG_PADDING_X, OPTIONS_DIALOG_PADDING_Y,
+        )
+        content_layout.setSpacing(8)
+
+        search_label = QtWidgets.QLabel("Search for:")
+        search_label.setStyleSheet(
+            "QLabel { background: transparent; border: none; "
+            "color: #CCCCCC; font-size: 12px; }"
+        )
+        content_layout.addWidget(search_label)
+
+        self.hidden_inputs_check = QtWidgets.QCheckBox("Search hidden inputs")
+        self.hidden_inputs_check.setToolTip(
+            "Find nodes with hidden input connections and replace them with stamps."
+        )
+        self.hidden_inputs_check.setChecked(True)
+        content_layout.addWidget(self.hidden_inputs_check)
+
+        self.dot_distributions_check = QtWidgets.QCheckBox("Search dot distributions")
+        self.dot_distributions_check.setToolTip(
+            "Find Dot trees that distribute one source to multiple destinations."
+        )
+        self.dot_distributions_check.setChecked(True)
+        content_layout.addWidget(self.dot_distributions_check)
+
+        self.long_connections_check = QtWidgets.QCheckBox("Search long connections")
+        self.long_connections_check.setToolTip(
+            "Find direct connections longer than the distance threshold."
+        )
+        self.long_connections_check.setChecked(True)
+        content_layout.addWidget(self.long_connections_check)
+
+        content_layout.addSpacing(4)
+        buttons_layout = QtWidgets.QHBoxLayout()
+        buttons_layout.setSpacing(10)
+        self.cancel_button = QtWidgets.QPushButton("Cancel")
+        self.cancel_button.setFixedHeight(30)
+        self.cancel_button.setStyleSheet(DIALOG_BUTTON_STYLE)
+        self.start_button = QtWidgets.QPushButton("Start")
+        self.start_button.setFixedHeight(30)
+        self.start_button.setStyleSheet(DIALOG_BUTTON_STYLE)
+        buttons_layout.addWidget(self.cancel_button)
+        buttons_layout.addWidget(self.start_button)
+        content_layout.addLayout(buttons_layout)
+
+        frame_layout.addWidget(content_widget)
+        main_layout.addWidget(self.main_frame)
+        self.setLayout(main_layout)
+
+        self.cancel_button.clicked.connect(self.reject)
+        self.start_button.clicked.connect(self._start)
+
+        self.adjustSize()
+
+    def selected_passes(self):
+        passes = set()
+        if self.hidden_inputs_check.isChecked():
+            passes.add(PASS_HIDDEN_INPUTS)
+        if self.dot_distributions_check.isChecked():
+            passes.add(PASS_DOT_DISTRIBUTIONS)
+        if self.long_connections_check.isChecked():
+            passes.add(PASS_LONG_CONNECTIONS)
+        return passes
+
+    def _start(self):
+        if not self.selected_passes():
+            nuke.message("Select at least one search option.")
+            return
+        self.accept()
+
+    def start_move(self, event):
+        if event.button() == QtCore.Qt.LeftButton:
+            self.drag_position = event.globalPos() - self.frameGeometry().topLeft()
+            event.accept()
+
+    def move_window(self, event):
+        if self.drag_position and event.buttons() & QtCore.Qt.LeftButton:
+            self.move(event.globalPos() - self.drag_position)
+            event.accept()
+
+    def stop_move(self, event):
+        self.drag_position = None
+
+    def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key_Escape:
+            self.reject()
+        elif event.key() in (QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter):
+            self._start()
+        else:
+            super(AutoStampsOptionsDialog, self).keyPressEvent(event)
 
 
 class ReplaceDialog(QtWidgets.QDialog):
@@ -425,18 +606,33 @@ class ReplaceDialog(QtWidgets.QDialog):
             """
         )
         content_layout = QtWidgets.QVBoxLayout(content_widget)
-        content_layout.setContentsMargins(10, 10, 10, 10)
+        content_layout.setContentsMargins(
+            REPLACE_DIALOG_PADDING_X, REPLACE_DIALOG_PADDING_Y,
+            REPLACE_DIALOG_PADDING_X, REPLACE_DIALOG_PADDING_Y,
+        )
         content_layout.setSpacing(0)
 
-        hijos = "hijo" if n_children == 1 else "hijos"
-        info = QtWidgets.QLabel("Nombre del nuevo Stamp  ({0} {1}):".format(
-            n_children, hijos))
+        if n_children == 1:
+            info_text = "This stamp will replace connections to 1 node."
+        else:
+            info_text = "This stamp will replace connections to {0} nodes.".format(
+                n_children
+            )
+        info = QtWidgets.QLabel(info_text)
         info.setStyleSheet(
             "QLabel { background: transparent; border: none; "
             "color: #CCCCCC; font-size: 12px; }"
         )
         content_layout.addWidget(info)
         content_layout.addSpacing(8)
+
+        name_label = QtWidgets.QLabel("Name:")
+        name_label.setStyleSheet(
+            "QLabel { background: transparent; border: none; "
+            "color: #CCCCCC; font-size: 12px; }"
+        )
+        content_layout.addWidget(name_label)
+        content_layout.addSpacing(4)
 
         self.name_edit = QtWidgets.QLineEdit()
         self.name_edit.setText(suggested_name)
@@ -462,20 +658,24 @@ class ReplaceDialog(QtWidgets.QDialog):
         # Botones.
         buttons_layout = QtWidgets.QHBoxLayout()
         buttons_layout.setSpacing(10)
-        self.cancel_button = QtWidgets.QPushButton("Cancelar")
-        self.cancel_button.setFixedHeight(30)
-        self.cancel_button.setStyleSheet(DIALOG_BUTTON_STYLE)
-        self.replace_button = QtWidgets.QPushButton("Reemplazar")
-        self.replace_button.setFixedHeight(30)
-        self.replace_button.setStyleSheet(DIALOG_BUTTON_STYLE)
-        buttons_layout.addWidget(self.cancel_button)
-        buttons_layout.addWidget(self.replace_button)
+        self.skip_button = QtWidgets.QPushButton("Skip")
+        self.skip_button.setFixedHeight(30)
+        self.skip_button.setStyleSheet(DIALOG_BUTTON_STYLE)
+        self.apply_button = QtWidgets.QPushButton("Apply")
+        self.apply_button.setFixedHeight(30)
+        self.apply_button.setStyleSheet(DIALOG_BUTTON_STYLE)
+        self.apply_stop_button = QtWidgets.QPushButton("Apply & Stop")
+        self.apply_stop_button.setFixedHeight(30)
+        self.apply_stop_button.setStyleSheet(DIALOG_BUTTON_STYLE)
+        buttons_layout.addWidget(self.skip_button)
+        buttons_layout.addWidget(self.apply_button)
+        buttons_layout.addWidget(self.apply_stop_button)
         content_layout.addLayout(buttons_layout)
 
         # Boton "mantener apretado" para ver lo que habia (hold-to-peek).
         content_layout.addSpacing(8)
         self.peek_button = QtWidgets.QPushButton(
-            "Mantené apretado para ver lo que había"
+            "Hold to preview original connections"
         )
         self.peek_button.setFixedHeight(30)
         self.peek_button.setStyleSheet(DIALOG_BUTTON_STYLE)
@@ -485,9 +685,11 @@ class ReplaceDialog(QtWidgets.QDialog):
         main_layout.addWidget(self.main_frame)
         self.setLayout(main_layout)
 
-        self.cancel_button.clicked.connect(self.reject)
-        self.replace_button.clicked.connect(self.accept)
-        self.name_edit.returnPressed.connect(self.accept)
+        self._action = ACTION_SKIP
+        self.skip_button.clicked.connect(self.skip)
+        self.apply_button.clicked.connect(self.apply)
+        self.apply_stop_button.clicked.connect(self.apply_and_stop)
+        self.name_edit.returnPressed.connect(self.apply)
         # pressed = mouse abajo (ver original); released = mouse arriba (ver Stamps).
         self.peek_button.pressed.connect(self._peek_start)
         self.peek_button.released.connect(self._peek_end)
@@ -496,6 +698,21 @@ class ReplaceDialog(QtWidgets.QDialog):
 
     def get_name(self):
         return self.name_edit.text().strip()
+
+    def get_action(self):
+        return self._action
+
+    def skip(self):
+        self._action = ACTION_SKIP
+        self.done(QtWidgets.QDialog.Rejected)
+
+    def apply(self):
+        self._action = ACTION_APPLY
+        self.done(QtWidgets.QDialog.Accepted)
+
+    def apply_and_stop(self):
+        self._action = ACTION_APPLY_AND_STOP
+        self.done(QtWidgets.QDialog.Accepted)
 
     # --- Hold to peek (ver original mientras se mantiene apretado el boton) ---
     def _peek_start(self):
@@ -526,9 +743,9 @@ class ReplaceDialog(QtWidgets.QDialog):
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Escape:
-            self.reject()
+            self.skip()
         elif event.key() in (QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter):
-            self.accept()
+            self.apply()
         else:
             super(ReplaceDialog, self).keyPressEvent(event)
 
@@ -554,12 +771,39 @@ def center_dialog_on_dag(dlg):
     dlg.move(cx - dlg.width() // 2, cy - dlg.height() // 2)
 
 
+def show_options_dialog():
+    """Shows the initial options dialog. Returns a set of enabled passes, or None
+    if the user cancels."""
+    dlg = AutoStampsOptionsDialog()
+    center_dialog_on_dag(dlg)
+
+    loop = QtCore.QEventLoop()
+    result = {"code": QtWidgets.QDialog.Rejected}
+
+    def _on_finished(code):
+        result["code"] = code
+        loop.quit()
+
+    dlg.finished.connect(_on_finished)
+    dlg.show()
+    dlg.raise_()
+    dlg.activateWindow()
+    loop.exec_()
+
+    if result["code"] == QtWidgets.QDialog.Accepted:
+        selected = dlg.selected_passes()
+    else:
+        selected = None
+    dlg.deleteLater()
+    return selected
+
+
 def show_replace_dialog(suggested_name, n_children, on_peek_start=None,
                         on_peek_end=None):
     """Muestra el cartel NO bloqueante centrado en el DAG. Espera la respuesta
     con un event loop anidado (el DAG sigue navegable).
     on_peek_start/on_peek_end: callbacks del hold-to-peek (ver original).
-    Devuelve (accepted, name)."""
+    Devuelve (action, name)."""
     dlg = ReplaceDialog(suggested_name, n_children, on_peek_start, on_peek_end)
     center_dialog_on_dag(dlg)
 
@@ -579,9 +823,9 @@ def show_replace_dialog(suggested_name, n_children, on_peek_start=None,
     loop.exec_()
 
     name = dlg.get_name()
-    accepted = result["code"] == QtWidgets.QDialog.Accepted
+    action = dlg.get_action()
     dlg.deleteLater()
-    return accepted, name
+    return action, name
 
 
 def snapshot_dots(dots, children):
@@ -743,7 +987,7 @@ def preview_group(build_fn):
     """Construye el grupo (build_fn re-detecta y arma), hace zoom UNA vez y
     muestra el cartel con hold-to-peek (mantener tecla = ver lo original).
     La preview SIEMPRE termina revertida (estado original).
-    Devuelve (accepted, name, title)."""
+    Devuelve (action, name, title)."""
     state = {"tx": None, "anchor": None, "wireds": None, "dests": None, "title": None}
 
     def to_stamps():
@@ -763,19 +1007,19 @@ def preview_group(build_fn):
 
     to_stamps()  # arranca mostrando los Stamps (resultado)
     if state["tx"] is None:
-        return False, "", ""
+        return ACTION_SKIP, "", ""
 
     title = state["title"]
     # Zoom UNA sola vez al contexto, para comparar A/B en el mismo encuadre.
     zoom_to_nodes(group_context(state["anchor"], state["wireds"], state["dests"]))
 
-    accepted, name = show_replace_dialog(
+    action, name = show_replace_dialog(
         title, len(state["wireds"]),
         on_peek_start=to_original, on_peek_end=to_stamps,
     )
 
     to_original()  # la preview no deja nada: el apply re-crea lo aceptado
-    return accepted, name, title
+    return action, name, title
 
 
 # ----------------------------------------------------------------------
@@ -1093,7 +1337,7 @@ def redetect_dots(stamps, source_name):
 # FASE 1: PREVIEW  (con undo deshabilitado) -> junta decisiones
 # ----------------------------------------------------------------------
 
-def preview_all(stamps):
+def preview_all(stamps, enabled_passes):
     """Para cada grupo: construye los Stamps (re-detectables para el peek), hace
     zoom, muestra el cartel y registra la decision. preview_group revierte cada
     grupo. No se graba en el historial de undo (el llamador lo deshabilita).
@@ -1101,54 +1345,63 @@ def preview_all(stamps):
     decisions = {}
 
     def handle(gkey, build_fn):
-        accepted, name, title = preview_group(build_fn)
-        if accepted:
+        action, name, title = preview_group(build_fn)
+        if action in (ACTION_APPLY, ACTION_APPLY_AND_STOP):
             decisions[gkey] = name if name else title
+        return action == ACTION_APPLY_AND_STOP
 
     # Pase 0: hidden inputs.
-    _, hgroups = hidden_groups(stamps)
-    for (source, _pickups) in hgroups:
-        sname = source.name()
+    if PASS_HIDDEN_INPUTS in enabled_passes:
+        _, hgroups = hidden_groups(stamps)
+        for (source, _pickups) in hgroups:
+            sname = source.name()
 
-        def build_fn(sname=sname):
-            redet = redetect_hidden(stamps, sname)
-            if redet is None:
-                return None
-            ch, s, p = redet
-            return build_hidden_group(stamps, s, p, ch)
+            def build_fn(sname=sname):
+                redet = redetect_hidden(stamps, sname)
+                if redet is None:
+                    return None
+                ch, s, p = redet
+                return build_hidden_group(stamps, s, p, ch)
 
-        handle(key_hidden(source), build_fn)
+            if handle(key_hidden(source), build_fn):
+                return decisions
 
     # Pase 1: distribuciones por Dots.
-    children = build_children_map()
-    trees = find_dot_distributions(stamps, children, MIN_DESTINATIONS)
-    debug_print("Pase 1 (distribuciones por Dots): {0} arbol/es.".format(len(trees)))
-    for (source, _dots, _leaves) in trees:
-        sname = source.name()
+    if PASS_DOT_DISTRIBUTIONS in enabled_passes:
+        children = build_children_map()
+        trees = find_dot_distributions(stamps, children, MIN_DESTINATIONS)
+        debug_print(
+            "Pase 1 (distribuciones por Dots): {0} arbol/es.".format(len(trees))
+        )
+        for (source, _dots, _leaves) in trees:
+            sname = source.name()
 
-        def build_fn(sname=sname):
-            redet = redetect_dots(stamps, sname)
-            if redet is None:
-                return None
-            ch, s, d, l = redet
-            return build_dot_distribution(stamps, s, d, l, ch)
+            def build_fn(sname=sname):
+                redet = redetect_dots(stamps, sname)
+                if redet is None:
+                    return None
+                ch, s, d, l = redet
+                return build_dot_distribution(stamps, s, d, l, ch)
 
-        handle(key_dots(source), build_fn)
+            if handle(key_dots(source), build_fn):
+                return decisions
 
     # Pase 2: conexiones largas directas.
-    pairs = find_long_connections(stamps, DISTANCE_THRESHOLD)
-    debug_print("Pase 2 (conexiones largas): {0} conexion/es.".format(len(pairs)))
-    for (src, dst, input_index, dist) in pairs:
-        sname, dname, idx = src.name(), dst.name(), input_index
+    if PASS_LONG_CONNECTIONS in enabled_passes:
+        pairs = find_long_connections(stamps, DISTANCE_THRESHOLD)
+        debug_print("Pase 2 (conexiones largas): {0} conexion/es.".format(len(pairs)))
+        for (src, dst, input_index, dist) in pairs:
+            sname, dname, idx = src.name(), dst.name(), input_index
 
-        def build_fn(sname=sname, dname=dname, idx=idx):
-            s = nuke.toNode(sname)
-            d = nuke.toNode(dname)
-            if s is None or d is None:
-                return None
-            return build_long_connection(stamps, s, d, idx)
+            def build_fn(sname=sname, dname=dname, idx=idx):
+                s = nuke.toNode(sname)
+                d = nuke.toNode(dname)
+                if s is None or d is None:
+                    return None
+                return build_long_connection(stamps, s, d, idx)
 
-        handle(key_long(src, dst, input_index), build_fn)
+            if handle(key_long(src, dst, input_index), build_fn):
+                return decisions
 
     return decisions
 
@@ -1157,44 +1410,47 @@ def preview_all(stamps):
 # FASE 2: APPLY  (con undo habilitado) -> re-aplica solo los aceptados
 # ----------------------------------------------------------------------
 
-def apply_all(stamps, accepted):
+def apply_all(stamps, accepted, enabled_passes):
     """Re-detecta los grupos (el grafo volvio al original tras el preview) y
     aplica SOLO los que el usuario acepto, sin cartel. Devuelve la cantidad."""
     total = 0
 
     # Pase 0: hidden inputs.
-    children, hgroups = hidden_groups(stamps)
-    for (source, pickups) in hgroups:
-        gkey = key_hidden(source)
-        if gkey in accepted:
-            tx, anchor, wireds, dests, title = build_hidden_group(
-                stamps, source, pickups, children
-            )
-            apply_title(anchor, wireds, accepted[gkey])
-            total += 1
+    if PASS_HIDDEN_INPUTS in enabled_passes:
+        children, hgroups = hidden_groups(stamps)
+        for (source, pickups) in hgroups:
+            gkey = key_hidden(source)
+            if gkey in accepted:
+                tx, anchor, wireds, dests, title = build_hidden_group(
+                    stamps, source, pickups, children
+                )
+                apply_title(anchor, wireds, accepted[gkey])
+                total += 1
 
     # Pase 1: distribuciones por Dots.
-    children = build_children_map()
-    trees = find_dot_distributions(stamps, children, MIN_DESTINATIONS)
-    for (source, dots, leaves) in trees:
-        gkey = key_dots(source)
-        if gkey in accepted:
-            tx, anchor, wireds, dests, title = build_dot_distribution(
-                stamps, source, dots, leaves, children
-            )
-            apply_title(anchor, wireds, accepted[gkey])
-            total += 1
+    if PASS_DOT_DISTRIBUTIONS in enabled_passes:
+        children = build_children_map()
+        trees = find_dot_distributions(stamps, children, MIN_DESTINATIONS)
+        for (source, dots, leaves) in trees:
+            gkey = key_dots(source)
+            if gkey in accepted:
+                tx, anchor, wireds, dests, title = build_dot_distribution(
+                    stamps, source, dots, leaves, children
+                )
+                apply_title(anchor, wireds, accepted[gkey])
+                total += 1
 
     # Pase 2: conexiones largas directas.
-    pairs = find_long_connections(stamps, DISTANCE_THRESHOLD)
-    for (src, dst, input_index, dist) in pairs:
-        gkey = key_long(src, dst, input_index)
-        if gkey in accepted:
-            tx, anchor, wireds, dests, title = build_long_connection(
-                stamps, src, dst, input_index
-            )
-            apply_title(anchor, wireds, accepted[gkey])
-            total += 1
+    if PASS_LONG_CONNECTIONS in enabled_passes:
+        pairs = find_long_connections(stamps, DISTANCE_THRESHOLD)
+        for (src, dst, input_index, dist) in pairs:
+            gkey = key_long(src, dst, input_index)
+            if gkey in accepted:
+                tx, anchor, wireds, dests, title = build_long_connection(
+                    stamps, src, dst, input_index
+                )
+                apply_title(anchor, wireds, accepted[gkey])
+                total += 1
 
     return total
 
@@ -1206,6 +1462,10 @@ def apply_all(stamps, accepted):
 def main():
     stamps = _import_stamps()
     if stamps is None:
+        return
+
+    enabled_passes = show_options_dialog()
+    if enabled_passes is None:
         return
 
     # Silenciar los callbacks de Stamps durante toda la corrida: nosotros
@@ -1220,20 +1480,19 @@ def main():
         # de los callbacks de stamps al recrear nodos).
         nuke.Undo().disable()
         try:
-            decisions = preview_all(stamps)
+            decisions = preview_all(stamps, enabled_passes)
         finally:
             nuke.Undo().enable()
 
         if not decisions:
             debug_print("LGA_AutoStamps: no se aplico ningun reemplazo.")
-            nuke.message("LGA_AutoStamps: no se aplico ningun reemplazo.")
             return
 
         # FASE 2: apply con un unico nuke.Undo(). Solo creaciones limpias de los
         # grupos aceptados -> un solo Ctrl+Z deshace todo sin avalancha.
         nuke.Undo().begin("LGA_AutoStamps")
         try:
-            total = apply_all(stamps, decisions)
+            total = apply_all(stamps, decisions, enabled_passes)
         finally:
             nuke.Undo().end()
     finally:

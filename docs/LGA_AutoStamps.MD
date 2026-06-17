@@ -15,7 +15,7 @@ Encontrar y reemplazar por Stamps:
    distribuye una misma salida a varios destinos). *(v0.02 - hecho)*
 3. **Conexiones con hidden inputs** (inputs ocultos / clones a distancia). *(v0.03 - hecho)*
 4. **Confirmacion por grupo** antes de dejar cada Stamp (cartel con nombre +
-   Reemplazar/Cancelar, con zoom al grupo). *(v0.04 - hecho)*
+   Skip/Apply/Apply & Stop, con zoom al grupo). *(v0.04 - hecho)*
 5. **Zoom al contexto** (source + destinos) y **cartel no bloqueante**. *(v0.05 - hecho)*
 6. **Two-phase** (preview con undo off + apply limpio): cancelar no ensucia el
    historial y un Ctrl+Z deshace sin avalancha de errores. *(v0.06 - hecho)*
@@ -23,6 +23,9 @@ Encontrar y reemplazar por Stamps:
    centrado en el DAG. *(v0.07 - hecho)*
 8. **Hold-to-peek**: mantener una tecla muestra las conexiones originales (lo que
    había) vs los Stamps, para comparar antes de decidir. *(v0.80 - hecho)*
+
+9. **Opciones iniciales + acciones explicitas**: antes del preview se eligen los
+   pases a correr, y cada grupo devuelve `skip`, `apply` o `apply_and_stop`.
 
 El desarrollo es **incremental**: empezamos por lo mas simple y vamos sumando casos.
 
@@ -61,7 +64,12 @@ El modulo `stamps` ya esta importado en la sesion de Nuke (se carga desde
 
 `main()` usa una arquitectura **two-phase** (v0.06):
 
-1. **Fase 1 — `preview_all()` con `nuke.Undo().disable()`:** corre los tres pases;
+0. **Opciones iniciales - `show_options_dialog()`:** muestra el dialog **Auto
+   Stamps** con los tres pases activados por defecto: hidden inputs, dot
+   distributions y long connections. `Cancel` sale sin escanear ni modificar; si
+   no hay ningun checkbox activo muestra un warning y no arranca.
+1. **Fase 1 — `preview_all()` con `nuke.Undo().disable()`:** corre solo los pases
+   habilitados;
    por cada grupo construye los Stamps (`build_*`), hace zoom, muestra el cartel,
    guarda la decision (`{clave: titulo}`) y **revierte** el grupo (`GroupTx.revert`).
    Al terminar, el grafo quedo igual que al inicio y **nada entro al historial de
@@ -127,21 +135,25 @@ En la **fase preview**, cada grupo (1 Anchor + sus Wireds) se construye y pasa p
    Calcula el bbox, busca el widget `DAG` (Qt) para su tamano en px y hace
    `nuke.zoom(min(dag_w/bw, dag_h/bh) * ZOOM_MARGIN / ZOOM_OUT_FACTOR, [cx, cy])`.
 3. **Cartel NO bloqueante** (`ReplaceDialog`) con el nombre sugerido (editable) y
-   botones **Reemplazar** / **Cancelar**, **centrado en el DAG** (`center_dialog_on_dag`)
+   botones **Skip** / **Apply** / **Apply & Stop**, **centrado en el DAG** (`center_dialog_on_dag`)
    y siempre arriba (`WindowStaysOnTopHint`). Se espera la respuesta con un
    **`QtCore.QEventLoop` anidado**, que bloquea el flujo del script pero deja la UI
    de Nuke navegable (pan/zoom/seleccion en el DAG).
    El cartel copia el estilo de `LGA_NodeLabel` (v0.07): `FramelessWindowHint` +
    `WA_TranslucentBackground`, frame `#1f1f1f` con borde `#555` redondeado,
    `QGraphicsDropShadowEffect`, barra de titulo arrastrable (mousePress/Move/Release)
-   y botones con el `DIALOG_BUTTON_STYLE`. Enter = Reemplazar, Esc = Cancelar.
+   y botones con el `DIALOG_BUTTON_STYLE`. Enter = Apply, Esc = Skip.
+
+   Acciones: `Skip` rechaza solo el grupo actual y continua; `Apply` acepta el
+   grupo actual y continua; `Apply & Stop` acepta el grupo actual y corta la
+   iteracion de previews, aplicando solo lo aceptado hasta ese momento.
 
 Tras el cartel, en la **fase preview siempre se revierte** el grupo (`GroupTx.revert`)
 y se guarda la decision. En la **fase apply** se re-crea solo lo aceptado y se aplica
 el titulo elegido (`apply_title` al Anchor + Wireds).
 
-**Hold-to-peek (v0.80):** el cartel tiene un boton **"Mantené apretado para ver lo
-que había"**. Mientras se mantiene apretado (señal `pressed`) revierte el grupo y
+**Hold-to-peek (v0.80):** el cartel tiene un boton **"Hold to preview original
+connections"**. Mientras se mantiene apretado (señal `pressed`) revierte el grupo y
 muestra las **conexiones originales**; al soltar (señal `released`) lo reconstruye
 y muestra los **Stamps**. Se usa un boton (no una tecla) a proposito: `Tab` y otras
 teclas tienen funciones en el Node Graph de Nuke (ej. crear nodo). Como al revertir
@@ -272,9 +284,9 @@ LGA_AutoStamps.main()
   Hay que balancearlos con try/finally. Las decisiones del preview se casan con los
   grupos del apply por una clave estable basada en nombres de nodo (no cambian al
   revertir): `H|<source>`, `D|<source>`, `L|<src>|<dst>|<idx>`.
-- **Cancel sin romper el Undo:** NO usar undo nativo por grupo. Se revierte a mano
+- **Skip sin romper el Undo:** NO usar undo nativo por grupo. Se revierte a mano
   (`GroupTx.revert`) dentro del mismo `nuke.Undo`. Asi un solo Ctrl+Z deshace todo
-  lo aceptado y los cancelados quedan en neto cero.
+  lo aceptado y los grupos omitidos quedan en neto cero.
 - **Recrear Dots borrados (cancel):** se guarda snapshot (pos, label, hide_input,
   tile_color, input desde source/otro Dot, destinos externos) y en `restore_dots`
   se crean, se renombran a su nombre original (ya libre) y se reconectan. Las
@@ -293,7 +305,7 @@ LGA_AutoStamps.main()
 - [x] Filtrar para no actuar sobre nodos que ya son Stamps/Dots.
 - [x] Caso hidden inputs (Dot y no-Dot) con regla del label y reuse de Anchor — v0.03.
 - [x] Reusar Anchor existente si la fuente ya tiene uno (al menos en el pase de hidden inputs).
-- [x] Confirmacion por grupo (cartel nombre + Reemplazar/Cancelar) con zoom-to-fit
+- [x] Confirmacion por grupo (cartel nombre + Skip/Apply/Apply & Stop) con zoom-to-fit
       y revert manual sin romper el Undo — v0.04.
 - [x] Zoom al contexto (source + destinos) y cartel no bloqueante — v0.05.
 - [ ] Extender el reuse de Anchor a TODOS los pases (hoy el pase 1 y 2 pueden
