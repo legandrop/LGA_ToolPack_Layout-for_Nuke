@@ -192,8 +192,12 @@ def build_children_map():
 def create_anchor_below(stamps, source, title=None):
     """Crea un Anchor conectado a 'source' y lo posiciona justo debajo.
     Si 'title' es None, se deriva del nodo origen."""
+    # IMPORTANTE: NO seleccionar el source. Si hay un nodo seleccionado,
+    # nuke.createNode hace "splice" e inserta el Anchor entre el source y su
+    # primer dependiente, robandole el input a ese dependiente. Eso rompia el
+    # cancel (el snapshot guardaba el Anchor como input original, y al borrarlo
+    # quedaba la referencia muerta). Creamos el Anchor suelto y conectamos a mano.
     deselect_all()
-    source.setSelected(True)
     if title is None:
         title = derive_title(stamps, source)
     node_type = stamps.nodeType(stamps.realInput(source))

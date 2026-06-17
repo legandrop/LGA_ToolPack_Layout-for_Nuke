@@ -212,6 +212,21 @@ LGA_AutoStamps.main()
 - **Con callbacks silenciados hay que setear el estilo del Wired a mano** con
   `stamps.wiredGetStyle(wired)` (es una funcion directa, no depende del flag), si no
   el Wired podria quedar con apariencia "broken".
+- **`nuke.createNode` hace SPLICE si hay un nodo seleccionado:** inserta el nodo
+  nuevo entre el seleccionado y su primer dependiente (le roba el input). Por eso
+  NO hay que seleccionar el source al crear el Anchor: se crea suelto (con
+  `deselect_all()`) y se conecta con `anchor.setInput(0, source)`. Si no, el dot/
+  hidden quedaba apuntando al Anchor, el snapshot guardaba el Anchor como input
+  original, y al cancelar (que borra el Anchor) la referencia moria y el nodo
+  quedaba desconectado. **Sintoma:** accept andaba pero cancel dejaba todo suelto.
+- **Las creaciones de Wired no splicean** porque cada `create_wired_above` hace
+  `deselect_all()` al final, dejando la seleccion limpia para la siguiente.
+- **Undo del usuario + callbacks de Stamps:** al hacer Ctrl+Z, Nuke recrea nodos y
+  dispara `knobChanged`; con el lock ya restaurado (False) eso puede tirar el error
+  `n.inputs()` sobre nodos detached. La avalancha que vio el usuario venia de un
+  undo manual extra (que hizo para arreglar el cancel roto). Pendiente: two-phase
+  (preview con undo deshabilitado + apply limpio) para que los grupos cancelados
+  no dejen "basura" en el historial de undo.
 - **Cancel sin romper el Undo:** NO usar undo nativo por grupo. Se revierte a mano
   (`GroupTx.revert`) dentro del mismo `nuke.Undo`. Asi un solo Ctrl+Z deshace todo
   lo aceptado y los cancelados quedan en neto cero.
@@ -240,6 +255,9 @@ LGA_AutoStamps.main()
       duplicar Anchor si la misma fuente aparece en varios casos).
 - [ ] Restaurar la vista (zoom/scroll) original al terminar (hoy queda en el ultimo grupo).
 - [ ] Hacer el cartel mas lindo (estilo, atajos).
+- [ ] Two-phase (preview con undo deshabilitado + apply limpio) para que los grupos
+      cancelados no dejen churn en el historial y un Ctrl+Z no tire la avalancha de
+      errores de `wiredKnobChanged` de stamps.
 - [ ] Caso ruteo por Dots con **1 solo destino** (codos de ruteo largo).
 - [ ] Hidden input en input distinto de 0 (ej. mask): hoy asumimos `input(0)`.
 - [ ] Multi-input al mismo destino (origen llega por input 0 y 1): hoy crea 2
