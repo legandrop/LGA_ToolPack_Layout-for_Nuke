@@ -16,6 +16,7 @@ Encontrar y reemplazar por Stamps:
 3. **Conexiones con hidden inputs** (inputs ocultos / clones a distancia). *(v0.03 - hecho)*
 4. **Confirmacion por grupo** antes de dejar cada Stamp (cartel con nombre +
    Reemplazar/Cancelar, con zoom al grupo). *(v0.04 - hecho)*
+5. **Zoom al contexto** (source + destinos) y **cartel no bloqueante**. *(v0.05 - hecho)*
 
 El desarrollo es **incremental**: empezamos por lo mas simple y vamos sumando casos.
 
@@ -98,11 +99,16 @@ la conexion por Anchor (debajo del padre) + Wired (arriba del hijo).
 Cada grupo (1 Anchor + sus Wireds) pasa por `confirm_group()`:
 
 1. Los Stamps **ya estan creados** (el reemplazo ya ocurrio), asi el usuario los ve.
-2. **Zoom-to-fit** al Anchor + sus Wireds (`zoom_to_nodes`): calcula el bbox, busca
-   el widget `DAG` (Qt) para su tamano en px y hace
-   `nuke.zoom(min(dag_w/bw, dag_h/bh) * ZOOM_MARGIN, [cx, cy])` (zoom + scroll).
-3. **Cartel modal** (`ReplaceDialog`) con el nombre sugerido (editable) y botones
-   **Reemplazar** / **Cancelar**, posicionado en una esquina del DAG.
+2. **Zoom-to-fit al CONTEXTO** (`zoom_to_nodes`): no encuadra los Stamps solos sino
+   el **padre del padre** (el nodo origen = `anchor.input(0)`) y los **hijos de los
+   hijos** (los nodos destino), para que el usuario entienda que se reemplazo.
+   Calcula el bbox, busca el widget `DAG` (Qt) para su tamano en px y hace
+   `nuke.zoom(min(dag_w/bw, dag_h/bh) * ZOOM_MARGIN / ZOOM_OUT_FACTOR, [cx, cy])`.
+3. **Cartel NO bloqueante** (`ReplaceDialog`) con el nombre sugerido (editable) y
+   botones **Reemplazar** / **Cancelar**, posicionado en una esquina del DAG y
+   siempre arriba (`WindowStaysOnTopHint`). Se espera la respuesta con un
+   **`QtCore.QEventLoop` anidado**, que bloquea el flujo del script pero deja la UI
+   de Nuke navegable (pan/zoom/seleccion en el DAG).
 4. **Reemplazar:** si cambio el nombre, se aplica al Anchor y a todos sus Wireds
    (`apply_title`).
 5. **Cancelar:** `GroupTx.revert()` deshace SOLO ese grupo (borra los Stamps
@@ -133,7 +139,9 @@ solo Ctrl+Z revierte todos los aceptados a la vez.
 - `MIN_DESTINATIONS = 3` — minimo de destinos para colapsar un arbol de Dots (pase 1).
 - `ANCHOR_GAP_Y = 40` — separacion vertical padre → Anchor.
 - `WIRED_GAP_Y = 40` — separacion vertical Wired → hijo.
-- `ZOOM_MARGIN = 0.9` — aire alrededor del grupo en el zoom-to-fit.
+- `ZOOM_MARGIN = 0.9` — aire base alrededor del grupo en el zoom-to-fit.
+- `ZOOM_OUT_FACTOR = 1.0` — cuanto MAS zoom out para dar contexto (1.0 = justo;
+  >1.0 = mas alejado, ej. 1.5 = 50% mas lejos).
 - `SKIP_CLASSES` — clases ignoradas (`Viewer`, `BackdropNode`, `Root`).
 - `DEBUG = True` — prints de diagnostico.
 
@@ -188,6 +196,22 @@ LGA_AutoStamps.main()
 - **Zoom-to-fit:** el widget del Node Graph se llama `DAG` (Qt). Su `width()/height()`
   dan el viewport en px. `nuke.zoom(scale, [cx, cy])` hace zoom Y scroll de una.
   Tambien existe `nuke.center()` si se quisiera restaurar la vista despues.
+- **Zoom al contexto, no a los Stamps:** los Stamps recien creados solos no le
+  dicen nada al usuario. Encuadramos `anchor.input(0)` (source) + los destinos.
+- **Cartel no bloqueante:** en vez de `dlg.exec_()` (modal, bloquea la UI) usamos
+  `dlg.setModal(False)` + `dlg.show()` + un `QtCore.QEventLoop` anidado que se
+  cierra con la senal `finished`. Asi el script "espera" la decision pero el DAG
+  sigue navegable. `WindowStaysOnTopHint` evita que el cartel quede atras.
+- **OJO con los callbacks de Stamps + event loop:** el loop anidado procesa la cola
+  de eventos de Nuke, y ahi disparan los `knobChanged` de Stamps. Si un Wired fue
+  borrado (cancel), su callback corre sobre un nodo muerto y crashea en
+  `stamps.py` (`n.inputs()` -> "A PythonObject is not attached to a node").
+  **Fix:** poner `stamps.Stamps_LockCallbacks = True` durante toda la corrida
+  (restaurar en `finally`). El callback retorna antes de tocar el nodo. Esto ademas
+  evita el popup "update linked stamps title?" al renombrar.
+- **Con callbacks silenciados hay que setear el estilo del Wired a mano** con
+  `stamps.wiredGetStyle(wired)` (es una funcion directa, no depende del flag), si no
+  el Wired podria quedar con apariencia "broken".
 - **Cancel sin romper el Undo:** NO usar undo nativo por grupo. Se revierte a mano
   (`GroupTx.revert`) dentro del mismo `nuke.Undo`. Asi un solo Ctrl+Z deshace todo
   lo aceptado y los cancelados quedan en neto cero.
@@ -211,10 +235,11 @@ LGA_AutoStamps.main()
 - [x] Reusar Anchor existente si la fuente ya tiene uno (al menos en el pase de hidden inputs).
 - [x] Confirmacion por grupo (cartel nombre + Reemplazar/Cancelar) con zoom-to-fit
       y revert manual sin romper el Undo — v0.04.
+- [x] Zoom al contexto (source + destinos) y cartel no bloqueante — v0.05.
 - [ ] Extender el reuse de Anchor a TODOS los pases (hoy el pase 1 y 2 pueden
       duplicar Anchor si la misma fuente aparece en varios casos).
 - [ ] Restaurar la vista (zoom/scroll) original al terminar (hoy queda en el ultimo grupo).
-- [ ] Hacer el cartel mas lindo (estilo, que no tape los nodos, atajos).
+- [ ] Hacer el cartel mas lindo (estilo, atajos).
 - [ ] Caso ruteo por Dots con **1 solo destino** (codos de ruteo largo).
 - [ ] Hidden input en input distinto de 0 (ej. mask): hoy asumimos `input(0)`.
 - [ ] Multi-input al mismo destino (origen llega por input 0 y 1): hoy crea 2

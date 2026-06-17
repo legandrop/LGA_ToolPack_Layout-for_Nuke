@@ -1,7 +1,7 @@
 """
 __________________________________________________________
 
-  LGA_AutoStamps v0.04 | Lega
+  LGA_AutoStamps v0.05 | Lega
   Encuentra conexiones "sucias" entre nodos y las reemplaza
   automaticamente por Stamps (Anchor + Wired) de Adrian Pueyo.
 
@@ -31,6 +31,13 @@ __________________________________________________________
         * Cancelar revierte SOLO ese grupo (manual, sin tocar el Undo).
         * Todo corre dentro de un unico nuke.Undo(): un solo Ctrl+Z
           revierte todos los grupos aceptados.
+
+  v0.05:
+    - El zoom encuadra el CONTEXTO (el padre del padre = nodo origen, y
+      los hijos de los hijos = nodos destino), no los Stamps solos.
+    - ZOOM_OUT_FACTOR: variable para alejar mas el zoom y dar contexto.
+    - El cartel es NO bloqueante: el usuario puede navegar el DAG
+      mientras decide (event loop anidado).
 __________________________________________________________
 
 """
@@ -59,8 +66,13 @@ ANCHOR_GAP_Y = 40
 # Separacion vertical entre el Wired y el hijo que tiene debajo.
 WIRED_GAP_Y = 40
 
-# Margen para el zoom-to-fit (0.9 = deja un 10% de aire alrededor).
+# Margen base para el zoom-to-fit (0.9 = deja un 10% de aire alrededor).
 ZOOM_MARGIN = 0.9
+
+# Cuanto MAS zoom out hacer para dar contexto al usuario.
+#   1.0 = encuadre justo a los nodos (padre del padre + hijos de los hijos).
+#   >1.0 = mas alejado / mas contexto alrededor (ej. 1.5 = 50% mas lejos).
+ZOOM_OUT_FACTOR = 1.0
 
 # Clases de nodos que NO participan (ni como origen ni como destino).
 SKIP_CLASSES = ["Viewer", "BackdropNode", "Root"]
@@ -207,6 +219,11 @@ def create_wired_above(stamps, anchor, dst):
     wy = int(dst.ypos() - wired.screenHeight() - WIRED_GAP_Y)
     wired.setXYpos(wx, wy)
     deselect_all()
+    # Con los callbacks silenciados, seteamos el estilo a mano (esta conectado).
+    try:
+        stamps.wiredGetStyle(wired)
+    except Exception:
+        pass
     debug_print("Wired '{0}' creado en ({1},{2})".format(wired.name(), wx, wy))
     return wired
 
@@ -261,6 +278,9 @@ def zoom_to_nodes(nodes, margin=ZOOM_MARGIN):
         scale = min(dag.width() / float(bw), dag.height() / float(bh)) * margin
     else:
         scale = nuke.zoom()
+    # Zoom out extra para dar contexto.
+    if ZOOM_OUT_FACTOR and ZOOM_OUT_FACTOR > 0:
+        scale = scale / float(ZOOM_OUT_FACTOR)
     nuke.zoom(scale, [cx, cy])
     try:
         QtWidgets.QApplication.processEvents()
@@ -274,7 +294,9 @@ class ReplaceDialog(QtWidgets.QDialog):
     def __init__(self, suggested_name, n_children, parent=None):
         super(ReplaceDialog, self).__init__(parent)
         self.setWindowTitle("LGA AutoStamps")
-        self.setModal(True)
+        # No bloqueante: el usuario puede navegar el DAG mientras esta abierto.
+        self.setModal(False)
+        self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowStaysOnTopHint)
 
         layout = QtWidgets.QVBoxLayout(self)
 
@@ -305,7 +327,8 @@ class ReplaceDialog(QtWidgets.QDialog):
 
 
 def show_replace_dialog(suggested_name, n_children):
-    """Muestra el cartel (modal) posicionado en una esquina del DAG.
+    """Muestra el cartel NO bloqueante posicionado en una esquina del DAG.
+    Espera la respuesta con un event loop anidado (el DAG sigue navegable).
     Devuelve (accepted, name)."""
     dlg = ReplaceDialog(suggested_name, n_children)
     dlg.adjustSize()
@@ -316,9 +339,26 @@ def show_replace_dialog(suggested_name, n_children):
             dlg.move(tl.x() + 30, tl.y() + 30)
     except Exception:
         pass
-    run = getattr(dlg, "exec_", None) or dlg.exec
-    accepted = bool(run())
-    return accepted, dlg.get_name()
+
+    # Event loop anidado: bloquea el flujo del script pero NO la UI de Nuke,
+    # asi el usuario puede pan/zoom/navegar el DAG mientras decide.
+    loop = QtCore.QEventLoop()
+    result = {"code": QtWidgets.QDialog.Rejected}
+
+    def _on_finished(code):
+        result["code"] = code
+        loop.quit()
+
+    dlg.finished.connect(_on_finished)
+    dlg.show()
+    dlg.raise_()
+    dlg.activateWindow()
+    loop.exec_()
+
+    name = dlg.get_name()
+    accepted = result["code"] == QtWidgets.QDialog.Accepted
+    dlg.deleteLater()
+    return accepted, name
 
 
 def snapshot_dots(dots, children):
@@ -461,10 +501,20 @@ def apply_title(anchor, wireds, name):
             pass
 
 
-def confirm_group(tx, anchor, wireds, suggested_name):
-    """Zoom al grupo, muestra el cartel y aplica/revierte segun la respuesta.
+def confirm_group(tx, anchor, wireds, suggested_name, dests=None):
+    """Zoom al CONTEXTO (el padre del padre = source, y los hijos de los hijos =
+    destinos), muestra el cartel y aplica/revierte segun la respuesta.
     Devuelve True si se acepta, False si se cancela."""
-    zoom_to_nodes([anchor] + wireds)
+    context = list(wireds) + [anchor]
+    try:
+        src = anchor.input(0)
+        if src is not None:
+            context.append(src)
+    except Exception:
+        pass
+    if dests:
+        context.extend(dests)
+    zoom_to_nodes(context)
     accepted, name = show_replace_dialog(suggested_name, len(wireds))
     if accepted:
         try:
@@ -524,6 +574,7 @@ def process_hidden_group(stamps, source, pickups, children):
         tx.created(anchor)
 
     wireds = []
+    dests = []
     for node in pickups:
         if node.Class() == "Dot":
             # Borrar el Dot y reemplazarlo por un Wired en su posicion.
@@ -532,10 +583,15 @@ def process_hidden_group(stamps, source, pickups, children):
             wy = int(node.ypos() + node.screenHeight() / 2 - wired.screenHeight() / 2)
             wired.setXYpos(wx, wy)
             deselect_all()
+            try:
+                stamps.wiredGetStyle(wired)
+            except Exception:
+                pass
             tx.created(wired)
             # Reconectar lo que colgaba del Dot al Wired (old = Dot -> snapshot).
             for (dep, idx) in children.get(node, []):
                 dep.setInput(idx, wired)
+                dests.append(dep)
             tx.snapshot_and_delete_dots([node], children)
             wireds.append(wired)
         else:
@@ -546,8 +602,9 @@ def process_hidden_group(stamps, source, pickups, children):
             if node.knob("hide_input"):
                 tx.change_knob(node, "hide_input", False)
             wireds.append(wired)
+            dests.append(node)
 
-    return confirm_group(tx, anchor, wireds, title)
+    return confirm_group(tx, anchor, wireds, title, dests)
 
 
 def process_hidden_inputs(stamps):
@@ -571,6 +628,11 @@ def process_hidden_inputs(stamps):
             order.append(key)
         groups[key]["pickups"].append(node)
 
+    debug_print(
+        "Pase 0 (hidden inputs): {0} pickup/s -> {1} grupo/s a procesar.".format(
+            len(pickups), len(order)
+        )
+    )
     accepted = 0
     for key in order:
         g = groups[key]
@@ -668,14 +730,16 @@ def replace_dot_distribution_with_stamps(stamps, source, dots, leaves, children)
         title = source.name()
 
     wireds = []
+    dests = []
     for (dst, idx) in leaves:
         wired = create_wired_above(stamps, anchor, dst)
         tx.created(wired)
         dst.setInput(idx, wired)  # old = un Dot (se borrara) -> snapshot
         wireds.append(wired)
+        dests.append(dst)
 
     tx.snapshot_and_delete_dots(dots, children)
-    return confirm_group(tx, anchor, wireds, title)
+    return confirm_group(tx, anchor, wireds, title, dests)
 
 
 def process_dot_distributions(stamps):
@@ -683,6 +747,7 @@ def process_dot_distributions(stamps):
     se aceptaron."""
     children = build_children_map()
     trees = find_dot_distributions(stamps, children, MIN_DESTINATIONS)
+    debug_print("Pase 1 (distribuciones por Dots): {0} arbol/es.".format(len(trees)))
     accepted = 0
     for (source, dots, leaves) in trees:
         if replace_dot_distribution_with_stamps(stamps, source, dots, leaves, children):
@@ -739,13 +804,14 @@ def replace_connection_with_stamps(stamps, src, dst, input_index):
     tx.created(wired)
     tx.change_input(dst, input_index, wired)  # old = src (sobrevive)
 
-    return confirm_group(tx, anchor, [wired], title)
+    return confirm_group(tx, anchor, [wired], title, [dst])
 
 
 def process_long_connections(stamps):
     """Releva y reemplaza todas las conexiones largas directas. Devuelve
     cuantas se aceptaron."""
     pairs = find_long_connections(stamps, DISTANCE_THRESHOLD)
+    debug_print("Pase 2 (conexiones largas): {0} conexion/es.".format(len(pairs)))
     accepted = 0
     for (src, dst, input_index, dist) in pairs:
         if replace_connection_with_stamps(stamps, src, dst, input_index):
@@ -762,6 +828,14 @@ def main():
     if stamps is None:
         return
 
+    # Silenciar los callbacks de Stamps durante toda la corrida: nosotros
+    # manejamos las conexiones/titulos explicitamente. Esto evita que un
+    # knobChanged dispare sobre un Wired ya borrado (crash dentro de stamps.py
+    # al procesar eventos en el event loop no bloqueante) y tambien los popups
+    # "update linked stamps title?" al renombrar.
+    prev_lock = getattr(stamps, "Stamps_LockCallbacks", False)
+    stamps.Stamps_LockCallbacks = True
+
     nuke.Undo().begin("LGA_AutoStamps")
     total = 0
     try:
@@ -774,6 +848,7 @@ def main():
         total += process_long_connections(stamps)
     finally:
         nuke.Undo().end()
+        stamps.Stamps_LockCallbacks = prev_lock
 
     if total == 0:
         debug_print("LGA_AutoStamps: no se aplico ningun reemplazo.")
