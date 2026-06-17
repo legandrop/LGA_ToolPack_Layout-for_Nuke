@@ -1,20 +1,20 @@
 """
 __________________________________________________________
 
-  LGA_AutoStamps v0.06 | Lega
+  LGA_AutoStamps v0.70 | Lega
   Encuentra conexiones "sucias" entre nodos y las reemplaza
   automaticamente por Stamps (Anchor + Wired) de Adrian Pueyo.
 
-  v0.01:
+  v0.10:
     - Conexiones largas directas (padre -> hijo) mas alla de un
       threshold de distancia: se reemplazan por Anchor + Wired.
 
-  v0.02:
+  v0.20:
     - Distribuciones por Dots: cuando un nodo reparte su salida a
       traves de un arbol de Dots hacia varios destinos, se borran
       los Dots y se crea 1 Anchor en el origen + 1 Wired por destino.
 
-  v0.03:
+  v0.30:
     - Hidden inputs: nodos con 'hide_input' (conexion oculta a un
       origen lejano).
         * Si es un Dot: se borra y se reemplaza por un Wired.
@@ -23,7 +23,7 @@ __________________________________________________________
           toman ese label; si no, el nombre derivado del origen.
         * Reuse: un solo Anchor por nodo origen (1 padre, N hijos).
 
-  v0.04:
+  v0.40:
     - Confirmacion por grupo: antes de dejar cada Stamp (padre + sus
       hijos), se crean los Stamps, se hace zoom a ellos y se muestra un
       cartel con el nombre sugerido (editable) y botones Reemplazar /
@@ -32,14 +32,14 @@ __________________________________________________________
         * Todo corre dentro de un unico nuke.Undo(): un solo Ctrl+Z
           revierte todos los grupos aceptados.
 
-  v0.05:
+  v0.50:
     - El zoom encuadra el CONTEXTO (el padre del padre = nodo origen, y
       los hijos de los hijos = nodos destino), no los Stamps solos.
     - ZOOM_OUT_FACTOR: variable para alejar mas el zoom y dar contexto.
     - El cartel es NO bloqueante: el usuario puede navegar el DAG
       mientras decide (event loop anidado).
 
-  v0.06:
+  v0.60:
     - Arquitectura two-phase:
         * Fase 1 (preview, con undo DESHABILITADO): crea Stamps, zoom,
           cartel, junta decisiones y revierte cada grupo.
@@ -48,6 +48,11 @@ __________________________________________________________
       Asi los grupos cancelados no dejan "basura" en el historial y un
       solo Ctrl+Z deshace todo sin disparar la avalancha de errores de
       los callbacks de stamps.
+
+  v0.70:
+    - Cartel con estilo LGA_NodeLabel: frameless, fondo translucido,
+      sombra, borde redondeado, barra de titulo arrastrable (drag & drop)
+      y botones estilizados. Aparece centrado en el DAG.
 __________________________________________________________
 
 """
@@ -56,7 +61,7 @@ import os
 import sys
 import nuke
 
-from LGA_QtAdapter_ToolPack_Layout import QtWidgets, QtCore
+from LGA_QtAdapter_ToolPack_Layout import QtWidgets, QtGui, QtCore
 
 # ----------------------------------------------------------------------
 # CONFIGURACION
@@ -302,57 +307,222 @@ def zoom_to_nodes(nodes, margin=ZOOM_MARGIN):
         pass
 
 
+# Estilo del cartel (copiado de LGA_NodeLabel para mantener consistencia visual).
+DIALOG_SHADOW_BLUR = 25
+DIALOG_SHADOW_OPACITY = 60
+DIALOG_SHADOW_OFFSET = 3
+DIALOG_SHADOW_MARGIN = 25
+
+DIALOG_BUTTON_STYLE = """
+    QPushButton {
+        background-color: #404040;
+        border: 1px solid #555555;
+        border-radius: 5px;
+        color: #CCCCCC;
+        font-size: 12px;
+        padding: 5px;
+    }
+    QPushButton:hover {
+        background-color: #505050;
+    }
+    QPushButton:pressed {
+        background-color: #303030;
+    }
+"""
+
+
 class ReplaceDialog(QtWidgets.QDialog):
-    """Cartel simple: nombre del nuevo Stamp + Reemplazar / Cancelar."""
+    """Cartel para nombrar/confirmar un Stamp. Estilo LGA_NodeLabel: frameless,
+    fondo translucido, sombra, barra de titulo arrastrable."""
 
     def __init__(self, suggested_name, n_children, parent=None):
         super(ReplaceDialog, self).__init__(parent)
-        self.setWindowTitle("LGA AutoStamps")
-        # No bloqueante: el usuario puede navegar el DAG mientras esta abierto.
-        self.setModal(False)
-        self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowStaysOnTopHint)
+        self.drag_position = None
 
-        layout = QtWidgets.QVBoxLayout(self)
+        # Frameless + translucido + siempre on top + no bloqueante.
+        self.setWindowFlags(
+            QtCore.Qt.FramelessWindowHint
+            | QtCore.Qt.Window
+            | QtCore.Qt.WindowStaysOnTopHint
+        )
+        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+        self.setStyleSheet("background-color: transparent;")
+        self.setModal(False)
+
+        # Layout principal con margen para la sombra.
+        main_layout = QtWidgets.QVBoxLayout()
+        main_layout.setContentsMargins(
+            DIALOG_SHADOW_MARGIN, DIALOG_SHADOW_MARGIN,
+            DIALOG_SHADOW_MARGIN, DIALOG_SHADOW_MARGIN,
+        )
+        main_layout.setSpacing(0)
+
+        # Frame principal con borde redondeado.
+        self.main_frame = QtWidgets.QFrame()
+        self.main_frame.setStyleSheet(
+            """
+            QFrame {
+                background-color: #1f1f1f;
+                border: 1px solid #555555;
+                border-radius: 10px;
+                color: #CCCCCC;
+            }
+            """
+        )
+        shadow = QtWidgets.QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(DIALOG_SHADOW_BLUR)
+        shadow.setColor(QtGui.QColor(0, 0, 0, DIALOG_SHADOW_OPACITY))
+        shadow.setOffset(DIALOG_SHADOW_OFFSET, DIALOG_SHADOW_OFFSET)
+        self.main_frame.setGraphicsEffect(shadow)
+
+        frame_layout = QtWidgets.QVBoxLayout(self.main_frame)
+        frame_layout.setContentsMargins(0, 0, 0, 0)
+        frame_layout.setSpacing(0)
+
+        # Barra de titulo arrastrable.
+        self.title_bar = QtWidgets.QLabel("New Stamp")
+        self.title_bar.setFixedHeight(30)
+        self.title_bar.setStyleSheet(
+            """
+            QLabel {
+                background-color: #1f1f1f;
+                color: #cccccc;
+                padding-left: 10px;
+                border-top-left-radius: 10px;
+                border-top-right-radius: 10px;
+                border: none;
+                font-weight: bold;
+            }
+            """
+        )
+        self.title_bar.setAlignment(QtCore.Qt.AlignCenter)
+        self.title_bar.mousePressEvent = self.start_move
+        self.title_bar.mouseMoveEvent = self.move_window
+        self.title_bar.mouseReleaseEvent = self.stop_move
+        frame_layout.addWidget(self.title_bar)
+
+        # Contenido.
+        content_widget = QtWidgets.QWidget()
+        content_widget.setStyleSheet(
+            """
+            QWidget {
+                background-color: #1f1f1f;
+                border: none;
+                border-bottom-left-radius: 10px;
+                border-bottom-right-radius: 10px;
+            }
+            """
+        )
+        content_layout = QtWidgets.QVBoxLayout(content_widget)
+        content_layout.setContentsMargins(10, 10, 10, 10)
+        content_layout.setSpacing(0)
 
         hijos = "hijo" if n_children == 1 else "hijos"
-        info = QtWidgets.QLabel("Nuevo Stamp  ({0} {1}):".format(n_children, hijos))
-        layout.addWidget(info)
+        info = QtWidgets.QLabel("Nombre del nuevo Stamp  ({0} {1}):".format(
+            n_children, hijos))
+        info.setStyleSheet(
+            "QLabel { background: transparent; border: none; "
+            "color: #CCCCCC; font-size: 12px; }"
+        )
+        content_layout.addWidget(info)
+        content_layout.addSpacing(8)
 
         self.name_edit = QtWidgets.QLineEdit()
         self.name_edit.setText(suggested_name)
-        self.name_edit.selectAll()
-        self.name_edit.setMinimumWidth(260)
-        layout.addWidget(self.name_edit)
+        self.name_edit.setMinimumWidth(280)
+        self.name_edit.setFixedHeight(30)
+        self.name_edit.setStyleSheet(
+            """
+            QLineEdit {
+                background-color: #1e1e1e;
+                border: 1px solid #3D3D3D;
+                border-radius: 5px;
+                padding: 5px;
+                font-size: 12px;
+                color: #CCCCCC;
+                selection-background-color: #555555;
+                selection-color: #FFFFFF;
+            }
+            """
+        )
+        content_layout.addWidget(self.name_edit)
+        content_layout.addSpacing(10)
 
-        btns = QtWidgets.QHBoxLayout()
-        self.cancel_btn = QtWidgets.QPushButton("Cancelar")
-        self.replace_btn = QtWidgets.QPushButton("Reemplazar")
-        self.replace_btn.setDefault(True)
-        btns.addWidget(self.cancel_btn)
-        btns.addStretch()
-        btns.addWidget(self.replace_btn)
-        layout.addLayout(btns)
+        # Botones.
+        buttons_layout = QtWidgets.QHBoxLayout()
+        buttons_layout.setSpacing(10)
+        self.cancel_button = QtWidgets.QPushButton("Cancelar")
+        self.cancel_button.setFixedHeight(30)
+        self.cancel_button.setStyleSheet(DIALOG_BUTTON_STYLE)
+        self.replace_button = QtWidgets.QPushButton("Reemplazar")
+        self.replace_button.setFixedHeight(30)
+        self.replace_button.setStyleSheet(DIALOG_BUTTON_STYLE)
+        buttons_layout.addWidget(self.cancel_button)
+        buttons_layout.addWidget(self.replace_button)
+        content_layout.addLayout(buttons_layout)
 
-        self.replace_btn.clicked.connect(self.accept)
-        self.cancel_btn.clicked.connect(self.reject)
+        frame_layout.addWidget(content_widget)
+        main_layout.addWidget(self.main_frame)
+        self.setLayout(main_layout)
+
+        self.cancel_button.clicked.connect(self.reject)
+        self.replace_button.clicked.connect(self.accept)
+
+        self.adjustSize()
 
     def get_name(self):
         return self.name_edit.text().strip()
 
+    # --- Arrastre de la ventana por la barra de titulo ---
+    def start_move(self, event):
+        if event.button() == QtCore.Qt.LeftButton:
+            self.drag_position = event.globalPos() - self.frameGeometry().topLeft()
+            event.accept()
+
+    def move_window(self, event):
+        if self.drag_position and event.buttons() & QtCore.Qt.LeftButton:
+            self.move(event.globalPos() - self.drag_position)
+            event.accept()
+
+    def stop_move(self, event):
+        self.drag_position = None
+
+    def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key_Escape:
+            self.reject()
+        elif event.key() in (QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter):
+            self.accept()
+        else:
+            super(ReplaceDialog, self).keyPressEvent(event)
+
+    def showEvent(self, event):
+        super(ReplaceDialog, self).showEvent(event)
+        self.activateWindow()
+        self.raise_()
+        self.name_edit.setFocus()
+        self.name_edit.selectAll()
+
+
+def center_dialog_on_dag(dlg):
+    """Centra el cartel sobre el viewport del DAG (fallback: cursor)."""
+    dlg.adjustSize()
+    dag = find_dag_widget()
+    if dag is not None:
+        tl = dag.mapToGlobal(QtCore.QPoint(0, 0))
+        cx = tl.x() + dag.width() // 2
+        cy = tl.y() + dag.height() // 2
+    else:
+        cur = QtGui.QCursor.pos()
+        cx, cy = cur.x(), cur.y()
+    dlg.move(cx - dlg.width() // 2, cy - dlg.height() // 2)
+
 
 def show_replace_dialog(suggested_name, n_children):
-    """Muestra el cartel NO bloqueante posicionado en una esquina del DAG.
-    Espera la respuesta con un event loop anidado (el DAG sigue navegable).
+    """Muestra el cartel NO bloqueante centrado en el DAG. Espera la respuesta
+    con un event loop anidado (el DAG sigue navegable).
     Devuelve (accepted, name)."""
     dlg = ReplaceDialog(suggested_name, n_children)
-    dlg.adjustSize()
-    try:
-        dag = find_dag_widget()
-        if dag is not None:
-            tl = dag.mapToGlobal(QtCore.QPoint(0, 0))
-            dlg.move(tl.x() + 30, tl.y() + 30)
-    except Exception:
-        pass
+    center_dialog_on_dag(dlg)
 
     # Event loop anidado: bloquea el flujo del script pero NO la UI de Nuke,
     # asi el usuario puede pan/zoom/navegar el DAG mientras decide.

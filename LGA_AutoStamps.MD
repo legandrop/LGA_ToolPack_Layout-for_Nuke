@@ -19,6 +19,8 @@ Encontrar y reemplazar por Stamps:
 5. **Zoom al contexto** (source + destinos) y **cartel no bloqueante**. *(v0.05 - hecho)*
 6. **Two-phase** (preview con undo off + apply limpio): cancelar no ensucia el
    historial y un Ctrl+Z deshace sin avalancha de errores. *(v0.06 - hecho)*
+7. **Cartel lindo** (estilo LGA_NodeLabel: frameless, sombra, drag & drop) y
+   centrado en el DAG. *(v0.07 - hecho)*
 
 El desarrollo es **incremental**: empezamos por lo mas simple y vamos sumando casos.
 
@@ -123,10 +125,14 @@ En la **fase preview**, cada grupo (1 Anchor + sus Wireds) se construye y pasa p
    Calcula el bbox, busca el widget `DAG` (Qt) para su tamano en px y hace
    `nuke.zoom(min(dag_w/bw, dag_h/bh) * ZOOM_MARGIN / ZOOM_OUT_FACTOR, [cx, cy])`.
 3. **Cartel NO bloqueante** (`ReplaceDialog`) con el nombre sugerido (editable) y
-   botones **Reemplazar** / **Cancelar**, posicionado en una esquina del DAG y
-   siempre arriba (`WindowStaysOnTopHint`). Se espera la respuesta con un
+   botones **Reemplazar** / **Cancelar**, **centrado en el DAG** (`center_dialog_on_dag`)
+   y siempre arriba (`WindowStaysOnTopHint`). Se espera la respuesta con un
    **`QtCore.QEventLoop` anidado**, que bloquea el flujo del script pero deja la UI
    de Nuke navegable (pan/zoom/seleccion en el DAG).
+   El cartel copia el estilo de `LGA_NodeLabel` (v0.07): `FramelessWindowHint` +
+   `WA_TranslucentBackground`, frame `#1f1f1f` con borde `#555` redondeado,
+   `QGraphicsDropShadowEffect`, barra de titulo arrastrable (mousePress/Move/Release)
+   y botones con el `DIALOG_BUTTON_STYLE`. Enter = Reemplazar, Esc = Cancelar.
 
 Tras el cartel, en la **fase preview siempre se revierte** el grupo (`GroupTx.revert`)
 y se guarda la decision. En la **fase apply** se re-crea solo lo aceptado y se aplica
@@ -281,7 +287,8 @@ LGA_AutoStamps.main()
 - [ ] Extender el reuse de Anchor a TODOS los pases (hoy el pase 1 y 2 pueden
       duplicar Anchor si la misma fuente aparece en varios casos).
 - [ ] Restaurar la vista (zoom/scroll) original al terminar (hoy queda en el ultimo grupo).
-- [ ] Hacer el cartel mas lindo (estilo, atajos).
+- [x] Cartel lindo (estilo LGA_NodeLabel: frameless, sombra, drag & drop) y
+      centrado en el DAG — v0.07.
 - [x] Two-phase (preview con undo deshabilitado + apply limpio): los grupos
       cancelados no dejan churn y un Ctrl+Z no tira la avalancha de errores — v0.06.
 - [ ] Caso ruteo por Dots con **1 solo destino** (codos de ruteo largo).
