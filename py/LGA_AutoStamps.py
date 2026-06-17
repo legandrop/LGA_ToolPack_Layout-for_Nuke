@@ -1,7 +1,7 @@
 """
 __________________________________________________________
 
-  LGA_AutoStamps v0.70 | Lega
+  LGA_AutoStamps v0.80 | Lega
   Encuentra conexiones "sucias" entre nodos y las reemplaza
   automaticamente por Stamps (Anchor + Wired) de Adrian Pueyo.
 
@@ -53,6 +53,13 @@ __________________________________________________________
     - Cartel con estilo LGA_NodeLabel: frameless, fondo translucido,
       sombra, borde redondeado, barra de titulo arrastrable (drag & drop)
       y botones estilizados. Aparece centrado en el DAG.
+
+  v0.80:
+    - Hold-to-peek: manteniendo apretado el boton "Mantené apretado para
+      ver lo que había" el cartel muestra las conexiones ORIGINALES; al
+      soltarlo vuelve a mostrar los Stamps. Mismo encuadre para comparar
+      A/B. Como la preview corre con undo deshabilitado, el toggle
+      revierte/reconstruye libremente sin ensuciar el historial.
 __________________________________________________________
 
 """
@@ -335,9 +342,13 @@ class ReplaceDialog(QtWidgets.QDialog):
     """Cartel para nombrar/confirmar un Stamp. Estilo LGA_NodeLabel: frameless,
     fondo translucido, sombra, barra de titulo arrastrable."""
 
-    def __init__(self, suggested_name, n_children, parent=None):
+    def __init__(self, suggested_name, n_children, on_peek_start=None,
+                 on_peek_end=None, parent=None):
         super(ReplaceDialog, self).__init__(parent)
         self.drag_position = None
+        self._on_peek_start = on_peek_start
+        self._on_peek_end = on_peek_end
+        self._peeking = False
 
         # Frameless + translucido + siempre on top + no bloqueante.
         self.setWindowFlags(
@@ -461,17 +472,43 @@ class ReplaceDialog(QtWidgets.QDialog):
         buttons_layout.addWidget(self.replace_button)
         content_layout.addLayout(buttons_layout)
 
+        # Boton "mantener apretado" para ver lo que habia (hold-to-peek).
+        content_layout.addSpacing(8)
+        self.peek_button = QtWidgets.QPushButton(
+            "Mantené apretado para ver lo que había"
+        )
+        self.peek_button.setFixedHeight(30)
+        self.peek_button.setStyleSheet(DIALOG_BUTTON_STYLE)
+        content_layout.addWidget(self.peek_button)
+
         frame_layout.addWidget(content_widget)
         main_layout.addWidget(self.main_frame)
         self.setLayout(main_layout)
 
         self.cancel_button.clicked.connect(self.reject)
         self.replace_button.clicked.connect(self.accept)
+        self.name_edit.returnPressed.connect(self.accept)
+        # pressed = mouse abajo (ver original); released = mouse arriba (ver Stamps).
+        self.peek_button.pressed.connect(self._peek_start)
+        self.peek_button.released.connect(self._peek_end)
 
         self.adjustSize()
 
     def get_name(self):
         return self.name_edit.text().strip()
+
+    # --- Hold to peek (ver original mientras se mantiene apretado el boton) ---
+    def _peek_start(self):
+        if not self._peeking:
+            self._peeking = True
+            if self._on_peek_start:
+                self._on_peek_start()
+
+    def _peek_end(self):
+        if self._peeking:
+            self._peeking = False
+            if self._on_peek_end:
+                self._on_peek_end()
 
     # --- Arrastre de la ventana por la barra de titulo ---
     def start_move(self, event):
@@ -517,11 +554,13 @@ def center_dialog_on_dag(dlg):
     dlg.move(cx - dlg.width() // 2, cy - dlg.height() // 2)
 
 
-def show_replace_dialog(suggested_name, n_children):
+def show_replace_dialog(suggested_name, n_children, on_peek_start=None,
+                        on_peek_end=None):
     """Muestra el cartel NO bloqueante centrado en el DAG. Espera la respuesta
     con un event loop anidado (el DAG sigue navegable).
+    on_peek_start/on_peek_end: callbacks del hold-to-peek (ver original).
     Devuelve (accepted, name)."""
-    dlg = ReplaceDialog(suggested_name, n_children)
+    dlg = ReplaceDialog(suggested_name, n_children, on_peek_start, on_peek_end)
     center_dialog_on_dag(dlg)
 
     # Event loop anidado: bloquea el flujo del script pero NO la UI de Nuke,
@@ -685,10 +724,9 @@ def apply_title(anchor, wireds, name):
             pass
 
 
-def preview_confirm(anchor, wireds, dests, suggested_name):
-    """Zoom al CONTEXTO (el padre del padre = source, y los hijos de los hijos =
-    destinos) y muestra el cartel. Devuelve (accepted, name). NO aplica ni
-    revierte: de eso se encargan las fases preview/apply."""
+def group_context(anchor, wireds, dests):
+    """Nodos a encuadrar: el padre del padre (source) + los hijos de los hijos
+    (destinos), ademas de los Stamps."""
     context = list(wireds) + [anchor]
     try:
         src = anchor.input(0)
@@ -698,8 +736,46 @@ def preview_confirm(anchor, wireds, dests, suggested_name):
         pass
     if dests:
         context.extend(dests)
-    zoom_to_nodes(context)
-    return show_replace_dialog(suggested_name, len(wireds))
+    return context
+
+
+def preview_group(build_fn):
+    """Construye el grupo (build_fn re-detecta y arma), hace zoom UNA vez y
+    muestra el cartel con hold-to-peek (mantener tecla = ver lo original).
+    La preview SIEMPRE termina revertida (estado original).
+    Devuelve (accepted, name, title)."""
+    state = {"tx": None, "anchor": None, "wireds": None, "dests": None, "title": None}
+
+    def to_stamps():
+        # Reconstruye los Stamps si ahora se ve el original.
+        if state["tx"] is None:
+            built = build_fn()
+            if built is None:
+                return
+            (state["tx"], state["anchor"], state["wireds"],
+             state["dests"], state["title"]) = built
+
+    def to_original():
+        # Revierte al estado original (lo que habia).
+        if state["tx"] is not None:
+            state["tx"].revert()
+            state["tx"] = None
+
+    to_stamps()  # arranca mostrando los Stamps (resultado)
+    if state["tx"] is None:
+        return False, "", ""
+
+    title = state["title"]
+    # Zoom UNA sola vez al contexto, para comparar A/B en el mismo encuadre.
+    zoom_to_nodes(group_context(state["anchor"], state["wireds"], state["dests"]))
+
+    accepted, name = show_replace_dialog(
+        title, len(state["wireds"]),
+        on_peek_start=to_original, on_peek_end=to_stamps,
+    )
+
+    to_original()  # la preview no deja nada: el apply re-crea lo aceptado
+    return accepted, name, title
 
 
 # ----------------------------------------------------------------------
@@ -980,48 +1056,99 @@ def key_long(src, dst, idx):
 
 
 # ----------------------------------------------------------------------
+# RE-DETECCION POR IDENTIDAD (para el hold-to-peek: tras revertir, los Dots
+# se recrean con referencias nuevas, asi que hay que volver a detectarlos)
+# ----------------------------------------------------------------------
+
+def redetect_hidden(stamps, source_name):
+    """Devuelve (children, source, pickups) para el grupo de hidden inputs de
+    'source_name', o None si ya no existe."""
+    source = nuke.toNode(source_name)
+    if source is None:
+        return None
+    children = build_children_map()
+    pickups = [
+        n for n in find_hidden_inputs(stamps)
+        if n.input(0) is not None and n.input(0).name() == source_name
+    ]
+    if not pickups:
+        return None
+    return children, source, pickups
+
+
+def redetect_dots(stamps, source_name):
+    """Devuelve (children, source, dots, leaves) para el arbol de Dots de
+    'source_name', o None si ya no califica."""
+    source = nuke.toNode(source_name)
+    if source is None:
+        return None
+    children = build_children_map()
+    dots, leaves = collect_dot_tree(source, children)
+    if len(leaves) < MIN_DESTINATIONS:
+        return None
+    return children, source, dots, leaves
+
+
+# ----------------------------------------------------------------------
 # FASE 1: PREVIEW  (con undo deshabilitado) -> junta decisiones
 # ----------------------------------------------------------------------
 
 def preview_all(stamps):
-    """Para cada grupo: construye los Stamps, hace zoom, muestra el cartel,
-    registra la decision y REVIERTE (vuelve al original). No se graba en el
-    historial de undo (el llamador lo deshabilita).
+    """Para cada grupo: construye los Stamps (re-detectables para el peek), hace
+    zoom, muestra el cartel y registra la decision. preview_group revierte cada
+    grupo. No se graba en el historial de undo (el llamador lo deshabilita).
     Devuelve un dict {clave: titulo_elegido} solo para los aceptados."""
     decisions = {}
 
-    def handle(gkey, tx, anchor, wireds, dests, title):
-        accepted, name = preview_confirm(anchor, wireds, dests, title)
+    def handle(gkey, build_fn):
+        accepted, name, title = preview_group(build_fn)
         if accepted:
             decisions[gkey] = name if name else title
-        tx.revert()
 
     # Pase 0: hidden inputs.
-    children, hgroups = hidden_groups(stamps)
-    for (source, pickups) in hgroups:
-        tx, anchor, wireds, dests, title = build_hidden_group(
-            stamps, source, pickups, children
-        )
-        handle(key_hidden(source), tx, anchor, wireds, dests, title)
+    _, hgroups = hidden_groups(stamps)
+    for (source, _pickups) in hgroups:
+        sname = source.name()
+
+        def build_fn(sname=sname):
+            redet = redetect_hidden(stamps, sname)
+            if redet is None:
+                return None
+            ch, s, p = redet
+            return build_hidden_group(stamps, s, p, ch)
+
+        handle(key_hidden(source), build_fn)
 
     # Pase 1: distribuciones por Dots.
     children = build_children_map()
     trees = find_dot_distributions(stamps, children, MIN_DESTINATIONS)
     debug_print("Pase 1 (distribuciones por Dots): {0} arbol/es.".format(len(trees)))
-    for (source, dots, leaves) in trees:
-        tx, anchor, wireds, dests, title = build_dot_distribution(
-            stamps, source, dots, leaves, children
-        )
-        handle(key_dots(source), tx, anchor, wireds, dests, title)
+    for (source, _dots, _leaves) in trees:
+        sname = source.name()
+
+        def build_fn(sname=sname):
+            redet = redetect_dots(stamps, sname)
+            if redet is None:
+                return None
+            ch, s, d, l = redet
+            return build_dot_distribution(stamps, s, d, l, ch)
+
+        handle(key_dots(source), build_fn)
 
     # Pase 2: conexiones largas directas.
     pairs = find_long_connections(stamps, DISTANCE_THRESHOLD)
     debug_print("Pase 2 (conexiones largas): {0} conexion/es.".format(len(pairs)))
     for (src, dst, input_index, dist) in pairs:
-        tx, anchor, wireds, dests, title = build_long_connection(
-            stamps, src, dst, input_index
-        )
-        handle(key_long(src, dst, input_index), tx, anchor, wireds, dests, title)
+        sname, dname, idx = src.name(), dst.name(), input_index
+
+        def build_fn(sname=sname, dname=dname, idx=idx):
+            s = nuke.toNode(sname)
+            d = nuke.toNode(dname)
+            if s is None or d is None:
+                return None
+            return build_long_connection(stamps, s, d, idx)
+
+        handle(key_long(src, dst, input_index), build_fn)
 
     return decisions
 

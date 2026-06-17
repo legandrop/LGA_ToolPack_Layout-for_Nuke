@@ -286,6 +286,17 @@ add_tool(
 )
 
 
+add_tool(
+    n,
+    label="  AutoStamps",
+    key="AutoStamps",
+    module="LGA_AutoStamps",
+    attr="main",
+    icon=icon_LTPB,
+    context=2,
+)
+
+
 # -----------------------------------------------------------------------------
 # Separador
 n.addSeparator()

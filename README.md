@@ -114,6 +114,19 @@ Permite cambiar el label de un nodo con una ventana emergente.
 <img src="Doc_Media/label_node_shortcut.svg" alt="Label Node shortcut" width="130" height="43"><br>
 <br>
 
+## ![](Doc_Media/seccion_amarilla.png) AutoStamps v0.70 | Lega
+
+Detecta conexiones "sucias" en el Node Graph y las reemplaza automáticamente
+por *Stamps* (sistema de Adrian Pueyo), dejando el árbol más limpio y legible.
+Resuelve tres casos:<br>
+&bull; Conexiones muy largas entre dos nodos lejanos.<br>
+&bull; Un nodo que distribuye su salida a varios destinos a través de Dots.<br>
+&bull; Nodos con *hidden input* (conexión oculta a un origen lejano).<br>
+Antes de reemplazar cada grupo, muestra una ventana para confirmar y nombrar el
+Stamp, con zoom automático al contexto (nodo origen y destinos). Cancelar revierte
+ese grupo y un solo *Ctrl+Z* deshace toda la operación.
+<br><br>
+
 ## ![](Doc_Media/seccion_violeta.png) Select Nodes v1.3 | Lega
 
 A partir del nodo seleccionado selecciona nodos en la dirección

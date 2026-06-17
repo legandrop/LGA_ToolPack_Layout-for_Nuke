@@ -21,6 +21,8 @@ Encontrar y reemplazar por Stamps:
    historial y un Ctrl+Z deshace sin avalancha de errores. *(v0.06 - hecho)*
 7. **Cartel lindo** (estilo LGA_NodeLabel: frameless, sombra, drag & drop) y
    centrado en el DAG. *(v0.07 - hecho)*
+8. **Hold-to-peek**: mantener una tecla muestra las conexiones originales (lo que
+   había) vs los Stamps, para comparar antes de decidir. *(v0.80 - hecho)*
 
 El desarrollo es **incremental**: empezamos por lo mas simple y vamos sumando casos.
 
@@ -137,6 +139,16 @@ En la **fase preview**, cada grupo (1 Anchor + sus Wireds) se construye y pasa p
 Tras el cartel, en la **fase preview siempre se revierte** el grupo (`GroupTx.revert`)
 y se guarda la decision. En la **fase apply** se re-crea solo lo aceptado y se aplica
 el titulo elegido (`apply_title` al Anchor + Wireds).
+
+**Hold-to-peek (v0.80):** el cartel tiene un boton **"Mantené apretado para ver lo
+que había"**. Mientras se mantiene apretado (señal `pressed`) revierte el grupo y
+muestra las **conexiones originales**; al soltar (señal `released`) lo reconstruye
+y muestra los **Stamps**. Se usa un boton (no una tecla) a proposito: `Tab` y otras
+teclas tienen funciones en el Node Graph de Nuke (ej. crear nodo). Como al revertir
+los Dots se recrean con referencias nuevas, `preview_group` rearma cada grupo via
+un `build_fn` que **re-detecta por identidad** (nombre de nodo): `redetect_hidden` /
+`redetect_dots` / `nuke.toNode` para largas. El zoom se hace una sola vez (mismo
+encuadre para comparar A/B).
 
 **Por que two-phase (v0.06):** antes todo (incluido el revert de los cancelados)
 ocurria dentro de un unico `nuke.Undo()`. Aunque el neto de un cancelado era cero,
@@ -297,4 +309,5 @@ LGA_AutoStamps.main()
       Wireds que pueden solaparse arriba del destino.
 - [ ] Decidir el criterio de distancia (¿euclidea, solo vertical, solo horizontal?).
 - [ ] Opcion de trabajar solo sobre la seleccion vs. todo el script.
-- [ ] Registro en `menu.py` (atajo + icono) cuando este maduro.
+- [x] Registro en `menu.py` (debajo de "Label Nodes", sin shortcut) y en el
+      README.md (seccion amarilla) — v0.70.
