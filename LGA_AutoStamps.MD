@@ -13,7 +13,9 @@ Encontrar y reemplazar por Stamps:
 1. **Conexiones muy largas** entre dos nodos lejanos. *(v0.01 - hecho)*
 2. **Conexiones desde un nodo a un Dot y de ahi a multiples lugares** (un Dot que
    distribuye una misma salida a varios destinos). *(v0.02 - hecho)*
-3. **Conexiones con hidden inputs** (inputs ocultos / clones a distancia). *(pendiente)*
+3. **Conexiones con hidden inputs** (inputs ocultos / clones a distancia). *(v0.03 - hecho)*
+4. **Confirmacion por grupo** antes de dejar cada Stamp (cartel con nombre +
+   Reemplazar/Cancelar, con zoom al grupo). *(v0.04 - hecho)*
 
 El desarrollo es **incremental**: empezamos por lo mas simple y vamos sumando casos.
 
@@ -50,7 +52,9 @@ El modulo `stamps` ya esta importado en la sesion de Nuke (se carga desde
 
 **Archivo:** `py/LGA_AutoStamps.py` — funcion principal `main()`.
 
-`main()` corre tres pases dentro de un unico bloque `nuke.Undo()`:
+`main()` corre tres pases dentro de un unico bloque `nuke.Undo()`. **Cada grupo
+(1 Anchor + sus Wireds) se confirma con un cartel** antes de quedar (ver
+"Confirmacion por grupo" mas abajo):
 
 ### Pase 0 — Hidden inputs (v0.03)
 
@@ -89,12 +93,47 @@ Recorre las conexiones directas (ignorando Dots y Stamps en ambos extremos) y,
 si la **distancia euclidea** entre centros supera `DISTANCE_THRESHOLD`, reemplaza
 la conexion por Anchor (debajo del padre) + Wired (arriba del hijo).
 
+### Confirmacion por grupo (v0.04)
+
+Cada grupo (1 Anchor + sus Wireds) pasa por `confirm_group()`:
+
+1. Los Stamps **ya estan creados** (el reemplazo ya ocurrio), asi el usuario los ve.
+2. **Zoom-to-fit** al Anchor + sus Wireds (`zoom_to_nodes`): calcula el bbox, busca
+   el widget `DAG` (Qt) para su tamano en px y hace
+   `nuke.zoom(min(dag_w/bw, dag_h/bh) * ZOOM_MARGIN, [cx, cy])` (zoom + scroll).
+3. **Cartel modal** (`ReplaceDialog`) con el nombre sugerido (editable) y botones
+   **Reemplazar** / **Cancelar**, posicionado en una esquina del DAG.
+4. **Reemplazar:** si cambio el nombre, se aplica al Anchor y a todos sus Wireds
+   (`apply_title`).
+5. **Cancelar:** `GroupTx.revert()` deshace SOLO ese grupo (borra los Stamps
+   creados, restaura inputs/knobs y **recrea los Dots borrados** con sus
+   conexiones y nombres).
+
+**Undo unico:** todo (incluido el revert de los cancelados) ocurre dentro de un
+solo `nuke.Undo().begin()/end()`. Los grupos cancelados quedan en neto cero, y un
+solo Ctrl+Z revierte todos los aceptados a la vez.
+
+#### `GroupTx` (transaccion por grupo)
+
+- `created(node)` — registra nodos creados (se borran en revert).
+- `change_input(node, idx, new)` — cambia un input cuyo valor previo **sobrevive**
+  (ej. el `source`); guarda el viejo para restaurar.
+- `change_knob(node, knob, val)` — idem para knobs (ej. `hide_input`).
+- `snapshot_and_delete_dots(dots, children)` — fotografia los Dots (pos, label,
+  `hide_input`, input desde source/otro Dot, destinos externos) y los borra.
+- `revert()` — borra creados → restaura inputs/knobs → `restore_dots()` recrea.
+
+> Importante: las reconexiones cuyo input viejo era **un Dot que se borra** NO se
+> registran con `change_input` (la referencia moriria). Se hacen con `setInput`
+> plano y el `snapshot_dots` se encarga de restaurarlas al recrear el Dot.
+
 ### Variables de configuracion (arriba del archivo)
 
 - `DISTANCE_THRESHOLD = 250` — umbral de distancia en px (pase 2).
 - `MIN_DESTINATIONS = 3` — minimo de destinos para colapsar un arbol de Dots (pase 1).
 - `ANCHOR_GAP_Y = 40` — separacion vertical padre → Anchor.
 - `WIRED_GAP_Y = 40` — separacion vertical Wired → hijo.
+- `ZOOM_MARGIN = 0.9` — aire alrededor del grupo en el zoom-to-fit.
 - `SKIP_CLASSES` — clases ignoradas (`Viewer`, `BackdropNode`, `Root`).
 - `DEBUG = True` — prints de diagnostico.
 
@@ -134,9 +173,10 @@ LGA_AutoStamps.main()
   resuelven igual que cualquier otra conexion.
 - **Los Wireds tienen `hide_input = true` por diseno** → en el pase de hidden
   inputs hay que excluir Stamps (`is_stamp`) para no procesarlos como pickups.
-- **Reuse de Anchor:** `get_or_create_anchor` usa un `registry` por
-  `source.name()` + busca Anchors existentes con ese `input(0)`. El `title` solo
-  se aplica al crearlo; si se reusa, se mantiene el del primero.
+- **Reuse de Anchor:** en el pase de hidden inputs se agrupan los pickups por
+  `source.name()` (1 Anchor por origen). Ademas `existing_anchor_for_source`
+  reutiliza un Anchor ya presente cuyo `input(0)` sea ese origen. El `title` solo
+  se aplica al crearlo; si se reusa, se mantiene.
 - El `label` se toma como `label.split("\n")[0].strip()` (primera linea limpia).
 - En el pase de hidden inputs, los **Dots de ruteo** del pase 1 se distinguen de
   los **pickups ocultos** por `hide_input`: `collect_dot_tree` ignora los Dots con
@@ -145,6 +185,20 @@ LGA_AutoStamps.main()
   `ValueError: A PythonObject is not attached to a node`. Hay que capturar lo que
   se necesite (ej. `node.name()`) ANTES de borrar. Si el error salta dentro del
   `try` del Undo, aborta los pases siguientes y parece que "se rompio todo".
+- **Zoom-to-fit:** el widget del Node Graph se llama `DAG` (Qt). Su `width()/height()`
+  dan el viewport en px. `nuke.zoom(scale, [cx, cy])` hace zoom Y scroll de una.
+  Tambien existe `nuke.center()` si se quisiera restaurar la vista despues.
+- **Cancel sin romper el Undo:** NO usar undo nativo por grupo. Se revierte a mano
+  (`GroupTx.revert`) dentro del mismo `nuke.Undo`. Asi un solo Ctrl+Z deshace todo
+  lo aceptado y los cancelados quedan en neto cero.
+- **Recrear Dots borrados (cancel):** se guarda snapshot (pos, label, hide_input,
+  tile_color, input desde source/otro Dot, destinos externos) y en `restore_dots`
+  se crean, se renombran a su nombre original (ya libre) y se reconectan. Las
+  conexiones son por referencia, asi que aunque falle el `setName` el grafo queda
+  funcionalmente igual.
+- **Reconexiones a un Dot que se borra** no se trackean con `change_input` (la
+  referencia al Dot muere); se hacen con `setInput` plano y las restaura el
+  snapshot del Dot. Solo se trackean inputs cuyo viejo valor sobrevive (el source).
 
 ---
 
@@ -155,8 +209,12 @@ LGA_AutoStamps.main()
 - [x] Filtrar para no actuar sobre nodos que ya son Stamps/Dots.
 - [x] Caso hidden inputs (Dot y no-Dot) con regla del label y reuse de Anchor — v0.03.
 - [x] Reusar Anchor existente si la fuente ya tiene uno (al menos en el pase de hidden inputs).
+- [x] Confirmacion por grupo (cartel nombre + Reemplazar/Cancelar) con zoom-to-fit
+      y revert manual sin romper el Undo — v0.04.
 - [ ] Extender el reuse de Anchor a TODOS los pases (hoy el pase 1 y 2 pueden
       duplicar Anchor si la misma fuente aparece en varios casos).
+- [ ] Restaurar la vista (zoom/scroll) original al terminar (hoy queda en el ultimo grupo).
+- [ ] Hacer el cartel mas lindo (estilo, que no tape los nodos, atajos).
 - [ ] Caso ruteo por Dots con **1 solo destino** (codos de ruteo largo).
 - [ ] Hidden input en input distinto de 0 (ej. mask): hoy asumimos `input(0)`.
 - [ ] Multi-input al mismo destino (origen llega por input 0 y 1): hoy crea 2

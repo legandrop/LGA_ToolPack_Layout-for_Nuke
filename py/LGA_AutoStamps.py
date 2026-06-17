@@ -1,7 +1,7 @@
 """
 __________________________________________________________
 
-  LGA_AutoStamps v0.03 | Lega
+  LGA_AutoStamps v0.04 | Lega
   Encuentra conexiones "sucias" entre nodos y las reemplaza
   automaticamente por Stamps (Anchor + Wired) de Adrian Pueyo.
 
@@ -22,6 +22,15 @@ __________________________________________________________
         * Naming: si el nodo oculto tiene 'label', Anchor y Wired
           toman ese label; si no, el nombre derivado del origen.
         * Reuse: un solo Anchor por nodo origen (1 padre, N hijos).
+
+  v0.04:
+    - Confirmacion por grupo: antes de dejar cada Stamp (padre + sus
+      hijos), se crean los Stamps, se hace zoom a ellos y se muestra un
+      cartel con el nombre sugerido (editable) y botones Reemplazar /
+      Cancelar.
+        * Cancelar revierte SOLO ese grupo (manual, sin tocar el Undo).
+        * Todo corre dentro de un unico nuke.Undo(): un solo Ctrl+Z
+          revierte todos los grupos aceptados.
 __________________________________________________________
 
 """
@@ -29,6 +38,8 @@ __________________________________________________________
 import os
 import sys
 import nuke
+
+from LGA_QtAdapter_ToolPack_Layout import QtWidgets, QtCore
 
 # ----------------------------------------------------------------------
 # CONFIGURACION
@@ -40,7 +51,6 @@ import nuke
 DISTANCE_THRESHOLD = 250
 
 # Cantidad minima de destinos finales para colapsar un arbol de Dots.
-# (En el ejemplo del usuario son 3; con 2 ya conviene limpiar.)
 MIN_DESTINATIONS = 3
 
 # Separacion vertical entre el padre y el Anchor que se crea debajo.
@@ -48,6 +58,9 @@ ANCHOR_GAP_Y = 40
 
 # Separacion vertical entre el Wired y el hijo que tiene debajo.
 WIRED_GAP_Y = 40
+
+# Margen para el zoom-to-fit (0.9 = deja un 10% de aire alrededor).
+ZOOM_MARGIN = 0.9
 
 # Clases de nodos que NO participan (ni como origen ni como destino).
 SKIP_CLASSES = ["Viewer", "BackdropNode", "Root"]
@@ -91,7 +104,7 @@ def _import_stamps():
 
 
 # ----------------------------------------------------------------------
-# HELPERS
+# HELPERS GENERALES
 # ----------------------------------------------------------------------
 
 def node_center(n):
@@ -121,6 +134,14 @@ def is_stamp(stamps, n):
         return False
 
 
+def node_label(n):
+    """Devuelve la primera linea del label del nodo, limpia, o ''."""
+    k = n.knob("label")
+    if not k:
+        return ""
+    return k.value().split("\n")[0].strip()
+
+
 def derive_title(stamps, src):
     """Calcula un titulo razonable para el Anchor a partir del nodo origen."""
     title = src.name()
@@ -139,6 +160,21 @@ def derive_title(stamps, src):
     except Exception:
         pass
     return title
+
+
+def build_children_map():
+    """
+    Devuelve un dict { nodo : [(downstream, input_index), ...] } a partir de
+    todas las conexiones actuales del script.
+    """
+    children = {}
+    for n in nuke.allNodes():
+        for i in range(n.inputs()):
+            inp = n.input(i)
+            if inp is None:
+                continue
+            children.setdefault(inp, []).append((n, i))
+    return children
 
 
 def create_anchor_below(stamps, source, title=None):
@@ -175,34 +211,6 @@ def create_wired_above(stamps, anchor, dst):
     return wired
 
 
-# ----------------------------------------------------------------------
-# PASE 0: HIDDEN INPUTS (v0.03)
-# ----------------------------------------------------------------------
-
-def has_hidden_input(n):
-    """True si el nodo tiene el knob hide_input activo y un input(0) real."""
-    k = n.knob("hide_input")
-    return bool(k and k.value() and n.input(0) is not None)
-
-
-def node_label(n):
-    """Devuelve la primera linea del label del nodo, limpia, o ''."""
-    k = n.knob("label")
-    if not k:
-        return ""
-    return k.value().split("\n")[0].strip()
-
-
-def pickup_title(stamps, pickup, source):
-    """Titulo para los Stamps de un hidden input.
-    Regla del label: si el nodo oculto tiene label, se usa ese; si no, se
-    deriva del nodo origen."""
-    label = node_label(pickup)
-    if label:
-        return label
-    return derive_title(stamps, source)
-
-
 def existing_anchor_for_source(stamps, source):
     """Busca un Anchor ya existente cuyo input(0) sea 'source'. None si no hay."""
     try:
@@ -215,17 +223,269 @@ def existing_anchor_for_source(stamps, source):
     return None
 
 
-def get_or_create_anchor(stamps, source, title, registry):
-    """Reuse: un solo Anchor por nodo origen. Devuelve el Anchor (lo crea si
-    hace falta) usando 'title' solo cuando se crea por primera vez."""
-    key = source.name()
-    if key in registry:
-        return registry[key]
-    anchor = existing_anchor_for_source(stamps, source)
-    if anchor is None:
-        anchor = create_anchor_below(stamps, source, title=title)
-    registry[key] = anchor
-    return anchor
+# ----------------------------------------------------------------------
+# ZOOM + DIALOGO + TRANSACCION CANCELABLE (v0.04)
+# ----------------------------------------------------------------------
+
+def find_dag_widget():
+    """Devuelve el widget del Node Graph (DAG) mas grande y visible."""
+    try:
+        candidates = [
+            w for w in QtWidgets.QApplication.allWidgets()
+            if w.objectName().startswith("DAG") and w.isVisible() and w.width() > 0
+        ]
+        if candidates:
+            return max(candidates, key=lambda w: w.width() * w.height())
+    except Exception:
+        pass
+    return None
+
+
+def zoom_to_nodes(nodes, margin=ZOOM_MARGIN):
+    """Ajusta zoom y scroll del DAG para que el conjunto de nodos entre lo mas
+    grande posible (con un margen)."""
+    nodes = [n for n in nodes if n is not None]
+    if not nodes:
+        return
+    minx = min(n.xpos() for n in nodes)
+    miny = min(n.ypos() for n in nodes)
+    maxx = max(n.xpos() + n.screenWidth() for n in nodes)
+    maxy = max(n.ypos() + n.screenHeight() for n in nodes)
+    bw = max(maxx - minx, 1)
+    bh = max(maxy - miny, 1)
+    cx = (minx + maxx) / 2.0
+    cy = (miny + maxy) / 2.0
+
+    dag = find_dag_widget()
+    if dag is not None:
+        scale = min(dag.width() / float(bw), dag.height() / float(bh)) * margin
+    else:
+        scale = nuke.zoom()
+    nuke.zoom(scale, [cx, cy])
+    try:
+        QtWidgets.QApplication.processEvents()
+    except Exception:
+        pass
+
+
+class ReplaceDialog(QtWidgets.QDialog):
+    """Cartel simple: nombre del nuevo Stamp + Reemplazar / Cancelar."""
+
+    def __init__(self, suggested_name, n_children, parent=None):
+        super(ReplaceDialog, self).__init__(parent)
+        self.setWindowTitle("LGA AutoStamps")
+        self.setModal(True)
+
+        layout = QtWidgets.QVBoxLayout(self)
+
+        hijos = "hijo" if n_children == 1 else "hijos"
+        info = QtWidgets.QLabel("Nuevo Stamp  ({0} {1}):".format(n_children, hijos))
+        layout.addWidget(info)
+
+        self.name_edit = QtWidgets.QLineEdit()
+        self.name_edit.setText(suggested_name)
+        self.name_edit.selectAll()
+        self.name_edit.setMinimumWidth(260)
+        layout.addWidget(self.name_edit)
+
+        btns = QtWidgets.QHBoxLayout()
+        self.cancel_btn = QtWidgets.QPushButton("Cancelar")
+        self.replace_btn = QtWidgets.QPushButton("Reemplazar")
+        self.replace_btn.setDefault(True)
+        btns.addWidget(self.cancel_btn)
+        btns.addStretch()
+        btns.addWidget(self.replace_btn)
+        layout.addLayout(btns)
+
+        self.replace_btn.clicked.connect(self.accept)
+        self.cancel_btn.clicked.connect(self.reject)
+
+    def get_name(self):
+        return self.name_edit.text().strip()
+
+
+def show_replace_dialog(suggested_name, n_children):
+    """Muestra el cartel (modal) posicionado en una esquina del DAG.
+    Devuelve (accepted, name)."""
+    dlg = ReplaceDialog(suggested_name, n_children)
+    dlg.adjustSize()
+    try:
+        dag = find_dag_widget()
+        if dag is not None:
+            tl = dag.mapToGlobal(QtCore.QPoint(0, 0))
+            dlg.move(tl.x() + 30, tl.y() + 30)
+    except Exception:
+        pass
+    run = getattr(dlg, "exec_", None) or dlg.exec
+    accepted = bool(run())
+    return accepted, dlg.get_name()
+
+
+def snapshot_dots(dots, children):
+    """Captura lo necesario para recrear un conjunto de Dots y sus conexiones
+    (internas entre ellos y de borde hacia source/destinos)."""
+    dot_names = set(d.name() for d in dots)
+    snaps = []
+    for d in dots:
+        up = d.input(0)
+        up_name = up.name() if (up is not None and up.name() in dot_names) else None
+        up_ext = up if (up is not None and up.name() not in dot_names) else None
+        downstream_ext = [
+            (dep, idx) for (dep, idx) in children.get(d, [])
+            if dep.name() not in dot_names
+        ]
+        snaps.append({
+            "name": d.name(),
+            "xpos": d.xpos(),
+            "ypos": d.ypos(),
+            "label": d["label"].value() if d.knob("label") else "",
+            "hide_input": bool(d.knob("hide_input") and d["hide_input"].value()),
+            "tile_color": d["tile_color"].value() if d.knob("tile_color") else None,
+            "up_name": up_name,    # input desde otro Dot del set
+            "up_ext": up_ext,      # input desde un nodo externo (source)
+            "downstream_ext": downstream_ext,  # destinos externos
+        })
+    return snaps
+
+
+def restore_dots(snaps):
+    """Recrea los Dots de un snapshot y restaura todas sus conexiones."""
+    name_map = {}
+    # 1) Recrear todos los Dots (con knobs)
+    for s in snaps:
+        d = nuke.nodes.Dot()
+        d.setXYpos(s["xpos"], s["ypos"])
+        if d.knob("label"):
+            d["label"].setValue(s["label"])
+        if d.knob("hide_input"):
+            d["hide_input"].setValue(s["hide_input"])
+        if s["tile_color"] is not None and d.knob("tile_color"):
+            d["tile_color"].setValue(s["tile_color"])
+        name_map[s["name"]] = d
+    # 2) Restaurar nombres originales (ya estan libres por el delete)
+    for s in snaps:
+        try:
+            name_map[s["name"]].setName(s["name"])
+        except Exception:
+            pass
+    # 3) Restaurar inputs (internos entre Dots y externos hacia source)
+    for s in snaps:
+        d = name_map[s["name"]]
+        if s["up_name"] is not None:
+            d.setInput(0, name_map.get(s["up_name"]))
+        elif s["up_ext"] is not None:
+            try:
+                d.setInput(0, s["up_ext"])
+            except Exception:
+                pass
+    # 4) Restaurar destinos externos hacia los Dots
+    for s in snaps:
+        d = name_map[s["name"]]
+        for (dep, idx) in s["downstream_ext"]:
+            try:
+                dep.setInput(idx, d)
+            except Exception:
+                pass
+
+
+class GroupTx:
+    """Transaccion de un grupo (Anchor + sus Wireds). Permite revertir SOLO
+    ese grupo manualmente, sin crear un Undo aparte."""
+
+    def __init__(self):
+        self.created_nodes = []   # nodos a borrar en revert
+        self.input_changes = []   # (node, idx, old_input) -> old debe sobrevivir
+        self.knob_changes = []    # (node, knob_name, old_value)
+        self.dot_snaps = []       # snapshots de Dots borrados
+
+    def created(self, node):
+        self.created_nodes.append(node)
+
+    def change_input(self, node, idx, new_input):
+        """Cambia un input cuyo valor previo SOBREVIVE (no es un Dot a borrar)."""
+        self.input_changes.append((node, idx, node.input(idx)))
+        node.setInput(idx, new_input)
+
+    def change_knob(self, node, knob_name, value):
+        self.knob_changes.append((node, knob_name, node[knob_name].value()))
+        node[knob_name].setValue(value)
+
+    def snapshot_and_delete_dots(self, dots, children):
+        self.dot_snaps.extend(snapshot_dots(dots, children))
+        for d in dots:
+            try:
+                nuke.delete(d)
+            except Exception:
+                pass
+
+    def revert(self):
+        # 1) Borrar nodos creados (desconecta automaticamente sus outputs)
+        for n in self.created_nodes:
+            try:
+                nuke.delete(n)
+            except Exception:
+                pass
+        # 2) Restaurar inputs cuyo valor previo sobrevive
+        for (node, idx, old) in reversed(self.input_changes):
+            try:
+                node.setInput(idx, old)
+            except Exception:
+                pass
+        # 3) Restaurar knobs
+        for (node, kn, old) in reversed(self.knob_changes):
+            try:
+                node[kn].setValue(old)
+            except Exception:
+                pass
+        # 4) Recrear los Dots borrados (esto reconecta los destinos)
+        restore_dots(self.dot_snaps)
+        debug_print("Grupo cancelado: revertido al estado original.")
+
+
+def apply_title(anchor, wireds, name):
+    """Aplica 'name' como titulo del Anchor y de todos sus Wireds."""
+    if not name:
+        return
+    try:
+        anchor["title"].setValue(name)
+        if anchor.knob("prev_title"):
+            anchor["prev_title"].setValue(name)
+    except Exception:
+        pass
+    for w in wireds:
+        try:
+            w["title"].setValue(name)
+            if w.knob("prev_title"):
+                w["prev_title"].setValue(name)
+        except Exception:
+            pass
+
+
+def confirm_group(tx, anchor, wireds, suggested_name):
+    """Zoom al grupo, muestra el cartel y aplica/revierte segun la respuesta.
+    Devuelve True si se acepta, False si se cancela."""
+    zoom_to_nodes([anchor] + wireds)
+    accepted, name = show_replace_dialog(suggested_name, len(wireds))
+    if accepted:
+        try:
+            current = anchor["title"].value()
+        except Exception:
+            current = ""
+        if name and name != current:
+            apply_title(anchor, wireds, name)
+        return True
+    tx.revert()
+    return False
+
+
+# ----------------------------------------------------------------------
+# PASE 0: HIDDEN INPUTS (v0.03)
+# ----------------------------------------------------------------------
+
+def has_hidden_input(n):
+    """True si el nodo tiene el knob hide_input activo y un input(0) real."""
+    k = n.knob("hide_input")
+    return bool(k and k.value() and n.input(0) is not None)
 
 
 def find_hidden_inputs(stamps):
@@ -242,103 +502,95 @@ def find_hidden_inputs(stamps):
     return pickups
 
 
-def replace_hidden_dot(stamps, dot, anchor, children):
-    """Borra un Dot con hidden input y lo reemplaza por un Wired (en la misma
-    posicion). Los nodos que colgaban del Dot se reconectan al Wired."""
-    dot_name = dot.name()  # capturar antes de borrar
-    wired = stamps.wired(anchor)
-    wx = int(dot.xpos() + dot.screenWidth() / 2 - wired.screenWidth() / 2)
-    wy = int(dot.ypos() + dot.screenHeight() / 2 - wired.screenHeight() / 2)
-    wired.setXYpos(wx, wy)
-    deselect_all()
+def process_hidden_group(stamps, source, pickups, children):
+    """Procesa todos los hidden inputs que apuntan al mismo 'source' como un
+    unico grupo (1 Anchor, N Wireds). Devuelve True si se acepta."""
+    tx = GroupTx()
 
-    for (dep, idx) in children.get(dot, []):
-        dep.setInput(idx, wired)
-        debug_print(
-            "Reconectado: {0}.input({1}) -> {2}".format(dep.name(), idx, wired.name())
-        )
+    # Titulo: primer label disponible entre los pickups, si no derivado del source.
+    title = None
+    for p in pickups:
+        lbl = node_label(p)
+        if lbl:
+            title = lbl
+            break
+    if not title:
+        title = derive_title(stamps, source)
 
-    nuke.delete(dot)
-    debug_print("Dot oculto '{0}' borrado y reemplazado por Wired.".format(dot_name))
+    # Reuse: 1 Anchor por origen (reutiliza uno existente si ya lo hay).
+    anchor = existing_anchor_for_source(stamps, source)
+    if anchor is None:
+        anchor = create_anchor_below(stamps, source, title=title)
+        tx.created(anchor)
 
+    wireds = []
+    for node in pickups:
+        if node.Class() == "Dot":
+            # Borrar el Dot y reemplazarlo por un Wired en su posicion.
+            wired = stamps.wired(anchor)
+            wx = int(node.xpos() + node.screenWidth() / 2 - wired.screenWidth() / 2)
+            wy = int(node.ypos() + node.screenHeight() / 2 - wired.screenHeight() / 2)
+            wired.setXYpos(wx, wy)
+            deselect_all()
+            tx.created(wired)
+            # Reconectar lo que colgaba del Dot al Wired (old = Dot -> snapshot).
+            for (dep, idx) in children.get(node, []):
+                dep.setInput(idx, wired)
+            tx.snapshot_and_delete_dots([node], children)
+            wireds.append(wired)
+        else:
+            # No-Dot: no se borra; se le alimenta un Wired y se muestra el input.
+            wired = create_wired_above(stamps, anchor, node)
+            tx.created(wired)
+            tx.change_input(node, 0, wired)  # old = source (sobrevive)
+            if node.knob("hide_input"):
+                tx.change_knob(node, "hide_input", False)
+            wireds.append(wired)
 
-def feed_wired_into_node(stamps, node, anchor):
-    """Para un nodo no-Dot con hidden input: NO se borra. Se crea un Wired
-    arriba y se conecta a su input(0). Se muestra el input (hide_input=False)
-    para que la conexion corta sea visible."""
-    wired = create_wired_above(stamps, anchor, node)
-    node.setInput(0, wired)
-    try:
-        node["hide_input"].setValue(False)
-    except Exception:
-        pass
-    debug_print(
-        "Nodo '{0}' (hidden input) alimentado por Wired '{1}'.".format(
-            node.name(), wired.name()
-        )
-    )
+    return confirm_group(tx, anchor, wireds, title)
 
 
 def process_hidden_inputs(stamps):
-    """Releva y procesa todos los hidden inputs. Devuelve la cantidad.
-    Reuse de Anchor por nodo origen via 'registry'."""
+    """Releva y procesa todos los hidden inputs, agrupados por nodo origen.
+    Devuelve la cantidad de grupos aceptados."""
     children = build_children_map()
     pickups = find_hidden_inputs(stamps)
-    registry = {}  # source.name() -> Anchor
-    count = 0
 
+    # Agrupar por origen, preservando el orden de aparicion.
+    groups = {}
+    order = []
     for node in pickups:
         source = node.input(0)
         if source is None:
             continue
-        # No tiene sentido anclar a un Stamp o a clases ignoradas.
         if is_stamp(stamps, source) or source.Class() in SKIP_CLASSES:
             continue
+        key = source.name()
+        if key not in groups:
+            groups[key] = {"source": source, "pickups": []}
+            order.append(key)
+        groups[key]["pickups"].append(node)
 
-        is_dot = node.Class() == "Dot"
-        # Nota: un Dot oculto sin nada colgando igual se convierte; es un
-        # pickup que el compositor coloco a proposito (preservamos el punto).
-
-        title = pickup_title(stamps, node, source)
-        anchor = get_or_create_anchor(stamps, source, title, registry)
-
-        if is_dot:
-            replace_hidden_dot(stamps, node, anchor, children)
-        else:
-            feed_wired_into_node(stamps, node, anchor)
-        count += 1
-
-    return count
+    accepted = 0
+    for key in order:
+        g = groups[key]
+        if process_hidden_group(stamps, g["source"], g["pickups"], children):
+            accepted += 1
+    return accepted
 
 
 # ----------------------------------------------------------------------
 # PASE 1: DISTRIBUCIONES POR DOTS (v0.02)
 # ----------------------------------------------------------------------
 
-def build_children_map():
-    """
-    Devuelve un dict { nodo : [(downstream, input_index), ...] } a partir de
-    todas las conexiones actuales del script.
-    """
-    children = {}
-    for n in nuke.allNodes():
-        for i in range(n.inputs()):
-            inp = n.input(i)
-            if inp is None:
-                continue
-            children.setdefault(inp, []).append((n, i))
-    return children
-
-
 def collect_dot_tree(source, children):
     """
-    Desde 'source', recorre SOLO a traves de Dots y devuelve:
+    Desde 'source', recorre SOLO a traves de Dots de ruteo y devuelve:
       - dots: lista de Dots que forman el arbol de distribucion.
       - leaves: lista de (destino, input_index) de los nodos reales (no Dot)
                 alimentados por algun Dot del arbol.
     Los hijos directos no-Dot de 'source' NO se consideran (no son ruteo).
-    Los Dots con hidden input se ignoran: son pickups remotos que maneja
-    el pase de hidden inputs, no ruteo visible.
+    Los Dots con hidden input se ignoran (los maneja el pase de hidden inputs).
     """
     dots = []
     leaves = []
@@ -404,36 +656,38 @@ def find_dot_distributions(stamps, children, min_destinations):
     return results
 
 
-def replace_dot_distribution_with_stamps(stamps, source, dots, leaves):
-    """
-    Colapsa un arbol de Dots:
-      source -> Anchor (debajo)  ...  N Wireds (uno arriba de cada destino).
-    Luego borra todos los Dots del arbol.
-    """
+def replace_dot_distribution_with_stamps(stamps, source, dots, leaves, children):
+    """Colapsa un arbol de Dots: 1 Anchor + N Wireds, y borra los Dots.
+    Devuelve True si se acepta."""
+    tx = GroupTx()
     anchor = create_anchor_below(stamps, source)
+    tx.created(anchor)
+    try:
+        title = anchor["title"].value()
+    except Exception:
+        title = source.name()
 
+    wireds = []
     for (dst, idx) in leaves:
         wired = create_wired_above(stamps, anchor, dst)
-        dst.setInput(idx, wired)
-        debug_print(
-            "Reconectado: {0}.input({1}) -> {2}".format(dst.name(), idx, wired.name())
-        )
+        tx.created(wired)
+        dst.setInput(idx, wired)  # old = un Dot (se borrara) -> snapshot
+        wireds.append(wired)
 
-    for d in dots:
-        try:
-            nuke.delete(d)
-        except Exception:
-            pass
-    debug_print("Borrados {0} Dot/s del arbol de '{1}'.".format(len(dots), source.name()))
+    tx.snapshot_and_delete_dots(dots, children)
+    return confirm_group(tx, anchor, wireds, title)
 
 
 def process_dot_distributions(stamps):
-    """Releva y colapsa todas las distribuciones por Dots. Devuelve la cantidad."""
+    """Releva y colapsa todas las distribuciones por Dots. Devuelve cuantas
+    se aceptaron."""
     children = build_children_map()
     trees = find_dot_distributions(stamps, children, MIN_DESTINATIONS)
+    accepted = 0
     for (source, dots, leaves) in trees:
-        replace_dot_distribution_with_stamps(stamps, source, dots, leaves)
-    return len(trees)
+        if replace_dot_distribution_with_stamps(stamps, source, dots, leaves, children):
+            accepted += 1
+    return accepted
 
 
 # ----------------------------------------------------------------------
@@ -471,24 +725,32 @@ def find_long_connections(stamps, threshold):
 
 
 def replace_connection_with_stamps(stamps, src, dst, input_index):
-    """
-    Reemplaza la conexion directa src -> dst por:
-        src -> Anchor (debajo de src)  ...  Wired (arriba de dst) -> dst
-    """
+    """Reemplaza una conexion directa larga por Anchor + Wired.
+    Devuelve True si se acepta."""
+    tx = GroupTx()
     anchor = create_anchor_below(stamps, src)
+    tx.created(anchor)
+    try:
+        title = anchor["title"].value()
+    except Exception:
+        title = src.name()
+
     wired = create_wired_above(stamps, anchor, dst)
-    dst.setInput(input_index, wired)
-    debug_print(
-        "Reconectado: {0}.input({1}) -> {2}".format(dst.name(), input_index, wired.name())
-    )
+    tx.created(wired)
+    tx.change_input(dst, input_index, wired)  # old = src (sobrevive)
+
+    return confirm_group(tx, anchor, [wired], title)
 
 
 def process_long_connections(stamps):
-    """Releva y reemplaza todas las conexiones largas directas. Devuelve la cantidad."""
+    """Releva y reemplaza todas las conexiones largas directas. Devuelve
+    cuantas se aceptaron."""
     pairs = find_long_connections(stamps, DISTANCE_THRESHOLD)
+    accepted = 0
     for (src, dst, input_index, dist) in pairs:
-        replace_connection_with_stamps(stamps, src, dst, input_index)
-    return len(pairs)
+        if replace_connection_with_stamps(stamps, src, dst, input_index):
+            accepted += 1
+    return accepted
 
 
 # ----------------------------------------------------------------------
@@ -514,11 +776,11 @@ def main():
         nuke.Undo().end()
 
     if total == 0:
-        debug_print("LGA_AutoStamps: no se encontro nada para reemplazar.")
-        nuke.message("LGA_AutoStamps: no se encontro nada para reemplazar.")
+        debug_print("LGA_AutoStamps: no se aplico ningun reemplazo.")
+        nuke.message("LGA_AutoStamps: no se aplico ningun reemplazo.")
         return
 
-    debug_print("LGA_AutoStamps: {0} caso/s reemplazado/s.".format(total))
+    debug_print("LGA_AutoStamps: {0} grupo/s reemplazado/s.".format(total))
 
 
 if __name__ == "__main__":
