@@ -126,5 +126,7 @@ El JSON incluye:
 
 - `execute_python` se ejecuta con `confirm=True` dentro del MCP.
 - La captura recorre el DAG top-level visible (sin expandir nodos internos de Group).
+- El render usa `tile_color` cuando existe y, si no, color por clase obtenido desde Nuke (`defaultNodeColor`) para aproximarse mejor al Node Graph real.
+- Las conexiones se dibujan con flechas direccionales siguiendo el ultimo segmento de flujo para mantener legible el orden de lectura.
 - El render intenta aproximarse al Node Graph real de Nuke, pero la comparacion exacta debe hacerse con el JSON.
 - Si Nuke queda ocupado o colgado, el broker puede reportar timeouts aunque el script este bien formado.

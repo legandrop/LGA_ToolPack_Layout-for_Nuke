@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-07-05T02:57:52Z",
+  "generated_at_utc": "2026-07-05T14:30:37Z",
   "source": {
     "before_script": {
       "name": "C://Portable//LGA_NukeMCP//Script_Prueba.nk",
@@ -8,7 +8,7 @@
         100.0
       ],
       "fps": 24.0,
-      "format": "<Format object at 0x0000018DE836AF30>",
+      "format": "<Format object at 0x0000018DE8368DB0>",
       "colorspace": "OCIO",
       "node_count": 55
     },
@@ -19,7 +19,7 @@
         100.0
       ],
       "fps": 24.0,
-      "format": "<Format object at 0x0000018DE8368230>",
+      "format": "<Format object at 0x0000018DE836AED0>",
       "colorspace": "OCIO",
       "node_count": 55
     }

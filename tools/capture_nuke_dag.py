@@ -1,7 +1,7 @@
 """
 ______________________________________________________________
 
-  capture_nuke_dag v1.01 | 2026 | Lega
+  capture_nuke_dag v1.02 | 2026 | Lega
 
   Captura el DAG actual de Nuke via MCP broker y genera:
   - JSON estructurado (nodos + conexiones)
@@ -12,6 +12,7 @@ ______________________________________________________________
 ChangeLog:
 - v1.00 (2026-07-04): version inicial con captura MCP, JSON y render PNG/SVG.
 - v1.01 (2026-07-04): corrige render de conexiones, quita inputs desconectados y captura solo DAG top-level.
+- v1.02 (2026-07-05): mejora fidelidad visual (colores reales, flechas de flujo y dots).
 """
 
 from __future__ import annotations
@@ -72,6 +73,7 @@ NODE_BASE_COLORS = {
 }
 
 DEFAULT_NODE_COLOR = (125, 125, 125)
+DOT_NODE_COLOR = (220, 220, 220)
 GRAPH_BG_COLOR = (52, 53, 57)
 EDGE_FLOW_COLOR = (24, 24, 24)
 EDGE_MASK_COLOR = (239, 219, 64)
@@ -105,6 +107,16 @@ def _safe_input_label(node, index):
             return text
     return ""
 
+def _safe_default_node_color(node_class, _cache={}):
+    if node_class in _cache:
+        return _cache[node_class]
+    try:
+        value = int(nuke.defaultNodeColor(node_class))
+    except Exception:
+        value = 0
+    _cache[node_class] = value
+    return value
+
 nodes = []
 
 for node in nuke.allNodes(recurseGroups=False):
@@ -133,6 +145,7 @@ for node in nuke.allNodes(recurseGroups=False):
         "screenWidth": int(node.screenWidth()) if hasattr(node, "screenWidth") else None,
         "screenHeight": int(node.screenHeight()) if hasattr(node, "screenHeight") else None,
         "tile_color": int(tile_color or 0),
+        "default_color": int(_safe_default_node_color(node.Class()) or 0),
         "selected": bool(_safe_knob_value(node, "selected", False)),
         "label": str(label_raw),
         "label_eval": str(label_raw),
@@ -264,7 +277,7 @@ class MCPStdioClient:
             {
                 "protocolVersion": self.protocol_version,
                 "capabilities": {},
-                "clientInfo": {"name": "capture_nuke_dag", "version": "1.00"},
+                "clientInfo": {"name": "capture_nuke_dag", "version": "1.02"},
             },
             timeout=45.0,
         )
@@ -345,12 +358,11 @@ def _decode_tile_color(value: Any) -> tuple[int, int, int] | None:
     if value in (None, 0, "0", ""):
         return None
     try:
-        raw = int(value)
+        raw = int(value) & 0xFFFFFFFF
     except (TypeError, ValueError):
         return None
-    if raw <= 0:
+    if raw == 0:
         return None
-    raw &= 0xFFFFFFFF
     r = (raw >> 24) & 0xFF
     g = (raw >> 16) & 0xFF
     b = (raw >> 8) & 0xFF
@@ -360,10 +372,15 @@ def _decode_tile_color(value: Any) -> tuple[int, int, int] | None:
 
 
 def _pick_node_color(node: dict[str, Any]) -> tuple[int, int, int]:
+    klass = str(node.get("class", ""))
+    if klass == "Dot":
+        return DOT_NODE_COLOR
     tile = _decode_tile_color(node.get("tile_color"))
     if tile is not None:
         return tile
-    klass = str(node.get("class", ""))
+    default_color = _decode_tile_color(node.get("default_color"))
+    if default_color is not None:
+        return default_color
     return NODE_BASE_COLORS.get(klass, DEFAULT_NODE_COLOR)
 
 
@@ -419,11 +436,19 @@ def _load_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     return ImageFont.load_default()
 
 
-def _draw_arrow(draw: ImageDraw.ImageDraw, end: tuple[float, float], direction: str, color: tuple[int, int, int]) -> None:
+def _draw_arrow(
+    draw: ImageDraw.ImageDraw,
+    end: tuple[float, float],
+    direction: str,
+    color: tuple[int, int, int],
+    size: int,
+) -> None:
     x, y = end
-    s = 5
+    s = max(4, size)
     if direction == "down":
         points = [(x, y), (x - s, y - s), (x + s, y - s)]
+    elif direction == "up":
+        points = [(x, y), (x - s, y + s), (x + s, y + s)]
     elif direction == "left":
         points = [(x, y), (x + s, y - s), (x + s, y + s)]
     elif direction == "right":
@@ -433,16 +458,12 @@ def _draw_arrow(draw: ImageDraw.ImageDraw, end: tuple[float, float], direction: 
     draw.polygon(points, fill=color)
 
 
-def _draw_diamond_marker(
-    draw: ImageDraw.ImageDraw,
-    center: tuple[float, float],
-    size: float,
-    fill: tuple[int, int, int],
-    outline: tuple[int, int, int] | None = None,
-) -> None:
-    x, y = center
-    points = [(x, y - size), (x + size, y), (x, y + size), (x - size, y)]
-    draw.polygon(_line_points(points), fill=fill, outline=outline)
+def _segment_direction(start: tuple[float, float], end: tuple[float, float]) -> str:
+    dx = end[0] - start[0]
+    dy = end[1] - start[1]
+    if abs(dx) > abs(dy):
+        return "right" if dx >= 0 else "left"
+    return "down" if dy >= 0 else "up"
 
 
 def _line_points(points: list[tuple[float, float]]) -> list[tuple[int, int]]:
@@ -541,6 +562,8 @@ def _draw_connections(
     render_map: dict[str, RenderNode],
     edges: list[dict[str, Any]],
     font_small: ImageFont.FreeTypeFont | ImageFont.ImageFont,
+    line_width: int,
+    arrow_size: int,
 ) -> None:
     by_name = {str(node.get("name")): node for node in raw_nodes}
 
@@ -573,9 +596,12 @@ def _draw_connections(
                 mid_x = (src_point[0] + dst_point[0]) / 2.0
                 points = [src_point, (mid_x, src_point[1]), (mid_x, dst_point[1]), dst_point]
 
-            draw.line(_line_points(points), fill=EDGE_FLOW_COLOR, width=2)
-            _draw_arrow(draw, dst_point, "left", EDGE_FLOW_COLOR)
-            _draw_diamond_marker(draw, points[0], size=4, fill=EDGE_MASK_COLOR, outline=NODE_BORDER_COLOR)
+            draw.line(_line_points(points), fill=EDGE_FLOW_COLOR, width=line_width)
+            if len(points) > 1:
+                direction = _segment_direction(points[-2], points[-1])
+            else:
+                direction = "left"
+            _draw_arrow(draw, dst_point, direction, EDGE_FLOW_COLOR, size=arrow_size)
             label_y = dst_point[1] - max(9, int(dst.h * 0.5))
             draw.text((dst_point[0] + 6, label_y), "mask", fill=EDGE_MASK_COLOR, font=font_small)
             continue
@@ -591,22 +617,20 @@ def _draw_connections(
         else:
             dst_point = (dst_cx, dst.y)
 
-        if abs(src_point[0] - dst_point[0]) <= 2:
+        if abs(src_point[0] - dst_point[0]) <= 2 or abs(src_point[1] - dst_point[1]) <= 2:
             points = [src_point, dst_point]
-        else:
-            mid_y = src_point[1] + max(18.0, (dst_point[1] - src_point[1]) * 0.5)
+        elif src_point[1] <= dst_point[1]:
+            mid_y = src_point[1] + max(20.0, (dst_point[1] - src_point[1]) * 0.5)
             points = [src_point, (src_point[0], mid_y), (dst_point[0], mid_y), dst_point]
+        else:
+            points = [src_point, (dst_point[0], src_point[1]), dst_point]
 
-        draw.line(_line_points(points), fill=EDGE_FLOW_COLOR, width=2)
-        _draw_arrow(draw, dst_point, "down", EDGE_FLOW_COLOR)
-        src_is_dot = src_raw.get("class") == "Dot"
-        dst_is_dot = dst_raw.get("class") == "Dot"
-        if not src_is_dot and not dst_is_dot:
-            mid_idx = max(0, int(len(points) / 2) - 1)
-            p0 = points[mid_idx]
-            p1 = points[mid_idx + 1]
-            marker = ((p0[0] + p1[0]) / 2.0, (p0[1] + p1[1]) / 2.0)
-            _draw_diamond_marker(draw, marker, size=4, fill=EDGE_MASK_COLOR, outline=NODE_BORDER_COLOR)
+        draw.line(_line_points(points), fill=EDGE_FLOW_COLOR, width=line_width)
+        if len(points) > 1:
+            direction = _segment_direction(points[-2], points[-1])
+        else:
+            direction = "down"
+        _draw_arrow(draw, dst_point, direction, EDGE_FLOW_COLOR, size=arrow_size)
 
 
 def _draw_nodes(
@@ -708,13 +732,23 @@ def render_png(snapshot: dict[str, Any], output_path: Path, scale: float = 1.0, 
 
     image = Image.new("RGB", (width, height), GRAPH_BG_COLOR)
     draw = ImageDraw.Draw(image)
-    font_main = _load_font(12)
-    font_small = _load_font(10)
+    font_main = _load_font(max(12, int(round(11 * scale))))
+    font_small = _load_font(max(10, int(round(9 * scale))))
+    line_width = max(2, int(round(1.4 * scale)))
+    arrow_size = max(5, int(round(3.6 * scale)))
 
     render_map = {node.name: node for node in render_nodes}
     edges = snapshot.get("edges", [])
     if isinstance(edges, list):
-        _draw_connections(draw, raw_nodes, render_map, edges, font_small=font_small)
+        _draw_connections(
+            draw,
+            raw_nodes,
+            render_map,
+            edges,
+            font_small=font_small,
+            line_width=line_width,
+            arrow_size=arrow_size,
+        )
     _draw_nodes(draw, render_nodes, font_main=font_main, font_small=font_small)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
