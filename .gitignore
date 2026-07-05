@@ -5,6 +5,7 @@
 __pycache__/
 +OLD/
 Building_Blocks/
++Building_Blocks/
 z_*.py
 .DS_Store
 Thumbs.db
@@ -12,4 +13,6 @@ Km_NodeGraphEN/templates/
 fix_gitgraph.ps1
 Doc/pandoc-3.9/
 .codex/
+.cursor/
+.cursorrules
 test_arrange_samples/
