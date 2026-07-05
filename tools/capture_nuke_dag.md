@@ -83,6 +83,35 @@ python tools\capture_nuke_dag.py --output-dir tools\output\after
 
 El JSON es la fuente precisa para medir cambios de coordenadas, nodos y conexiones. El PNG/SVG sirve para revisar visualmente si el layout conserva proporciones, distancias relativas y conexiones.
 
+## Comparador automatico before/after
+
+Se agrego `tools\compare_nuke_dag.py` para automatizar el ciclo completo:
+
+```powershell
+python tools\compare_nuke_dag.py
+```
+
+Flujo por defecto:
+
+1. Captura `before` en `tools\output\before`.
+2. Espera que ejecutes `lga_arrange` en Nuke y presiones Enter.
+3. Captura `after` en `tools\output\after`.
+4. Genera:
+   - `tools\output\compare\dag_compare_report.json`
+   - `tools\output\compare\dag_compare.png`
+
+Opciones utiles:
+
+```powershell
+python tools\compare_nuke_dag.py --no-pause --wait-seconds 2
+python tools\compare_nuke_dag.py --use-existing
+python tools\compare_nuke_dag.py --scale 1.5 --padding 100
+```
+
+- `--use-existing`: no vuelve a capturar; compara los JSON ya existentes.
+- `--no-pause`: no espera Enter entre before/after.
+- `--wait-seconds`: espera fija cuando se usa `--no-pause`.
+
 ## Datos capturados
 
 El JSON incluye:
@@ -96,5 +125,6 @@ El JSON incluye:
 ## Notas
 
 - `execute_python` se ejecuta con `confirm=True` dentro del MCP.
+- La captura recorre el DAG top-level visible (sin expandir nodos internos de Group).
 - El render intenta aproximarse al Node Graph real de Nuke, pero la comparacion exacta debe hacerse con el JSON.
 - Si Nuke queda ocupado o colgado, el broker puede reportar timeouts aunque el script este bien formado.

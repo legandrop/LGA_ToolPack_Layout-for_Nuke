@@ -1,5 +1,5 @@
 {
-  "captured_at_utc": "2026-07-05T02:57:25.460864+00:00",
+  "captured_at_utc": "2026-07-05T02:57:52.242876+00:00",
   "capture_tool": "capture_nuke_dag.py",
   "broker_command": [
     "powershell",
@@ -17,7 +17,7 @@
       100.0
     ],
     "fps": 24.0,
-    "format": "<Format object at 0x0000018DE83690F0>",
+    "format": "<Format object at 0x0000018DE8368230>",
     "colorspace": "OCIO",
     "node_count": 55
   },

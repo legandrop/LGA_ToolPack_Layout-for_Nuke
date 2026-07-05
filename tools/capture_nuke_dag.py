@@ -1,7 +1,7 @@
 """
 ______________________________________________________________
 
-  capture_nuke_dag v1.00 | 2026 | Lega
+  capture_nuke_dag v1.01 | 2026 | Lega
 
   Captura el DAG actual de Nuke via MCP broker y genera:
   - JSON estructurado (nodos + conexiones)
@@ -11,6 +11,7 @@ ______________________________________________________________
 
 ChangeLog:
 - v1.00 (2026-07-04): version inicial con captura MCP, JSON y render PNG/SVG.
+- v1.01 (2026-07-04): corrige render de conexiones, quita inputs desconectados y captura solo DAG top-level.
 """
 
 from __future__ import annotations
@@ -76,16 +77,6 @@ EDGE_FLOW_COLOR = (24, 24, 24)
 EDGE_MASK_COLOR = (239, 219, 64)
 NODE_BORDER_COLOR = (14, 14, 14)
 
-MASK_LAST_INPUT_CLASSES = {
-    "Grade",
-    "Blur",
-    "ColorCorrect",
-    "Multiply",
-    "Copy",
-    "Merge",
-    "Merge2",
-}
-
 CAPTURE_DAG_CODE = r"""
 import nuke
 
@@ -98,19 +89,25 @@ def _safe_knob_value(node, knob_name, default=None):
     except Exception:
         return default
 
-def _safe_eval_label(node):
-    knob = node.knob("label")
-    if knob is None:
-        return ""
-    try:
-        value = knob.evaluate()
-    except Exception:
-        value = ""
-    return "" if value is None else str(value)
+def _safe_input_label(node, index):
+    for attr in ("inputLabel", "input_label"):
+        fn = getattr(node, attr, None)
+        if not callable(fn):
+            continue
+        try:
+            value = fn(index)
+        except Exception:
+            continue
+        if value is None:
+            continue
+        text = str(value).strip()
+        if text:
+            return text
+    return ""
 
 nodes = []
 
-for node in nuke.allNodes(recurseGroups=True):
+for node in nuke.allNodes(recurseGroups=False):
     if node.Class() == "Root":
         continue
 
@@ -121,6 +118,7 @@ for node in nuke.allNodes(recurseGroups=True):
             {
                 "input_index": int(i),
                 "source_node": src.name() if src is not None else None,
+                "input_label": _safe_input_label(node, i),
             }
         )
 
@@ -137,7 +135,7 @@ for node in nuke.allNodes(recurseGroups=True):
         "tile_color": int(tile_color or 0),
         "selected": bool(_safe_knob_value(node, "selected", False)),
         "label": str(label_raw),
-        "label_eval": _safe_eval_label(node),
+        "label_eval": str(label_raw),
         "channels": _safe_knob_value(node, "channels", ""),
         "size": _safe_knob_value(node, "size", None),
         "output": _safe_knob_value(node, "output", ""),
@@ -390,13 +388,19 @@ def _build_display_lines(node: dict[str, Any]) -> list[str]:
     return lines[:3]
 
 
-def _classify_input_kind(node_class: str, input_index: int, total_inputs: int) -> str:
+def _classify_input_kind(
+    node_class: str,
+    input_index: int,
+    total_inputs: int,
+    input_label: str = "",
+) -> str:
+    label_lower = input_label.strip().lower()
+    if "mask" in label_lower:
+        return "mask"
     if node_class in {"Merge", "Merge2"}:
         if input_index >= 2:
             return "mask"
         return "flow"
-    if node_class in MASK_LAST_INPUT_CLASSES and total_inputs > 1 and input_index == total_inputs - 1:
-        return "mask"
     return "flow"
 
 
@@ -514,12 +518,18 @@ def _build_edges(raw_nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 input_index = int(idx_raw)
             except (TypeError, ValueError):
                 input_index = 0
+            input_label = str(item.get("input_label") or "")
             edges.append(
                 {
                     "source_node": str(source),
                     "target_node": dst_name,
                     "input_index": input_index,
-                    "kind": _classify_input_kind(node_class, input_index, total_inputs),
+                    "kind": _classify_input_kind(
+                        node_class=node_class,
+                        input_index=input_index,
+                        total_inputs=total_inputs,
+                        input_label=input_label,
+                    ),
                 }
             )
     return edges
@@ -563,8 +573,8 @@ def _draw_connections(
                 mid_x = (src_point[0] + dst_point[0]) / 2.0
                 points = [src_point, (mid_x, src_point[1]), (mid_x, dst_point[1]), dst_point]
 
-            draw.line(_line_points(points), fill=EDGE_MASK_COLOR, width=2)
-            _draw_arrow(draw, dst_point, "left", EDGE_MASK_COLOR)
+            draw.line(_line_points(points), fill=EDGE_FLOW_COLOR, width=2)
+            _draw_arrow(draw, dst_point, "left", EDGE_FLOW_COLOR)
             _draw_diamond_marker(draw, points[0], size=4, fill=EDGE_MASK_COLOR, outline=NODE_BORDER_COLOR)
             label_y = dst_point[1] - max(9, int(dst.h * 0.5))
             draw.text((dst_point[0] + 6, label_y), "mask", fill=EDGE_MASK_COLOR, font=font_small)
@@ -631,17 +641,6 @@ def _draw_nodes(
                 (x0, y0 + node.h / 2.0),
             ]
             draw.polygon(_line_points(points), fill=node.color, outline=NODE_BORDER_COLOR)
-            draw.line(
-                _line_points(
-                    [
-                        (x0 + bevel + 4, y0 - 16),
-                        (x0 + bevel + 10, y0 - 2),
-                    ]
-                ),
-                fill=NODE_BORDER_COLOR,
-                width=2,
-            )
-            draw.text((x0 + bevel + 1, y0 - 14), "1", fill=EDGE_MASK_COLOR, font=font_small)
         else:
             draw.rectangle(
                 (int(x0), int(y0), int(x1), int(y1)),
@@ -657,19 +656,6 @@ def _draw_nodes(
         right_tick = [(x1 + side, cy), (x1, cy - side), (x1, cy + side)]
         draw.polygon(_line_points(left_tick), fill=NODE_BORDER_COLOR)
         draw.polygon(_line_points(right_tick), fill=NODE_BORDER_COLOR)
-
-        # Pequeno trazo superior diagonal (look de entrada de nodo en Nuke).
-        top_x = x0 + max(6.0, node.w * 0.2)
-        draw.line(
-            _line_points(
-                [
-                    (top_x, y0 - max(7.0, node.h * 0.9)),
-                    (top_x + max(8.0, node.w * 0.08), y0 - 1.0),
-                ]
-            ),
-            fill=NODE_BORDER_COLOR,
-            width=2,
-        )
 
         if node.selected:
             draw.rectangle(
@@ -777,7 +763,7 @@ def render_svg(snapshot: dict[str, Any], output_path: Path, scale: float = 1.0, 
         dst_y = dst.y
         color = EDGE_FLOW_COLOR
         if kind == "mask":
-            color = EDGE_MASK_COLOR
+            color = EDGE_FLOW_COLOR
             src_x = src.x + src.w
             src_y = src.y + src.h / 2.0
             dst_x = dst.x + dst.w
@@ -821,12 +807,21 @@ def render_svg(snapshot: dict[str, Any], output_path: Path, scale: float = 1.0, 
     output_path.write_text("\n".join(lines), encoding="utf-8")
 
 
-def _port_is_open(host: str, port: int, timeout: float = 1.5) -> bool:
-    try:
-        with socket.create_connection((host, port), timeout=timeout):
-            return True
-    except OSError:
-        return False
+def _port_is_open(
+    host: str,
+    port: int,
+    timeout: float = 1.5,
+    retries: int = 3,
+    retry_delay_s: float = 0.2,
+) -> bool:
+    for attempt in range(max(1, retries)):
+        try:
+            with socket.create_connection((host, port), timeout=timeout):
+                return True
+        except OSError:
+            if attempt < retries - 1:
+                time.sleep(retry_delay_s)
+    return False
 
 
 def capture_snapshot(
@@ -854,7 +849,7 @@ def capture_snapshot(
         dag_data = client.call_tool(
             "execute_python",
             {"code": CAPTURE_DAG_CODE, "confirm": True},
-            timeout=120.0,
+            timeout=45.0,
         )
         if dag_data.get("ok") is not True:
             raise RuntimeError(f"execute_python no devolvio ok=True: {dag_data}")

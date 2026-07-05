@@ -1,4 +1,10 @@
 v2.59
+- Se corrige `tools/capture_nuke_dag.py` para no dibujar inputs desconectados, capturar solo el DAG top-level visible y clasificar mejor conexiones de mask (evitando trazos amarillos incorrectos en conexiones horizontales).
+- Se endurece la captura MCP reduciendo riesgo de cuelgue en Nuke (sin evaluar labels en Nuke y timeout mas corto en `execute_python`).
+- Se agrega `tools/compare_nuke_dag.py` con comparacion automatica before/after (captura pair, reporte JSON y PNG comparativa).
+- Se actualiza `tools/capture_nuke_dag.md` incorporando el flujo del nuevo comparador automatico.
+[ DAG Compare - Fix render y comparador ]
+
 - Se agrega documentacion de uso en `tools/capture_nuke_dag.md` con requisitos MCP broker, comandos, salidas y flujo before/after para comparar `lga_arrange`.
 [ Capture DAG MCP - Documentacion de uso ]
 
