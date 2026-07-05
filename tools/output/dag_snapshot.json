@@ -1,0 +1,211 @@
+{
+  "captured_at_utc": "2026-07-05T02:25:29.889853+00:00",
+  "capture_tool": "capture_nuke_dag.py",
+  "broker_command": [
+    "powershell",
+    "-NoProfile",
+    "-ExecutionPolicy",
+    "Bypass",
+    "-File",
+    "C:\\Portable\\LGA_NukeMCP\\scripts\\mcp\\start_kleer_broker.ps1"
+  ],
+  "mcp_server": "nuke_kleer (broker)",
+  "script_info": {
+    "name": "C:/Users/leg4-pc/Desktop/borrar.nk",
+    "frame_range": [
+      1.0,
+      100.0
+    ],
+    "fps": 24.0,
+    "format": "<Format object at 0x000002B4C2627E50>",
+    "colorspace": "OCIO",
+    "node_count": 7
+  },
+  "tool_names": [
+    "auto_layout",
+    "connect_nodes",
+    "create_node",
+    "delete_node",
+    "execute_python",
+    "find_broken_reads",
+    "find_nodes_by_type",
+    "get_node_info",
+    "get_script_info",
+    "load_script",
+    "modify_node",
+    "position_node",
+    "save_script"
+  ],
+  "node_count": 7,
+  "edge_count": 5,
+  "nodes": [
+    {
+      "name": "Viewer1",
+      "class": "Viewer",
+      "xpos": -40,
+      "ypos": -9,
+      "screenWidth": 80,
+      "screenHeight": 18,
+      "tile_color": 842150655,
+      "selected": false,
+      "label": "",
+      "label_eval": "",
+      "channels": "rgba",
+      "size": null,
+      "output": "",
+      "inputs": []
+    },
+    {
+      "name": "Codex_Native_Blur_Test",
+      "class": "Blur",
+      "xpos": 271,
+      "ypos": 113,
+      "screenWidth": 80,
+      "screenHeight": 30,
+      "tile_color": 0,
+      "selected": false,
+      "label": "[value size]",
+      "label_eval": "7",
+      "channels": "rgba",
+      "size": 7.0,
+      "output": "",
+      "inputs": []
+    },
+    {
+      "name": "Codex_Native_Grade_Test",
+      "class": "Grade",
+      "xpos": 271,
+      "ypos": 235,
+      "screenWidth": 80,
+      "screenHeight": 18,
+      "tile_color": 0,
+      "selected": false,
+      "label": "",
+      "label_eval": "",
+      "channels": "rgb",
+      "size": null,
+      "output": "",
+      "inputs": [
+        {
+          "input_index": 0,
+          "source_node": "Codex_Native_Blur_Test"
+        }
+      ]
+    },
+    {
+      "name": "Roto1",
+      "class": "Roto",
+      "xpos": 401,
+      "ypos": 316,
+      "screenWidth": 80,
+      "screenHeight": 18,
+      "tile_color": 0,
+      "selected": false,
+      "label": "",
+      "label_eval": "",
+      "channels": "rgb",
+      "size": null,
+      "output": "rgba",
+      "inputs": []
+    },
+    {
+      "name": "Blur1",
+      "class": "Blur",
+      "xpos": 401,
+      "ypos": 364,
+      "screenWidth": 80,
+      "screenHeight": 42,
+      "tile_color": 0,
+      "selected": false,
+      "label": "[value size]",
+      "label_eval": "7",
+      "channels": "alpha",
+      "size": 7.0,
+      "output": "",
+      "inputs": [
+        {
+          "input_index": 0,
+          "source_node": "Roto1"
+        }
+      ]
+    },
+    {
+      "name": "Grade1",
+      "class": "Grade",
+      "xpos": 271,
+      "ypos": 421,
+      "screenWidth": 80,
+      "screenHeight": 18,
+      "tile_color": 0,
+      "selected": false,
+      "label": "",
+      "label_eval": "",
+      "channels": "rgb",
+      "size": null,
+      "output": "",
+      "inputs": [
+        {
+          "input_index": 0,
+          "source_node": "Codex_Native_Grade_Test"
+        },
+        {
+          "input_index": 1,
+          "source_node": "Dot1"
+        }
+      ]
+    },
+    {
+      "name": "Dot1",
+      "class": "Dot",
+      "xpos": 435,
+      "ypos": 424,
+      "screenWidth": 12,
+      "screenHeight": 12,
+      "tile_color": 0,
+      "selected": false,
+      "label": "",
+      "label_eval": "",
+      "channels": "",
+      "size": null,
+      "output": "",
+      "inputs": [
+        {
+          "input_index": 0,
+          "source_node": "Blur1"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "source_node": "Codex_Native_Blur_Test",
+      "target_node": "Codex_Native_Grade_Test",
+      "input_index": 0,
+      "kind": "flow"
+    },
+    {
+      "source_node": "Roto1",
+      "target_node": "Blur1",
+      "input_index": 0,
+      "kind": "flow"
+    },
+    {
+      "source_node": "Codex_Native_Grade_Test",
+      "target_node": "Grade1",
+      "input_index": 0,
+      "kind": "flow"
+    },
+    {
+      "source_node": "Dot1",
+      "target_node": "Grade1",
+      "input_index": 1,
+      "kind": "mask"
+    },
+    {
+      "source_node": "Blur1",
+      "target_node": "Dot1",
+      "input_index": 0,
+      "kind": "flow"
+    }
+  ]
+}

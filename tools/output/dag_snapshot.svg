@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="661" height="588" viewBox="0 0 661 588">
+<rect x="0" y="0" width="661" height="588" fill="rgb(52,53,57)"/>
+<line x1="421.0" y1="222.0" x2="421.0" y2="314.0" stroke="rgb(24,24,24)" stroke-width="2"/>
+<line x1="551.0" y1="413.0" x2="551.0" y2="443.0" stroke="rgb(24,24,24)" stroke-width="2"/>
+<line x1="421.0" y1="332.0" x2="421.0" y2="500.0" stroke="rgb(24,24,24)" stroke-width="2"/>
+<line x1="557.0" y1="509.0" x2="461.0" y2="509.0" stroke="rgb(239,219,64)" stroke-width="2"/>
+<line x1="551.0" y1="485.0" x2="551.0" y2="503.0" stroke="rgb(24,24,24)" stroke-width="2"/>
+<rect x="70.0" y="70.0" width="80.0" height="18.0" fill="rgb(50,50,50)" stroke="rgb(14,14,14)" stroke-width="1"/>
+<text x="110.0" y="82.0" text-anchor="middle" fill="rgb(246,246,246)" font-family="Arial, sans-serif" font-size="11">Viewer1</text>
+<rect x="381.0" y="192.0" width="80.0" height="30.0" fill="rgb(206,144,88)" stroke="rgb(14,14,14)" stroke-width="1"/>
+<text x="421.0" y="204.0" text-anchor="middle" fill="rgb(18,18,18)" font-family="Arial, sans-serif" font-size="11">Codex_Native_Blur_Test</text>
+<text x="421.0" y="215.0" text-anchor="middle" fill="rgb(18,18,18)" font-family="Arial, sans-serif" font-size="11">7</text>
+<rect x="381.0" y="314.0" width="80.0" height="18.0" fill="rgb(114,164,244)" stroke="rgb(14,14,14)" stroke-width="1"/>
+<text x="421.0" y="326.0" text-anchor="middle" fill="rgb(18,18,18)" font-family="Arial, sans-serif" font-size="11">Codex_Native_Grade_Test</text>
+<rect x="511.0" y="395.0" width="80.0" height="18.0" fill="rgb(129,212,123)" stroke="rgb(14,14,14)" stroke-width="1"/>
+<text x="551.0" y="407.0" text-anchor="middle" fill="rgb(18,18,18)" font-family="Arial, sans-serif" font-size="11">Roto1</text>
+<rect x="511.0" y="443.0" width="80.0" height="42.0" fill="rgb(206,144,88)" stroke="rgb(14,14,14)" stroke-width="1"/>
+<text x="551.0" y="455.0" text-anchor="middle" fill="rgb(18,18,18)" font-family="Arial, sans-serif" font-size="11">Blur1</text>
+<text x="551.0" y="466.0" text-anchor="middle" fill="rgb(18,18,18)" font-family="Arial, sans-serif" font-size="11">(alpha)</text>
+<text x="551.0" y="477.0" text-anchor="middle" fill="rgb(18,18,18)" font-family="Arial, sans-serif" font-size="11">7</text>
+<rect x="381.0" y="500.0" width="80.0" height="18.0" fill="rgb(114,164,244)" stroke="rgb(14,14,14)" stroke-width="1"/>
+<text x="421.0" y="512.0" text-anchor="middle" fill="rgb(18,18,18)" font-family="Arial, sans-serif" font-size="11">Grade1</text>
+<polygon points="551.0,503.0 557.0,509.0 551.0,515.0 545.0,509.0" fill="rgb(238,224,73)" stroke="rgb(14,14,14)" stroke-width="1"/>
+<text x="551.0" y="515.0" text-anchor="middle" fill="rgb(18,18,18)" font-family="Arial, sans-serif" font-size="11">Dot1</text>
+</svg>
