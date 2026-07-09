@@ -1,8 +1,11 @@
 """
 __________________________________________
 
-  LGA_backdrop v0.81 | Lega Pugliese
+  LGA_backdrop v0.82 | Lega Pugliese
   Backdrop personalizado con knobs modulares
+
+  v0.82 | 2026-07-09
+  - Usa callbacks runtime portables y suprime callbacks durante creacion interna.
 __________________________________________
 
 """
@@ -33,7 +36,7 @@ import LGA_BD_config as LGA_BD_config  # type: ignore
 
 # ===== CONTROL DE RECURSOS Y GESTIÓN DE MEMORIA =====
 # Namespace único para evitar conflictos con otros scripts
-LGA_BACKDROP_NAMESPACE = "LGA_Backdrop_v081"
+LGA_BACKDROP_NAMESPACE = "LGA_Backdrop_v082"
 
 # Control de instancias para evitar múltiples widgets
 _BACKDROP_INSTANCES = weakref.WeakSet()
@@ -655,27 +658,28 @@ def autoBackdrop():
         border_width=default_border_width,
     )
 
-    # Agregar todos los knobs personalizados (pasar el alignment por defecto)
-    LGA_BD_knobs.add_all_knobs(n, formatted_user_text, default_align)
+    with LGA_BD_callbacks.suppress_callbacks():
+        # Agregar todos los knobs personalizados (pasar el alignment por defecto)
+        LGA_BD_knobs.add_all_knobs(n, formatted_user_text, default_align)
 
-    # IMPORTANTE: Sincronizar el slider zorder con el valor del z_order nativo después de crear los knobs
-    if "zorder" in n.knobs():
-        current_z_order = n["z_order"].getValue()
-        n["zorder"].setValue(current_z_order)
-        print(f"Sincronizado slider zorder con z_order nativo: {current_z_order}")
+        # IMPORTANTE: Sincronizar el slider zorder con el valor del z_order nativo despues de crear los knobs
+        if "zorder" in n.knobs():
+            current_z_order = n["z_order"].getValue()
+            n["zorder"].setValue(current_z_order)
+            print(f"Sincronizado slider zorder con z_order nativo: {current_z_order}")
 
-    # IMPORTANTE: Sincronizar el margin slider con el valor por defecto cargado
-    if "margin_slider" in n.knobs():
-        n["margin_slider"].setValue(margin_value)
-        print(f"Sincronizado margin slider con valor por defecto: {margin_value}")
+        # IMPORTANTE: Sincronizar el margin slider con el valor por defecto cargado
+        if "margin_slider" in n.knobs():
+            n["margin_slider"].setValue(margin_value)
+            print(f"Sincronizado margin slider con valor por defecto: {margin_value}")
 
-    # IMPORTANTE: Sincronizar el font size slider con el valor por defecto cargado
-    if "lga_note_font_size" in n.knobs():
-        n["lga_note_font_size"].setValue(note_font_size)
-        print(f"Sincronizado font size slider con valor por defecto: {note_font_size}")
+        # IMPORTANTE: Sincronizar el font size slider con el valor por defecto cargado
+        if "lga_note_font_size" in n.knobs():
+            n["lga_note_font_size"].setValue(note_font_size)
+            print(f"Sincronizado font size slider con valor por defecto: {note_font_size}")
 
-    # Configurar callbacks
-    LGA_BD_callbacks.setup_callbacks(n)
+        # Configurar callbacks
+        LGA_BD_callbacks.setup_callbacks(n)
 
     # Revertir a la seleccion previa
     n["selected"].setValue(False)

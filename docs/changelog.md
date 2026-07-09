@@ -1,4 +1,9 @@
 v2.59
+- Se cambia `LGA_backdrop` para no serializar el callback pesado en el `knobChanged` de cada BackdropNode: ahora usa un callback runtime global filtrado por knobs LGA, con debounce para el autofit automatico del `margin_slider`.
+- Se actualiza `LGA_backdropReplacer.py` para regenerar backdrops sin callback legacy embebido, preservando label formateado, font, margin, z-order, estilo visual y nombre cuando sea posible.
+- Se agrega `docs/LGA_backdrop_callbacks_runtime.md` con notas de portabilidad y migracion de scripts viejos.
+[ LGA Backdrop - Callbacks runtime portables ]
+
 - Se mejora la fidelidad del render en `tools/capture_nuke_dag.py`: colores reales por clase usando `defaultNodeColor`, flechas direccionales visibles en conexiones (incluyendo horizontales) y eliminacion de marcadores intermedios que desplazaban visualmente los dots.
 - Se realizan comprobaciones visuales manuales con recortes comparativos contra capturas reales del DAG para validar geometria y orden de flujo.
 [ DAG Render - Colores, flechas y dots ]

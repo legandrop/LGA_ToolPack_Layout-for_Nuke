@@ -1,12 +1,16 @@
 """
 LGA_BD_fit.py - Funcionalidad de fit para LGA_backdrop
+
+v1.01 | 2026-07-09
+- Agrega modo silencioso para autofit automatico desde el callback runtime.
+- Usa el adapter Qt para medir texto de forma compatible con Nuke 15/16.
 """
 
 import re
-import nuke
-from LGA_QtAdapter_ToolPack_Layout import QtGui
 
-# Variable global para activar o desactivar los prints
+import nuke
+from LGA_QtAdapter_ToolPack_Layout import QtGui, horizontal_advance
+
 DEBUG = False
 
 
@@ -17,14 +21,12 @@ def debug_print(*message):
 
 def find_nodes_inside_backdrop(backdrop):
     """
-    Encuentra eficientemente todos los nodos (incluidos backdrops) que están dentro de un backdrop dado.
-    Esta implementación optimizada evita iterar innecesariamente por todos los nodos del script.
+    Encuentra todos los nodos que estan completamente dentro de un backdrop.
     """
     debug_print(
         f"find_nodes_inside_backdrop - Buscando nodos dentro del backdrop: {backdrop.name()}"
     )
 
-    # Obtener límites del backdrop
     backdrop_left = backdrop.xpos()
     backdrop_top = backdrop.ypos()
     backdrop_right = backdrop_left + backdrop.screenWidth()
@@ -35,31 +37,24 @@ def find_nodes_inside_backdrop(backdrop):
     )
 
     nodes_inside = []
-
-    # Usar nuke.allNodes() que es la forma más eficiente en Nuke
-    # Esta función está optimizada internamente y es preferible a métodos de filtrado manual
     all_nodes = nuke.allNodes()
     debug_print(f"Total nodos en el script: {len(all_nodes)}")
 
     for node in all_nodes:
-        # Excluir el backdrop mismo y nodos Root
         if node == backdrop or node.Class() == "Root":
             continue
 
-        # Obtener límites del nodo
         node_left = node.xpos()
         node_top = node.ypos()
         node_right = node_left + node.screenWidth()
         node_bottom = node_top + node.screenHeight()
 
-        # Verificar si el nodo está completamente dentro del backdrop
         if (
             node_left >= backdrop_left
             and node_top >= backdrop_top
             and node_right <= backdrop_right
             and node_bottom <= backdrop_bottom
         ):
-
             nodes_inside.append(node)
             debug_print(f"Nodo dentro del backdrop: {node.name()} ({node.Class()})")
 
@@ -69,63 +64,54 @@ def find_nodes_inside_backdrop(backdrop):
 
 def get_nodes_efficiently(filter_class=None):
     """
-    Método optimizado para obtener nodos usando la API nativa de Nuke.
-    Usa nuke.allNodes() con filtro de clase que está optimizado internamente.
+    Obtiene nodos usando la API nativa de Nuke.
     """
     if filter_class:
         return nuke.allNodes(filter_class)
-    else:
-        return nuke.allNodes()
+    return nuke.allNodes()
 
 
 def calculate_extra_top(text, font_size):
     """
-    Calcula el tamano adicional necesario para el texto en funcion del tamano de la fuente y el numero de lineas.
+    Calcula altura adicional para el texto segun font size y cantidad de lineas.
     """
-    line_count = text.count("\n") + 2  # Contar las lineas en el texto
-    text_height = font_size * line_count  # Calcular la altura total del texto
-    return text_height
+    line_count = text.count("\n") + 2
+    return font_size * line_count
 
 
 def strip_html_tags(text):
-    """Elimina las etiquetas HTML del texto."""
-    clean_text = re.sub(r"<.*?>", "", text)
-    return clean_text
+    """Elimina etiquetas HTML del texto."""
+    return re.sub(r"<.*?>", "", text)
 
 
 def calculate_min_horizontal(text, font_size):
     """
-    Calcula el ancho minimo necesario para el texto en funcion del tamano de la fuente y la linea mas larga,
-    teniendo en cuenta el ancho real de cada caracter.
+    Calcula el ancho minimo necesario para la linea mas larga del texto.
     """
     text = strip_html_tags(text)
     debug_print(f"Texto utilizado para el calculo: {text}")
 
-    # Calcular el ajuste del tamano de la fuente
     adjustment = 0.2 * font_size - 1.5
     adjusted_font_size = font_size - adjustment
 
-    # Crear una fuente con la familia Verdana y el tamano ajustado
     font = QtGui.QFont("Verdana")
-    font.setPointSize(adjusted_font_size)
+    if hasattr(font, "setPointSizeF"):
+        font.setPointSizeF(float(adjusted_font_size))
+    else:
+        font.setPointSize(int(round(adjusted_font_size)))
     metrics = QtGui.QFontMetrics(font)
 
-    lines = text.split("\n")  # Dividir el texto en lineas
-    max_width = max(
-        metrics.horizontalAdvance(line) for line in lines
-    )  # Encontrar la linea mas ancha
-    min_horizontal = (
-        max_width  # Calcular el ancho minimo basado en el ancho real del texto
-    )
+    lines = text.split("\n")
+    max_width = max(horizontal_advance(metrics, line) for line in lines)
 
     debug_print(f"Linea mas larga tiene {max_width} pixeles de ancho.")
-    debug_print(f"Ancho minimo calculado: {min_horizontal}")
-    return min_horizontal
+    debug_print(f"Ancho minimo calculado: {max_width}")
+    return max_width
 
 
 def nodeIsInside(node, backdropNode):
     """
-    Retorna True si el nodo esta dentro del backdrop
+    Retorna True si el nodo esta dentro del backdrop.
     """
     topLeftNode = [node.xpos(), node.ypos()]
     topLeftBackDrop = [backdropNode.xpos(), backdropNode.ypos()]
@@ -148,61 +134,65 @@ def nodeIsInside(node, backdropNode):
     return topLeft and bottomRight
 
 
-def fit_to_selected_nodes(backdrop_node=None):
+def _is_node_selected(node):
+    try:
+        return bool(node["selected"].value())
+    except Exception:
+        try:
+            return bool(node.isSelected())
+        except Exception:
+            return False
+
+
+def fit_to_selected_nodes(backdrop_node=None, show_message=True):
     """
-    Redimensiona el backdrop para abarcar todos los nodos seleccionados.
-    Si no hay nodos seleccionados, busca automáticamente todos los nodos dentro del backdrop.
+    Redimensiona el backdrop para abarcar nodos seleccionados.
+    Si no hay seleccion, busca todos los nodos dentro del backdrop.
 
     Args:
-        backdrop_node: Opcional. Node del backdrop a redimensionar. Si no se proporciona, usa nuke.thisNode()
+        backdrop_node: Node opcional. Si no se proporciona, usa nuke.thisNode().
+        show_message: Si es False, no muestra popup cuando no hay nodos para ajustar.
     """
     this = backdrop_node if backdrop_node else nuke.thisNode()
     padding = this["margin_slider"].getValue()
 
-    if this.isSelected:
+    if _is_node_selected(this):
         this.setSelected(False)
 
     selNodes = nuke.selectedNodes()
     debug_print(f"Nodos inicialmente seleccionados: {len(selNodes)}")
 
-    # NUEVA FUNCIONALIDAD: Si no hay nodos seleccionados, buscar nodos dentro del backdrop
     if not selNodes:
-        debug_print(f"No hay nodos seleccionados, buscando nodos dentro del backdrop")
+        debug_print("No hay nodos seleccionados, buscando nodos dentro del backdrop")
         selNodes = find_nodes_inside_backdrop(this)
 
         if not selNodes:
-            nuke.message("No hay nodos dentro del backdrop para hacer autofit")
+            if show_message:
+                nuke.message("No hay nodos dentro del backdrop para hacer autofit")
             return
 
         debug_print(
             f"Encontrados {len(selNodes)} nodos dentro del backdrop para autofit"
         )
-
-        # Mostrar qué nodos se encontraron
         node_names = [f"{node.name()} ({node.Class()})" for node in selNodes]
-        debug_print(f"Nodos que se usarán para autofit: {', '.join(node_names)}")
+        debug_print(f"Nodos que se usaran para autofit: {', '.join(node_names)}")
 
-    # Obtener el texto y tamano de fuente del backdrop actual
     user_text = this["label"].getValue()
     note_font_size = this["note_font_size"].getValue()
 
-    # Calcular los limites para el nodo de fondo
     bdX = min([node.xpos() for node in selNodes])
     bdY = min([node.ypos() for node in selNodes])
     bdW = max([node.xpos() + node.screenWidth() for node in selNodes]) - bdX
     bdH = max([node.ypos() + node.screenHeight() for node in selNodes]) - bdY
 
-    debug_print(f"Límites calculados: X={bdX}, Y={bdY}, W={bdW}, H={bdH}")
+    debug_print(f"Limites calculados: X={bdX}, Y={bdY}, W={bdW}, H={bdH}")
 
-    # Calcular el tamano adicional necesario para el texto
     extra_top = calculate_extra_top(user_text, note_font_size)
     debug_print(f"extra_top fit: {extra_top}")
 
-    # Calcular el ancho minimo necesario para el texto
     min_horizontal = calculate_min_horizontal(user_text, note_font_size)
     debug_print(f"min_horizontal nuevo: {min_horizontal}")
 
-    # Expandir los limites para dejar un pequeno borde
     if padding < extra_top:
         top = -extra_top
     else:
@@ -212,7 +202,6 @@ def fit_to_selected_nodes(backdrop_node=None):
     bottom = padding
     debug_print(f"bottom nuevo fit: {bottom}")
 
-    # Ajustar los valores de left y right para asegurar el minimo horizontal
     left = -1 * padding
     debug_print(f"left nuevo: {left}")
     additional_width = max(0, min_horizontal - bdW)
@@ -229,38 +218,13 @@ def fit_to_selected_nodes(backdrop_node=None):
     bdW += right - left
     bdH += bottom - top
 
-    # COMENTADO: Cálculo automático de Z-Order (causa problema de cambio no deseado)
-    # zOrder = 0
-    # selectedBackdropNodes = nuke.selectedNodes("BackdropNode")
-
-    # # Si hay nodos de fondo seleccionados, colocar el nuevo inmediatamente detras del mas lejano
-    # if len(selectedBackdropNodes):
-    #     zOrder = min([node["z_order"].getValue() for node in selectedBackdropNodes]) - 1
-    # else:
-    #     # De lo contrario encontrar el fondo mas cercano si existe y colocar el nuevo frente a el
-    #     nonSelectedBackdropNodes = nuke.allNodes("BackdropNode")
-    #     for nonBackdrop in selNodes:
-    #         for backdrop in nonSelectedBackdropNodes:
-    #             if nodeIsInside(nonBackdrop, backdrop):
-    #                 zOrder = max(zOrder, backdrop["z_order"].getValue() + 1)
-
-    # Aplicar los nuevos valores al backdrop (SIN modificar Z-order)
+    # Aplicar nuevos valores sin modificar Z-order.
     this["xpos"].setValue(bdX)
     this["bdwidth"].setValue(bdW)
     this["ypos"].setValue(bdY)
     this["bdheight"].setValue(bdH)
-    # COMENTADO: No modificar Z-order al hacer autofit manual
-    # this["z_order"].setValue(zOrder)
-
-    # COMENTADO: No sincronizar slider zorder (causa cambio no deseado del valor)
-    # # IMPORTANTE: Sincronizar el slider zorder con el valor del z_order nativo
-    # if "zorder" in this.knobs():
-    #     this["zorder"].setValue(zOrder)
-    #     debug_print(
-    #         f"Sincronizado slider zorder con z_order en autofit: {zOrder}"
-    #     )
 
     debug_print(
         f"Autofit aplicado SIN modificar Z-order: X={bdX}, Y={bdY}, W={bdW}, H={bdH}"
     )
-    debug_print(f"Z-order preservado (no modificado por autofit)")
+    debug_print("Z-order preservado (no modificado por autofit)")

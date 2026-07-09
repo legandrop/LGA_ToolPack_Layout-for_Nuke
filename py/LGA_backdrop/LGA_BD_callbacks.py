@@ -1,246 +1,259 @@
 """
 LGA_BD_callbacks.py - Callbacks para LGA_backdrop
+
+v1.01 | 2026-07-09
+- Reemplaza el knobChanged embebido por nodo por un callback runtime global.
+- Limpia callbacks LGA legacy serializados en scripts viejos.
+- Debouncea el autofit del margin slider y reutiliza LGA_BD_fit.
 """
 
+import re
+from contextlib import contextmanager
+
 import nuke
-# Import plano; la ruta se asegura en LGA_backdrop.py
+from LGA_QtAdapter_ToolPack_Layout import QtCore
+
+# Import plano; la ruta se asegura en LGA_backdrop.py.
+import LGA_BD_fit as LGA_BD_fit  # type: ignore
 import LGA_BD_knobs as LGA_BD_knobs  # type: ignore
 
-# Variable global para activar o desactivar los prints
 DEBUG = False
+LEGACY_CALLBACK_MARKERS = (
+    "Callback para knobChanged del LGA_backdrop",
+    "calculate_min_horizontal_inline",
+    "Ejecutando autofit",
+)
+RUNTIME_KNOBS = {
+    "zorder",
+    "z_order",
+    "lga_note_font_size",
+    "margin_slider",
+    "lga_margin",
+}
+LGA_BACKDROP_KNOBS = {
+    "label_link",
+    "lga_note_font_size",
+    "margin_slider",
+    "lga_autofit_control",
+    "lga_margin",
+}
+AUTOFIT_DEBOUNCE_MS = 80
+
+_SUPPRESS_CALLBACKS = False
+_PROCESSING_NODES = set()
+_PENDING_AUTOFIT = {}
 
 
 def debug_print(*message):
     if DEBUG:
-        print(*message)
+        print("[LGA_backdrop callbacks]", *message)
 
 
 def knob_changed_script():
     """
-    Script que se ejecuta cuando cambia un knob del backdrop
+    Devuelve un callback vacio para que los .nk sigan siendo portables.
+    La funcionalidad viva se registra con nuke.addKnobChanged().
     """
-    return """
-# Callback para knobChanged del LGA_backdrop
-# Variable global para activar o desactivar los prints
-DEBUG = False
+    return ""
 
-def debug_print(*message):
-    if DEBUG:
-        print(*message)
 
-node = nuke.thisNode()
-knob = nuke.thisKnob()
+@contextmanager
+def suppress_callbacks():
+    """
+    Pausa callbacks runtime mientras se crean o migran knobs de LGA_backdrop.
+    """
+    global _SUPPRESS_CALLBACKS
 
-debug_print(f"[CALLBACK DEBUG] Knob changed: {knob.name()} = {knob.value()}")
-
-if knob.name() == 'zorder':
-    # Sincronizar el slider zorder con z_order (asegurar que sea entero)
-    value = int(round(knob.value()))
-    node['z_order'].setValue(value)
-    # Asegurar que el slider también muestre el valor entero
-    knob.setValue(value)
-elif knob.name() == 'z_order':
-    # Sincronizar z_order con el slider zorder (asegurar que sea entero)
-    if 'zorder' in node.knobs():
-        value = int(round(knob.value()))
-        node['zorder'].setValue(value)
-
-elif knob.name() == 'label_link':
-    # Manejar cambios en el label
-    text_value = knob.value()
-    debug_print(f"label_link changed to: '{text_value}'")
-
-elif knob.name() == 'lga_note_font_size':
-    # Sincronizar el font size personalizado con el knob note_font_size nativo del BackdropNode
-    value = int(round(knob.value())) # Forzar valor entero
-    node['note_font_size'].setValue(value)
-    knob.setValue(value) # Asegurar que el slider muestre el valor entero
-
-elif knob.name() == 'margin_slider':
-    # NUEVA FUNCIONALIDAD: Auto fit automático cuando cambia el margin slider
-    debug_print(f"margin_slider changed to: {knob.value()}")
-    debug_print(f"Ejecutando autofit automático completo...")
-    
+    previous = _SUPPRESS_CALLBACKS
+    _SUPPRESS_CALLBACKS = True
     try:
-        # Usar la misma lógica que la función fit_to_selected_nodes pero SIN cambiar Z-order
-        this = node
-        padding = this["margin_slider"].getValue()
+        yield
+    finally:
+        _SUPPRESS_CALLBACKS = previous
 
-        if this.isSelected:
-            this.setSelected(False)
-        
-        selNodes = nuke.selectedNodes()
-        debug_print(f"Nodos inicialmente seleccionados: {len(selNodes)}")
 
-        # Si no hay nodos seleccionados, buscar nodos dentro del backdrop
-        if not selNodes:
-            debug_print(f"No hay nodos seleccionados, buscando nodos dentro del backdrop")
-            
-            # Buscar nodos dentro del backdrop (función inline copiada de fit_to_selected_nodes)
-            backdrop_left = this.xpos()
-            backdrop_top = this.ypos()
-            backdrop_right = backdrop_left + this.screenWidth()
-            backdrop_bottom = backdrop_top + this.screenHeight()
-            
-            nodes_inside = []
-            all_nodes = nuke.allNodes()
-            
-            for node_check in all_nodes:
-                if node_check == this or node_check.Class() == 'Root':
-                    continue
-                    
-                node_left = node_check.xpos()
-                node_top = node_check.ypos()
-                node_right = node_left + node_check.screenWidth()
-                node_bottom = node_top + node_check.screenHeight()
-                
-                if (node_left >= backdrop_left and 
-                    node_top >= backdrop_top and 
-                    node_right <= backdrop_right and 
-                    node_bottom <= backdrop_bottom):
-                    
-                    nodes_inside.append(node_check)
-            
-            selNodes = nodes_inside
-            
-            if not selNodes:
-                debug_print(f"No hay nodos dentro del backdrop para hacer autofit")
-                # No hacer nada si no hay nodos
-                pass
-            else:
-                debug_print(f"Encontrados {len(selNodes)} nodos dentro del backdrop para autofit")
+def _node_key(node):
+    try:
+        return node.fullName()
+    except Exception:
+        return node.name()
 
-        # Continuar con el cálculo de autofit completo solo si hay nodos
-        if selNodes:
-            # Obtener el texto y tamaño de fuente del backdrop actual (IGUAL QUE LA FUNCIÓN PRO)
-            user_text = this["label"].getValue()
-            note_font_size = this["note_font_size"].getValue()
-            
-            # Calcular los límites básicos para el nodo de fondo
-            bdX = min([node_calc.xpos() for node_calc in selNodes])
-            bdY = min([node_calc.ypos() for node_calc in selNodes])
-            bdW = max([node_calc.xpos() + node_calc.screenWidth() for node_calc in selNodes]) - bdX
-            bdH = max([node_calc.ypos() + node_calc.screenHeight() for node_calc in selNodes]) - bdY
 
-            debug_print(f"Límites calculados básicos: X={bdX}, Y={bdY}, W={bdW}, H={bdH}")
-            
-            # ===== AQUÍ VIENE LA LÓGICA COMPLETA DE TEXTO (copiada de fit_to_selected_nodes) =====
-            
-            # Función para eliminar tags HTML
-            import re
-            def strip_html_tags_inline(text):
-                clean_text = re.sub(r"<.*?>", "", text)
-                return clean_text
-            
-            # Función para calcular extra top
-            def calculate_extra_top_inline(text, font_size):
-                line_count = text.count("\\n") + 2
-                text_height = font_size * line_count
-                return text_height
-            
-            # Función para calcular mínimo horizontal
-            def calculate_min_horizontal_inline(text, font_size):
-                text = strip_html_tags_inline(text)
-                debug_print(f"[DEBUG INLINE] Texto utilizado para el cálculo: {text}")
-                
-                # Calcular el ajuste del tamaño de la fuente
-                adjustment = 0.2 * font_size - 1.5
-                adjusted_font_size = font_size - adjustment
-                
-                # Crear una fuente con la familia Verdana y el tamaño ajustado
-                try:
-                    from PySide6.QtGui import QFontMetrics, QFont
-                except ImportError:
-                    from PySide2.QtGui import QFontMetrics, QFont
-                font = QFont("Verdana")
-                font.setPointSize(adjusted_font_size)
-                metrics = QFontMetrics(font)
-                
-                lines = text.split("\\n")
-                max_width = max(metrics.horizontalAdvance(line) for line in lines)
-                min_horizontal = max_width
-                
-                debug_print(f"[DEBUG INLINE] Línea más larga tiene {max_width} píxeles de ancho.")
-                debug_print(f"[DEBUG INLINE] Ancho mínimo calculado: {min_horizontal}")
-                return min_horizontal
-            
-            # Calcular el tamaño adicional necesario para el texto
-            extra_top = calculate_extra_top_inline(user_text, note_font_size)
-            debug_print(f"extra_top fit: {extra_top}")
-            
-            # Calcular el ancho mínimo necesario para el texto
-            min_horizontal = calculate_min_horizontal_inline(user_text, note_font_size)
-            debug_print(f"min_horizontal nuevo: {min_horizontal}")
-            
-            # Expandir los límites para dejar un pequeño borde (IGUAL QUE LA FUNCIÓN PRO)
-            if padding < extra_top:
-                top = -extra_top
-            else:
-                top = -padding
-            
-            debug_print(f"top nuevo fit: {top}")
-            bottom = padding
-            debug_print(f"bottom nuevo fit: {bottom}")
-            
-            # Ajustar los valores de left y right para asegurar el mínimo horizontal
-            left = -1 * padding
-            debug_print(f"left nuevo: {left}")
-            additional_width = max(0, min_horizontal - bdW)
-            left_adjustment = additional_width / 2
-            right_adjustment = additional_width / 2
-            
-            right = padding + right_adjustment
-            debug_print(f"right nuevo: {right}")
-            left -= left_adjustment
-            debug_print(f"left ajustado: {left}")
-            
-            bdX += left
-            bdY += top
-            bdW += right - left
-            bdH += bottom - top
-            
-            # ===== APLICAR LOS NUEVOS VALORES (SIN TOCAR Z-ORDER) =====
-            this["xpos"].setValue(bdX)
-            this["bdwidth"].setValue(bdW)
-            this["ypos"].setValue(bdY)
-            this["bdheight"].setValue(bdH)
-            
-            debug_print(f"Autofit COMPLETO aplicado: X={bdX}, Y={bdY}, W={bdW}, H={bdH}")
-            debug_print(f"Z-order NO modificado (preservado)")
-        else:
-            debug_print(f"No se encontraron nodos para autofit")
-        
-    except Exception as e:
-        debug_print(f"[DEBUG ERROR] Error en autofit automático: {str(e)}")
-        import traceback
-        debug_print(f"[DEBUG ERROR] Traceback: {traceback.format_exc()}")
+def _is_lga_backdrop(node):
+    try:
+        if node.Class() != "BackdropNode":
+            return False
+        knobs = node.knobs()
+        return any(name in knobs for name in LGA_BACKDROP_KNOBS)
+    except Exception:
+        return False
 
-elif knob.name() == 'lga_margin':
-    # Sincronizar alignment
-    debug_print(f"lga_margin changed to: '{knob.value()}'")
-    
-    # Obtener el texto actual del label nativo (limpiar tags previos)
-    current_text = node['label'].value()
-    debug_print(f"Current label text: '{current_text}'")
-    
-    # Limpiar tags de alignment previos
-    clean_text = current_text
-    if clean_text.startswith('<div align="center">') and clean_text.endswith('</div>'):
-        clean_text = clean_text[20:-6]
-    elif clean_text.startswith('<div align="right">') and clean_text.endswith('</div>'):
-        clean_text = clean_text[19:-6]
-    
-    # Aplicar nuevo alignment
-    formatted_text = clean_text
-    if knob.value() == "center":
-        formatted_text = '<div align="center">' + formatted_text + '</div>'
-    elif knob.value() == "right":
-        formatted_text = '<div align="right">' + formatted_text + '</div>'
-    
-    debug_print(f"Final formatted text: '{formatted_text}'")
-    node['label'].setValue(formatted_text)
 
-"""
+def _has_legacy_lga_callback(node):
+    try:
+        script = node["knobChanged"].value()
+    except Exception:
+        return False
+    return any(marker in script for marker in LEGACY_CALLBACK_MARKERS)
+
+
+def _set_value_if_changed(knob, value, tolerance=0.0001):
+    try:
+        current = knob.value()
+    except Exception:
+        current = knob.getValue()
+
+    if isinstance(current, (int, float)) and isinstance(value, (int, float)):
+        if abs(float(current) - float(value)) <= tolerance:
+            return
+    elif current == value:
+        return
+
+    knob.setValue(value)
+
+
+def normalise_alignment(value):
+    if isinstance(value, (int, float)):
+        options = ["left", "center", "right"]
+        index = int(value)
+        if 0 <= index < len(options):
+            return options[index]
+
+    value = str(value).lower()
+    if value in {"center", "right"}:
+        return value
+    return "left"
+
+
+def strip_alignment_tags(text):
+    """
+    Remueve los tags de alineacion que usa LGA_backdrop y devuelve texto + alignment.
+    """
+    patterns = (
+        ("center", r'^<div align="center">(.*)</div>$'),
+        ("right", r'^<div align="right">(.*)</div>$'),
+    )
+    for alignment, pattern in patterns:
+        match = re.match(pattern, text, flags=re.DOTALL)
+        if match:
+            return match.group(1), alignment
+    return text, "left"
+
+
+def format_label(text, alignment):
+    clean_text, _old_alignment = strip_alignment_tags(text)
+    if alignment == "center":
+        return '<div align="center">' + clean_text + "</div>"
+    if alignment == "right":
+        return '<div align="right">' + clean_text + "</div>"
+    return clean_text
+
+
+def _sync_zorder(node, knob_name):
+    if knob_name == "zorder" and "z_order" in node.knobs():
+        value = int(round(node["zorder"].value()))
+        _set_value_if_changed(node["z_order"], value)
+        _set_value_if_changed(node["zorder"], value)
+    elif knob_name == "z_order" and "zorder" in node.knobs():
+        value = int(round(node["z_order"].value()))
+        _set_value_if_changed(node["zorder"], value)
+
+
+def _sync_font_size(node):
+    if "note_font_size" not in node.knobs() or "lga_note_font_size" not in node.knobs():
+        return
+
+    value = int(round(node["lga_note_font_size"].value()))
+    _set_value_if_changed(node["note_font_size"], value)
+    _set_value_if_changed(node["lga_note_font_size"], value)
+
+
+def _sync_alignment(node):
+    if "label" not in node.knobs() or "lga_margin" not in node.knobs():
+        return
+
+    alignment = normalise_alignment(node["lga_margin"].value())
+    formatted_text = format_label(node["label"].value(), alignment)
+    _set_value_if_changed(node["label"], formatted_text)
+
+
+def _run_autofit(node):
+    global _SUPPRESS_CALLBACKS
+
+    previous = _SUPPRESS_CALLBACKS
+    _SUPPRESS_CALLBACKS = True
+    try:
+        LGA_BD_fit.fit_to_selected_nodes(node, show_message=False)
+    except Exception as exc:
+        debug_print(f"Error en autofit automatico: {exc}")
+    finally:
+        _SUPPRESS_CALLBACKS = previous
+
+
+def _run_pending_autofit(key, token):
+    pending = _PENDING_AUTOFIT.get(key)
+    if not pending or pending[0] != token:
+        return
+
+    _PENDING_AUTOFIT.pop(key, None)
+    node = pending[1]
+    try:
+        if _is_lga_backdrop(node):
+            _run_autofit(node)
+    except (RuntimeError, ReferenceError):
+        debug_print("Nodo LGA_backdrop eliminado antes del autofit")
+
+
+def _schedule_autofit(node):
+    key = _node_key(node)
+    token = _PENDING_AUTOFIT.get(key, (0, None))[0] + 1
+    _PENDING_AUTOFIT[key] = (token, node)
+
+    app = QtCore.QCoreApplication.instance()
+    if app is None:
+        _run_pending_autofit(key, token)
+        return
+
+    QtCore.QTimer.singleShot(
+        AUTOFIT_DEBOUNCE_MS,
+        lambda: _run_pending_autofit(key, token),
+    )
+
+
+def handle_knob_changed(node=None, knob=None):
+    """
+    Callback runtime para LGA_backdrop.
+    No se guarda dentro del .nk, por lo que el script sigue siendo portable.
+    """
+    if _SUPPRESS_CALLBACKS:
+        return
+
+    try:
+        node = node or nuke.thisNode()
+        knob = knob or nuke.thisKnob()
+        knob_name = knob.name()
+    except Exception:
+        return
+
+    if knob_name not in RUNTIME_KNOBS or not _is_lga_backdrop(node):
+        return
+
+    key = _node_key(node)
+    if key in _PROCESSING_NODES:
+        return
+
+    _PROCESSING_NODES.add(key)
+    try:
+        if knob_name in {"zorder", "z_order"}:
+            _sync_zorder(node, knob_name)
+        elif knob_name == "lga_note_font_size":
+            _sync_font_size(node)
+        elif knob_name == "lga_margin":
+            _sync_alignment(node)
+        elif knob_name == "margin_slider":
+            _schedule_autofit(node)
+    finally:
+        _PROCESSING_NODES.discard(key)
 
 
 def add_knobs_to_existing_backdrops():
@@ -248,63 +261,40 @@ def add_knobs_to_existing_backdrops():
     Asegura que los knobs personalizados se anadan a los BackdropNodes existentes.
     Esta funcion se llama al cargar un script.
     """
-    debug_print(f"add_knobs_to_existing_backdrops called - onScriptLoad")
-    backdrop_nodes = nuke.allNodes("BackdropNode")
-    debug_print(f"Found {len(backdrop_nodes)} BackdropNode(s)")
+    with suppress_callbacks():
+        debug_print("add_knobs_to_existing_backdrops called - onScriptLoad")
+        backdrop_nodes = nuke.allNodes("BackdropNode")
+        debug_print(f"Found {len(backdrop_nodes)} BackdropNode(s)")
 
-    for node in backdrop_nodes:
-        debug_print(f"Processing node: {node.name()}")
+        for node in backdrop_nodes:
+            debug_print(f"Processing node: {node.name()}")
 
-        # Usar el label nativo
-        user_text = node["label"].value()
-        debug_print(f"Using native label value: '{user_text}'")
+            user_text = node["label"].value()
+            clean_text, existing_margin_alignment = strip_alignment_tags(user_text)
+            clean_text = re.sub(r"</?[bi]>", "", clean_text)
 
-        # Detectar y limpiar formato del texto (solo alignment, no bold/italic)
-        clean_text = user_text
-        existing_margin_alignment = "left"
+            debug_print(f"Calling add_all_knobs for node: {node.name()}")
+            LGA_BD_knobs.add_all_knobs(node, clean_text, existing_margin_alignment)
+            setup_callbacks(node, force=False)
+            debug_print(f"Finished processing node: {node.name()}")
 
-        # Detectar y remover div alignment tags
-        if clean_text.startswith('<div align="center">') and clean_text.endswith(
-            "</div>"
-        ):
-            clean_text = clean_text[20:-6]  # Remover <div align="center"> y </div>
-            existing_margin_alignment = "center"
-        elif clean_text.startswith('<div align="right">') and clean_text.endswith(
-            "</div>"
-        ):
-            clean_text = clean_text[19:-6]  # Remover <div align="right"> y </div>
-            existing_margin_alignment = "right"
+            debug_print(f"Aplicando NO_ANIMATION a sliders para node: {node.name()}")
+            fix_animation_flags(node)
 
-        # Remover tags HTML residuales si existen (de implementaciones anteriores)
-        import re
+            if "border_width" in node.knobs():
+                border_width_knob = node["border_width"]
+                if hasattr(border_width_knob, "setFlag"):
+                    border_width_knob.setFlag(nuke.NO_ANIMATION)
+                    debug_print(
+                        f"FORCED NO_ANIMATION to native border_width for existing backdrop: {node.name()}"
+                    )
 
-        clean_text = re.sub(r"</?[bi]>", "", clean_text)
-
-        debug_print(f"Clean text: '{clean_text}'")
-
-        debug_print(f"Calling add_all_knobs for node: {node.name()}")
-        LGA_BD_knobs.add_all_knobs(node, clean_text, existing_margin_alignment)
-        debug_print(f"Finished processing node: {node.name()}")
-
-        # NUEVA FUNCIONALIDAD: Asegurar que los sliders no tengan animación
-        debug_print(f"Aplicando NO_ANIMATION a sliders para node: {node.name()}")
-        fix_animation_flags(node)
-
-        # FORZAR NO_ANIMATION al border_width nativo específicamente
-        if "border_width" in node.knobs():
-            border_width_knob = node["border_width"]
-            if hasattr(border_width_knob, "setFlag"):
-                border_width_knob.setFlag(nuke.NO_ANIMATION)
-                debug_print(
-                    f"FORCED NO_ANIMATION to native border_width for existing backdrop: {node.name()}"
-                )
-
-    debug_print(f"add_knobs_to_existing_backdrops completed")
+        debug_print("add_knobs_to_existing_backdrops completed")
 
 
 def fix_animation_flags(node):
     """
-    Aplica el flag NO_ANIMATION a todos los sliders que no deben tener animación
+    Aplica el flag NO_ANIMATION a todos los sliders que no deben tener animacion.
     """
     slider_knobs = [
         "margin_slider",
@@ -324,26 +314,54 @@ def fix_animation_flags(node):
                     f"Could not apply NO_ANIMATION to {knob_name} - no setFlag method"
                 )
 
-    # También aplicar NO_ANIMATION al knob nativo border_width si existe
     if "border_width" in node.knobs():
         border_width_knob = node["border_width"]
         if hasattr(border_width_knob, "setFlag"):
             border_width_knob.setFlag(nuke.NO_ANIMATION)
-            debug_print(f"Applied NO_ANIMATION to native border_width")
+            debug_print("Applied NO_ANIMATION to native border_width")
         else:
             debug_print(
-                f"Could not apply NO_ANIMATION to native border_width - no setFlag method"
+                "Could not apply NO_ANIMATION to native border_width - no setFlag method"
             )
 
 
-def setup_callbacks(node):
+def setup_callbacks(node, force=True):
     """
-    Configura los callbacks del nodo backdrop
+    Configura el callback del nodo para el nuevo modelo runtime.
     """
-    # Agregar el script de knobChanged
-    node["knobChanged"].setValue(knob_changed_script())
+    if "knobChanged" not in node.knobs():
+        return
+
+    if force or _has_legacy_lga_callback(node) or not node["knobChanged"].value():
+        node["knobChanged"].setValue(knob_changed_script())
 
 
-# Registrar el callback onScriptLoad
-# Esto asegura que los knobs lga_label mantengan su altura multilinea al cargar scripts
-nuke.addOnScriptLoad(add_knobs_to_existing_backdrops)
+def register_runtime_callbacks():
+    """
+    Registra callbacks runtime sin serializarlos dentro de cada BackdropNode.
+    """
+    old_callback = getattr(nuke, "_LGA_BD_RUNTIME_CALLBACK", None)
+    if old_callback is not None:
+        try:
+            nuke.removeKnobChanged(old_callback, nodeClass="BackdropNode")
+        except Exception:
+            pass
+
+    nuke.addKnobChanged(handle_knob_changed, nodeClass="BackdropNode")
+    nuke._LGA_BD_RUNTIME_CALLBACK = handle_knob_changed
+
+
+def register_script_load_callback():
+    old_callback = getattr(nuke, "_LGA_BD_ONSCRIPTLOAD_CALLBACK", None)
+    if old_callback is not None:
+        try:
+            nuke.removeOnScriptLoad(old_callback)
+        except Exception:
+            pass
+
+    nuke.addOnScriptLoad(add_knobs_to_existing_backdrops)
+    nuke._LGA_BD_ONSCRIPTLOAD_CALLBACK = add_knobs_to_existing_backdrops
+
+
+register_runtime_callbacks()
+register_script_load_callback()

@@ -1,9 +1,14 @@
 """
 ___________________________________________________________________________________________
 
-  LGA_backdropReplacer v1.0 | Lega
+  LGA_backdropReplacer v1.1 | Lega
   Replace the selected backdrop with an LGA_backdrop
   or all backdrops if none are selected, and calling LGA_backdropZorder in the end
+
+  v1.1 | 2026-07-09
+  - Preserva label formateado, font, margin, nombre y estilo al actualizar backdrops.
+  - Crea nodos sin knobChanged legacy embebido.
+  - Suprime callbacks runtime durante la migracion para evitar autofit recursivo.
 ___________________________________________________________________________________________
 
 """
@@ -41,6 +46,21 @@ def strip_html_tags(text):
     return re.sub(clean, "", text)
 
 
+def detect_alignment_from_label(text):
+    """Devuelve texto sin wrapper LGA y alignment detectado."""
+    return LGA_BD_callbacks.strip_alignment_tags(text)
+
+
+def get_knob_value(node, knob_name, default=None):
+    """Lee un knob si existe; evita repetir guards en el reemplazo."""
+    if knob_name not in node.knobs():
+        return default
+    try:
+        return node[knob_name].value()
+    except Exception:
+        return node[knob_name].getValue()
+
+
 def create_lga_backdrop_silent(
     user_text="",
     xpos=0,
@@ -52,6 +72,10 @@ def create_lga_backdrop_silent(
     z_order=0,
     appearance="Fill",
     border_width=1.0,
+    note_font=None,
+    margin_value=None,
+    alignment=None,
+    label_is_formatted=False,
 ):
     """
     Crea un LGA_backdrop sin mostrar el dialogo de entrada de texto.
@@ -66,7 +90,7 @@ def create_lga_backdrop_silent(
         default_bold = backdrop_defaults["bold"]
         default_italic = backdrop_defaults["italic"]
         default_align = backdrop_defaults["align"]
-        margin_value = backdrop_defaults["margin"]
+        default_margin_value = backdrop_defaults["margin"]
         debug_print(f"Loaded backdrop defaults: {backdrop_defaults}")
     except Exception as e:
         debug_print(f"Error loading backdrop defaults, using hardcoded values: {e}")
@@ -75,21 +99,29 @@ def create_lga_backdrop_silent(
         default_bold = False
         default_italic = False
         default_align = "left"
-        margin_value = 50
+        default_margin_value = 50
+
+    if alignment is None:
+        alignment = default_align
+    alignment = LGA_BD_callbacks.normalise_alignment(alignment)
+    if margin_value is None:
+        margin_value = default_margin_value
 
     # Construir el valor de font con bold/italic
-    font_value = default_font_name
-    if default_bold:
-        font_value += " Bold"
-    if default_italic:
-        font_value += " Italic"
+    if note_font:
+        font_value = note_font
+    else:
+        font_value = default_font_name
+        if default_bold:
+            font_value += " Bold"
+        if default_italic:
+            font_value += " Italic"
 
     # Aplicar alignment al texto del label
-    formatted_user_text = user_text
-    if default_align == "center":
-        formatted_user_text = '<div align="center">' + user_text + "</div>"
-    elif default_align == "right":
-        formatted_user_text = '<div align="right">' + user_text + "</div>"
+    if label_is_formatted:
+        formatted_user_text = user_text
+    else:
+        formatted_user_text = LGA_BD_callbacks.format_label(user_text, alignment)
 
     # Crear el backdrop
     n = nuke.nodes.BackdropNode(
@@ -106,29 +138,34 @@ def create_lga_backdrop_silent(
         border_width=border_width,
     )
 
-    # Agregar todos los knobs personalizados (pasar el alignment por defecto)
-    LGA_BD_knobs.add_all_knobs(n, formatted_user_text, default_align)
+    with LGA_BD_callbacks.suppress_callbacks():
+        # Agregar todos los knobs personalizados (pasar el alignment por defecto)
+        LGA_BD_knobs.add_all_knobs(n, formatted_user_text, alignment)
 
-    # Sincronizar el slider zorder con el valor del z_order nativo despues de crear los knobs
-    if "zorder" in n.knobs():
-        current_z_order = n["z_order"].getValue()
-        n["zorder"].setValue(current_z_order)
-        debug_print(f"Sincronizado slider zorder con z_order nativo: {current_z_order}")
+        # Sincronizar el slider zorder con el valor del z_order nativo despues de crear los knobs
+        if "zorder" in n.knobs():
+            current_z_order = n["z_order"].getValue()
+            n["zorder"].setValue(current_z_order)
+            debug_print(f"Sincronizado slider zorder con z_order nativo: {current_z_order}")
 
-    # Sincronizar el margin slider con el valor por defecto cargado
-    if "margin_slider" in n.knobs():
-        n["margin_slider"].setValue(margin_value)
-        debug_print(f"Sincronizado margin slider con valor por defecto: {margin_value}")
+        # Sincronizar el margin slider con el valor por defecto cargado
+        if "margin_slider" in n.knobs():
+            n["margin_slider"].setValue(margin_value)
+            debug_print(f"Sincronizado margin slider con valor por defecto: {margin_value}")
 
-    # Sincronizar el font size slider con el valor por defecto cargado
-    if "lga_note_font_size" in n.knobs():
-        n["lga_note_font_size"].setValue(note_font_size)
-        debug_print(
-            f"Sincronizado font size slider con valor por defecto: {note_font_size}"
-        )
+        if "lga_margin" in n.knobs():
+            n["lga_margin"].setValue(alignment)
+            debug_print(f"Sincronizado alignment con valor preservado: {alignment}")
 
-    # Configurar callbacks
-    LGA_BD_callbacks.setup_callbacks(n)
+        # Sincronizar el font size slider con el valor por defecto cargado
+        if "lga_note_font_size" in n.knobs():
+            n["lga_note_font_size"].setValue(note_font_size)
+            debug_print(
+                f"Sincronizado font size slider con valor por defecto: {note_font_size}"
+            )
+
+        # Configurar callbacks
+        LGA_BD_callbacks.setup_callbacks(n)
 
     debug_print(f"LGA_backdrop created successfully: {n.name()}")
     return n
@@ -166,7 +203,10 @@ def replace_with_lga_backdrop():
         try:
             # Guardar las propiedades del backdrop existente
             label = node["label"].getValue()
+            clean_label, detected_alignment = detect_alignment_from_label(label)
             note_font_size = int(node["note_font_size"].getValue())
+            note_font = get_knob_value(node, "note_font", None)
+            margin_value = get_knob_value(node, "margin_slider", None)
             tile_color = int(node["tile_color"].getValue())
             xpos = int(node.xpos())
             ypos = int(node.ypos())
@@ -174,12 +214,14 @@ def replace_with_lga_backdrop():
             bdheight = int(node["bdheight"].getValue())
 
             # Obtener z_order (puede venir de diferentes knobs)
-            if "zorder" in node.knobs():
-                z_order = int(node["zorder"].getValue())
-            elif "z_order" in node.knobs():
+            if "z_order" in node.knobs():
                 z_order = int(node["z_order"].getValue())
+            elif "zorder" in node.knobs():
+                z_order = int(node["zorder"].getValue())
             else:
                 z_order = 0
+
+            alignment = get_knob_value(node, "lga_margin", detected_alignment)
 
             # Obtener appearance y border_width
             appearance = "Fill"
@@ -200,15 +242,16 @@ def replace_with_lga_backdrop():
 
             debug_print(f"Procesando backdrop: {node_name}")
             debug_print(f"- Label: '{label}'")
+            debug_print(f"- Clean label: '{clean_label}'")
             debug_print(f"- Font size: {note_font_size}")
+            debug_print(f"- Font: {note_font}")
             debug_print(f"- Position: ({xpos}, {ypos})")
             debug_print(f"- Size: {bdwidth}x{bdheight}")
             debug_print(f"- Z-order: {z_order}")
             debug_print(f"- Appearance: {appearance}")
             debug_print(f"- Border width: {border_width}")
-
-            # Limpiar etiquetas HTML del label para obtener texto plano
-            stripped_label = strip_html_tags(label)
+            debug_print(f"- Alignment: {alignment}")
+            debug_print(f"- Margin: {margin_value}")
 
             # Deseleccionar todos los nodos
             for n in nuke.allNodes():
@@ -216,7 +259,7 @@ def replace_with_lga_backdrop():
 
             # Crear un nuevo LGA_backdrop con las propiedades guardadas
             new_bd = create_lga_backdrop_silent(
-                user_text=stripped_label,
+                user_text=label,
                 xpos=xpos,
                 ypos=ypos,
                 bdwidth=bdwidth,
@@ -226,10 +269,18 @@ def replace_with_lga_backdrop():
                 z_order=z_order,
                 appearance=appearance,
                 border_width=border_width,
+                note_font=note_font,
+                margin_value=margin_value,
+                alignment=alignment,
+                label_is_formatted=True,
             )
 
             # Eliminar el backdrop original
             nuke.delete(node)
+            try:
+                new_bd["name"].setValue(node_name)
+            except Exception as rename_error:
+                debug_print(f"No se pudo restaurar el nombre {node_name}: {rename_error}")
             replaced_count += 1
 
             debug_print(

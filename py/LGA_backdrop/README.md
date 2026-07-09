@@ -11,7 +11,7 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 
 - **Ventana de diálogo personalizada**: Pregunta el nombre del backdrop antes de crearlo
 - **Interfaz limpia**: Ventana sin marco con estilo personalizado
-- **Controles de teclado**: 
+- **Controles de teclado**:
   - `Ctrl+Enter` para confirmar
   - `Escape` para cancelar
 - **Posicionamiento inteligente**: Se posiciona cerca del cursor del mouse
@@ -21,7 +21,7 @@ LGA_backdrop es una implementación personalizada de autoBackdrop para Nuke, con
 
 ## Funcionalidades Avanzadas
 
-### Tab "backdrop" 
+### Tab "backdrop"
 - **Label**: Link directo al `label` nativo del BackdropNode usando `Link_Knob`
 - **Font Size**: Slider numérico (`lga_note_font_size`) sincronizado con `note_font_size` nativo
 - **Margin**: Dropdown (`lga_margin`) para alineación del texto (Left/Center/Right) ubicado en la misma línea que Font Size
@@ -107,7 +107,7 @@ El sistema de configuración sigue el mismo patrón que `LGA_ToolPack_settings.p
 - **Link_Knobs Directos**: Uso de `Link_Knob` para vincular directamente a `label` y `note_font` nativos, eliminando duplicación
 - **Callback onScriptLoad**: `add_knobs_to_existing_backdrops()` detecta backdrops existentes y solo agrega knobs faltantes
 - **Recreación Condicional**: `add_all_knobs()` verifica si los knobs existen antes de crearlos, evitando duplicación
-- **Sincronización Bidireccional**: `knob_changed_script()` sincroniza cambios entre knobs personalizados y nativos
+- **Sincronización Bidireccional**: callback runtime global sincroniza cambios entre knobs personalizados y nativos sin serializar lógica pesada en el `.nk`
 - **Preservación de Valores**: Los valores de `lga_note_font_size`, `lga_margin` y `zorder` se preservan al recargar scripts
 - **Detección de Alignment**: Detecta automáticamente alignment existente en el `label` y configura el dropdown apropiadamente
 - **Persistencia de Widgets**: PyCustom_Knob usa clase registrada globalmente para preservar widgets de colores al guardar/cargar scripts
@@ -136,7 +136,8 @@ El sistema de configuración sigue el mismo patrón que `LGA_ToolPack_settings.p
   - `_rgb_to_hls()` y `_hls_to_rgb()`: Funciones de conversión de espacios de color para variaciones precisas
   - `create_lga_color_swatch_buttons()`: Crea PyCustom_Knob con clase registrada globalmente para persistencia
 - **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_callbacks.py`**:
-  - `knob_changed_script()`: Sincroniza cambios entre knobs y ejecuta autofit automático inline en cambios de `margin_slider`
+  - `handle_knob_changed()`: Sincroniza cambios entre knobs con `nuke.addKnobChanged()` y ejecuta autofit automático debounced en cambios de `margin_slider`
+  - `knob_changed_script()`: Devuelve un script vacío para que los backdrops guardados sigan siendo portables
   - `fix_animation_flags()`: Aplica el flag NO_ANIMATION a sliders para evitar iconos de animación no deseados
 - **`LGA_ToolPack-Layout/LGA_backdrop/LGA_BD_fit.py`**:
   - `fit_to_selected_nodes()`: Redimensiona backdrop usando valor del margin slider o nodos internos
@@ -163,7 +164,7 @@ if "nuevo_knob" not in node.knobs():
 El sistema permite ajustar los rangos de variación editando las constantes de clase en `ColorSwatchWidget`:
 ```python
 MIN_LIGHTNESS = 0.3    # Luminancia mínima (0.0 = negro, 1.0 = blanco)
-MAX_LIGHTNESS = 0.8    # Luminancia máxima 
+MAX_LIGHTNESS = 0.8    # Luminancia máxima
 MIN_SATURATION = 0.4   # Saturación mínima (0.0 = gris, 1.0 = color puro)
 MAX_SATURATION = 1.0   # Saturación máxima
 SecondRow_SatuMult = 0.43  # Multiplicador de saturación para la segunda fila
@@ -208,7 +209,7 @@ El sistema usa variables internas para mantener estado por fila:
 - **Sin necesidad de botón**: No es necesario hacer clic en el botón Auto Fit, el cambio es inmediato
 - **Función completa**: Usa la misma lógica que el botón autofit, respetando texto multilínea, font size y cálculos precisos
 - **Preservación de Z-order**: El autofit automático NO modifica el Z-order del backdrop (a diferencia del botón)
-- **Callback inteligente**: Usa `knob_changed_script()` con función inline completa que incluye cálculo de texto
+- **Callback inteligente**: Usa callback runtime global con debounce y reutiliza `LGA_BD_fit.py` para el cálculo de texto
 - **Debug extensivo**: Sistema completo de debug prints para monitorear el funcionamiento del autofit automático
 
 ### Métodos de Optimización
@@ -253,7 +254,7 @@ El sistema incluye lógica inteligente para determinar el Z-order al crear nuevo
 
 ### Funcionalidades
 - ✅ **Creación básica de backdrop**: Implementada
-- ✅ **Manejo de texto del usuario**: Implementada  
+- ✅ **Manejo de texto del usuario**: Implementada
 - ✅ **Cálculo de límites**: Implementada (con funciones de oz_backdrop)
 - ✅ **Z-order management**: Implementada con cálculo automático y preservación de valores
 - ✅ **Knobs personalizados**: Implementados (modulares)
@@ -290,7 +291,7 @@ USE_LGA_BACKDROP = True  # Cambiar a False para usar oz_backdrop
 - `LGA_BD_config.py`: Sistema de configuración para guardar y cargar valores por defecto del backdrop
 - `LGA_BD_knobs.py`: Manejo modular de knobs personalizados, sistema de altura multilínea, preservación de valores y widget Save
 - `LGA_BD_fit.py`: Funciones de cálculo de tamaño y encompass
-- `LGA_BD_callbacks.py`: Callbacks, eventos, preservación de altura multilínea y detección de formato HTML
+- `LGA_BD_callbacks.py`: Callback runtime global, limpieza de `knobChanged` legacy, preservación de altura multilínea y detección de formato HTML
 - `README.md`: Este archivo de documentación
 
 ## Notas técnicas
@@ -301,4 +302,4 @@ USE_LGA_BACKDROP = True  # Cambiar a False para usar oz_backdrop
 - **Cálculo inteligente**: Usa las mismas funciones que oz_backdrop para tamaño
 - **PySide2**: Para la ventana de diálogo
 - **Compatible**: Con la arquitectura de plugins de Nuke
-- **Callbacks**: Sincronización automática entre knobs (ej: zorder ↔ z_order) 
+- **Callbacks**: Sincronización automática runtime entre knobs (ej: zorder ↔ z_order), sin guardar callbacks pesados dentro de cada nodo
