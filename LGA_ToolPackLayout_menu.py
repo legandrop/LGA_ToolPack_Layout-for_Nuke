@@ -152,6 +152,21 @@ def any_enabled(keys):
     return any(is_enabled(k) for k in keys)
 
 
+def _export_to_main(**objects):
+    """Publica los objetos recibidos en el namespace __main__.
+
+    Nuke evalua los comandos de menu pasados como string dentro de __main__.
+    Mientras la implementacion vivia en menu.py eso funcionaba solo, porque Nuke
+    ejecuta menu.py en ese mismo namespace. Ahora el codigo vive en este modulo,
+    asi que sus imports quedan en el namespace del modulo y los comandos string
+    fallarian con NameError si no se publican explicitamente.
+    """
+    import __main__
+
+    for name, obj in objects.items():
+        setattr(__main__, name, obj)
+
+
 # --- End config helpers ---------------------------------------------------------
 
 
@@ -189,6 +204,8 @@ add_tool(
 
 if is_enabled("Dots_After_System"):
     import LGA_dotsAfter
+
+    _export_to_main(LGA_dotsAfter=LGA_dotsAfter)
 
     n.addCommand(
         "  Add Dots After - Left",
@@ -257,6 +274,8 @@ if is_enabled("LGA_Backdrop_System"):
     nuke.pluginAddPath(os.path.join(PY_DIR, "LGA_backdrop").replace("\\", "/"))
     import LGA_backdrop
 
+    _export_to_main(LGA_backdrop=LGA_backdrop)
+
     nukescripts.autoBackdrop = LGA_backdrop.autoBackdrop  # type: ignore
     n.addCommand(
         "  Create LGA_Backdrop",
@@ -269,6 +288,8 @@ if is_enabled("LGA_Backdrop_System"):
     # Importar el LGA_backdropReplacer para LGA_backdrop
     import LGA_backdropReplacer
 
+    _export_to_main(LGA_backdropReplacer=LGA_backdropReplacer)
+
     n.addCommand(
         "  Replace with LGA_Backdrop",
         "LGA_backdropReplacer.replace_with_lga_backdrop()",
@@ -279,6 +300,8 @@ if is_enabled("LGA_Backdrop_System"):
 
     # Toggle Fill/Border para todos los backdrops usando el primero como master
     import LGA_backdropToggleAppearance
+
+    _export_to_main(LGA_backdropToggleAppearance=LGA_backdropToggleAppearance)
 
     n.addCommand(
         "  Toggle Backdrop Fill | Border",
@@ -338,6 +361,8 @@ if is_enabled("Layout_Panel"):
 if is_enabled("Select_Nodes"):
 
     import LGA_selectNodes
+
+    _export_to_main(LGA_selectNodes=LGA_selectNodes)
 
     n.addCommand(
         "  Select Nodes - Left",
@@ -431,6 +456,8 @@ icon_LTPD = _get_icon("LTPD")
 if is_enabled("Align_Nodes"):
     import LGA_alignNodes_Backdrops
 
+    _export_to_main(LGA_alignNodes_Backdrops=LGA_alignNodes_Backdrops)
+
     n.addCommand(
         "  Align Nodes or Bdrps - Left",
         "LGA_alignNodes_Backdrops.alignNodes(direction='l')",
@@ -464,6 +491,8 @@ if is_enabled("Align_Nodes"):
 if is_enabled("Distribute_Nodes"):
     import LGA_distributeNodes_Backdrops
 
+    _export_to_main(LGA_distributeNodes_Backdrops=LGA_distributeNodes_Backdrops)
+
     n.addCommand(
         "  Dist Nodes or Bdrps - Horizontal",
         "LGA_distributeNodes_Backdrops.distribute(direction='h')",
@@ -483,6 +512,8 @@ if is_enabled("Distribute_Nodes"):
 if is_enabled("Arrange_Nodes"):
     import LGA_arrangeNodes
 
+    _export_to_main(LGA_arrangeNodes=LGA_arrangeNodes)
+
     n.addCommand(
         "  Arrange Nodes",
         "LGA_arrangeNodes.main()",
@@ -491,6 +522,8 @@ if is_enabled("Arrange_Nodes"):
         icon=icon_LTPD,
     )
     import LGA_arrangeNodes_OLD
+
+    _export_to_main(LGA_arrangeNodes_OLD=LGA_arrangeNodes_OLD)
 
     n.addCommand(
         "  Arrange Nodes (Old)",
@@ -508,6 +541,8 @@ n.addCommand("  Arrange Nodes Beta", "LGA_arrangeNodes_NU.main()", "Meta+5", sho
 
 if is_enabled("Scale_Nodes"):
     import scale_widget
+
+    _export_to_main(scale_widget=scale_widget)
 
     n.addCommand(
         "  Scale Nodes",
@@ -535,6 +570,8 @@ icon_LTPE = _get_icon("LTPE")
 
 if is_enabled("Push_Pull_Nodes"):
     from nuke_move_nodes import push_nodes
+
+    _export_to_main(push_nodes=push_nodes)
 
     n.addCommand(
         "  Push Nodes - Up",
@@ -567,6 +604,8 @@ if is_enabled("Push_Pull_Nodes"):
 
     # Importar el Pull nodes
     from nuke_move_nodes import pull_nodes
+
+    _export_to_main(pull_nodes=pull_nodes)
 
     n.addCommand(
         "  Pull Nodes - Up",
@@ -614,6 +653,8 @@ if is_enabled("Easy_Navigate"):
     # Importar Easy Navigate
     import Km_NodeGraph_Easy_Navigate
     import model
+
+    _export_to_main(Km_NodeGraph_Easy_Navigate=Km_NodeGraph_Easy_Navigate)
 
     easy_nav_menu = n.addMenu("  Easy Navigate", icon=icon_LTPF)
     settings = model.Settings().Load()

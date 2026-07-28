@@ -1,6 +1,8 @@
 # ChangeLog
 
 ## v2.59
+- Se corrigen los comandos de menú que fallaban con `NameError` (`LGA_backdrop`, `LGA_backdropReplacer`, dots after, select/align/distribute/arrange nodes, scale, push/pull y Easy Navigate). Al mover la implementación de `menu.py` a `LGA_ToolPackLayout_menu.py`, los imports pasaron a vivir en el namespace del módulo, pero Nuke evalúa los comandos pasados como string dentro de `__main__`, donde esos nombres ya no existían. Se agrega el helper `_export_to_main()` y se publica ahí cada módulo usado por un comando string. Los comandos registrados como callable (`add_tool`) nunca estuvieron afectados. [ Layout ToolPack - Reparar comandos de menu tras mover la implementacion ]
+
 - El instalador ordena `~/.nuke/init.py` de forma canónica en Windows y macOS: recolecta todos los bloques `pluginAddPath` de LGA, los reordena según el orden oficial (Layout, ToolPack-B, ToolPack, NodePack, OpenInNukeX, Defaults, CollectedTools), elimina duplicados y deja intactos los paths ajenos. Antes cada plataforma resolvía el orden de una manera distinta y macOS simplemente agregaba al final. [ Layout ToolPack - Unificar el orden del init.py ]
 
 - Se agregan instaladores transaccionales para Windows y macOS, con validación del payload, backup de la carpeta previa, actualización idempotente de `init.py` y restauración ante fallos. Los generadores de release incluyen ambos instaladores y aplican exclusiones seguras aunque no exista un `+exclude.lst` local. [ Layout ToolPack - Agregar instaladores multiplataforma ]
