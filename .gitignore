@@ -13,6 +13,9 @@ Km_NodeGraphEN/templates/
 fix_gitgraph.ps1
 Doc/pandoc-3.9/
 .codex/
-.cursor/
+.cursor/*
+!.cursor/rules/
+.cursor/rules/*
+!.cursor/rules/instructions.mdc
 .cursorrules
 test_arrange_samples/

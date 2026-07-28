@@ -1,4 +1,10 @@
-v2.59
+# ChangeLog
+
+## v2.59
+- El `menu.py` del pack se convierte en un wrapper mínimo que detecta los flags oficiales de Hiero y Nuke Studio antes de importar la implementación completa desde `LGA_ToolPackLayout_menu.py`. El pack mantiene una instalación simple mediante `pluginAddPath`, pero deja de crear paths, imports o menús dentro de los hosts de timeline. [ Layout ToolPack - Evitar carga en Hiero y Nuke Studio ]
+
+- Se incorpora `VERSION` como fuente única de la versión publicada y el menú obtiene desde allí su label de documentación. Se normaliza el nombre del changelog, se agregan reglas de desarrollo espejadas y se reserva el bump real para el generador manual de `LGA_Release`. [ Layout ToolPack - Unificar reglas, changelog y versión publicada ]
+
 - Se cambia `LGA_backdrop` para no serializar el callback pesado en el `knobChanged` de cada BackdropNode: ahora usa un callback runtime global filtrado por knobs LGA, con debounce para el autofit automatico del `margin_slider`.
 - Se actualiza `LGA_backdropReplacer.py` para regenerar backdrops sin callback legacy embebido, preservando label formateado, font, margin, z-order, estilo visual y nombre cuando sea posible.
 - Se agrega `docs/LGA_backdrop_callbacks_runtime.md` con notas de portabilidad y migracion de scripts viejos.
@@ -21,4 +27,4 @@ v2.59
 - Se agrega render visual reutilizable a PNG/SVG calibrado con geometria de Node Graph para comparar estado before/after de `lga_arrange`.
 [ Capture DAG MCP - JSON y PNG ]
 
-v2.58
+## v2.58
