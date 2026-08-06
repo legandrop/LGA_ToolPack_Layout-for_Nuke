@@ -1,5 +1,8 @@
 # ChangeLog
 
+## v2.60
+- El instalador dejaba el `init.py` roto en cualquier equipo que tuviera sus `pluginAddPath` adentro de un bloque `if` —por ejemplo para discriminar por version de Nuke— y ademas reportaba exito. Al reordenar los paths se llevaba tambien las lineas indentadas, dejando el bloque sin cuerpo, y Nuke no arrancaba con un `IndentationError`. Ahora solo toca las lineas en columna 0 y respeta las indentadas donde estan. Suma ademas deduplicacion de paths repetidos, preservacion del BOM del archivo original y una validacion del resultado: si el `init.py` quedaria invalido, no lo modifica y aborta la instalacion. [ Layout - Corregir el manejo del init.py del instalador ]
+
 ## v2.59
 - Se corrigen los comandos de menú que fallaban con `NameError` (`LGA_backdrop`, `LGA_backdropReplacer`, dots after, select/align/distribute/arrange nodes, scale, push/pull y Easy Navigate). Al mover la implementación de `menu.py` a `LGA_ToolPackLayout_menu.py`, los imports pasaron a vivir en el namespace del módulo, pero Nuke evalúa los comandos pasados como string dentro de `__main__`, donde esos nombres ya no existían. Se agrega el helper `_export_to_main()` y se publica ahí cada módulo usado por un comando string. Los comandos registrados como callable (`add_tool`) nunca estuvieron afectados. [ Layout ToolPack - Reparar comandos de menu tras mover la implementacion ]
 
