@@ -35,3 +35,9 @@
 # explicito y sin conversion sorpresa.
 *.nk    text eol=lf
 *.gizmo text eol=lf
+
+# Mas terceros vendorizados, mismo criterio que arriba. Se agregaron en una
+# segunda pasada: una auditoria encontro que el criterio estaba escrito pero no
+# aplicado parejo, y estos arboles se habian normalizado igual.
+py/Km_NodeGraphEN/** -text
+py/nuke_move_nodes/** -text
