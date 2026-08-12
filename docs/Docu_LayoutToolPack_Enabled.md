@@ -1,243 +1,112 @@
 > **Regla de documentacion**: este archivo describe el estado actual del codigo. No es un historial de cambios, changelog ni bitacora temporal.
 > **Regla de documentacion**: este archivo debe incluir una seccion de referencias tecnicas con rutas completas a los archivos mas importantes relacionados, y para cada archivo nombrar las funciones, clases o metodos clave vinculados a este tema.
 
-# Sistema de Configuración de Herramientas LGA Layout ToolPack
+# Activar y desactivar herramientas — LGA Layout ToolPack
 
-## 🎯 ¿Qué es este sistema?
+Cada herramienta del pack se puede ocultar del menu. Una herramienta apagada
+no se muestra y ademas no se importa, asi que tampoco cuesta tiempo de
+arranque.
 
-El **Sistema de Configuración de Herramientas** es una funcionalidad avanzada del LGA Layout ToolPack que permite a los usuarios personalizar completamente qué herramientas se cargan y muestran en el menú de Nuke. Esto proporciona un control total sobre el entorno de trabajo, optimizando la carga y evitando clutter en el menú.
+## Para el usuario
 
-## 📁 Archivos del Sistema
+Menu **TPL > Enable Tools**. Se destilda lo que no se quiere y se guarda.
+Los cambios se ven **al reiniciar Nuke**: el menu se arma una sola vez, al
+inicio, y las tools apagadas no llegan a registrarse.
 
-### Archivos de Configuración
-- **`_LGA_LayoutToolPack_Enabled.ini`** (en carpeta del paquete): Configuración por defecto
-- **`_LGA_LayoutToolPack_Enabled.ini`** (en `~/.nuke/`): Configuración personal del usuario
+La eleccion se guarda **fuera del pack**:
 
-### Archivos del Sistema
-- **`menu.py`**: Menú principal con el sistema integrado
-- **`Docu_LayoutToolPack_Enabled.md`**: Esta documentación
+| Sistema | Archivo |
+|---|---|
+| Windows | `%APPDATA%\LGA\ToolPack_Layout\Enabled.ini` |
+| macOS | `~/Library/Application Support/LGA/ToolPack_Layout/Enabled.ini` |
 
-## ⚙️ Cómo Funciona
+Para volver a los valores de fabrica: boton **Reset** y despues **Save**.
+Borrar el archivo a mano puede no alcanzar: si quedo un ini viejo en
+`.nuke` —que por diseno no se borra nunca— el arranque siguiente lo
+vuelve a migrar.
 
-### 1. Carga de Configuración
-```python
-# El sistema busca archivos .ini en este orden:
-1. ~/.nuke/_LGA_LayoutToolPack_Enabled.ini (usuario) - PRIORIDAD
-2. LGA_ToolPack-Layout/_LGA_LayoutToolPack_Enabled.ini (paquete) - DEFAULTS
-```
+## Por que vive afuera del pack
 
-### 2. Evaluación de Herramientas
-- **True**: La herramienta se carga y muestra en el menú
-- **False**: La herramienta NO se carga ni muestra
-- **No existe**: Se asume **True** (compatibilidad hacia atrás)
+El instalador renombra la carpeta del pack a `LGA_ToolPack-Layout_backup` y copia la
+version nueva limpia. Todo lo que viva adentro se pierde en cada update. Antes
+el estado estaba ahi, y por eso se perdia.
 
-### 3. Carga Perezosa (Lazy Loading)
-- Los módulos de las herramientas se importan **solo** cuando están habilitadas
-- Mejora significativamente el tiempo de inicio de Nuke
-- Reduce el uso de memoria
+## Las dos piezas
 
-## 📝 Formato del Archivo .ini
+**`Enabled.default.ini`** (dentro del pack) es el manifiesto: la lista canonica de
+tools con su valor de fabrica, agrupadas por los marcadores `; === X ===` que
+el panel usa como titulos. Viaja con el pack y el instalador lo pisa en cada
+update, asi que una edicion a mano se pierde ahi. Mientras tanto si aplica:
+es la capa base de `load_flags()`, no solo una semilla inicial, asi que
+sirve para armar un ZIP pre-configurado. Lo que el usuario haya tocado
+desde el panel le gana igual.
 
-```ini
-[Tools]
-; LGA Layout ToolPack – Tool Switches
-; Set to False to hide a tool from the menu AND avoid importing its script.
-; Leave True to keep it visible and load on demand.
-; Example: Add_Dots_Before = False
+**`Enabled.ini`** (carpeta de datos del usuario) guarda **solo los overrides**:
+lo que difiere del manifiesto. Un usuario que no cambio nada tiene un archivo
+vacio. Eso es lo que hace que agregar o borrar tools entre versiones sea
+transparente: las tools nuevas aparecen habilitadas solas y las que ya no
+existen desaparecen sin dejar claves muertas.
 
-; === SECCIÓN A: DOTS ===
-Add_Dots_Before = True
-Dots_After_System = True
-; ... todas las demás herramientas
-```
+Precedencia en runtime: manifiesto, y encima el archivo del usuario. Una clave
+que no esta en ninguno de los dos se considera habilitada.
 
-## 🛠️ Lista Completa de Herramientas Configurables
+## Migracion desde el sistema viejo
 
-### **🟢 Herramientas Individuales:**
-- **Add_Dots_Before**: "Add Dots Before" (Dots.Dots)
-- **Script_Checker**: "Script Checker" (LGA_scriptChecker)
-- **StickyNote**: "Create StickyNote" (LGA_StickyNote)
-- **NodeLabel**: "Label Nodes" (LGA_NodeLabel)
-- **Toggle_Zoom**: "Toggle Zoom" (LGA_zoom)
+La primera vez que arranca, el pack siembra el archivo del usuario juntando lo
+que hubiera configurado antes, de menor a mayor prioridad:
 
-### **🟡 Herramientas Agrupadas:**
+1. inis historicos de los packs hermanos — hay tools que cambiaron de pack, y
+   quien apago `CopyCat_Cleaner` cuando vivia en LGA_ToolPack tiene que
+   seguir viendolo apagado ahora que vive en LGA_ToolPack-B;
+2. inis que quedaron dentro de las carpetas `<Pack>_backup`, para quien edito
+   el ini adentro del pack;
+3. el ini historico de `.nuke`, que es lo que documentaba el PDF viejo.
 
-#### **1. Dots_After_System** (4 comandos)
-*Variantes de "Add Dots After":*
-- "Add Dots After - Left" (LGA_dotsAfter)
-- "Add Dots After - Left +" (LGA_dotsAfter)
-- "Add Dots After - Right" (LGA_dotsAfter)
-- "Add Dots After - Right +" (LGA_dotsAfter)
+De los archivos ajenos solo se toman las claves que este pack reconoce.
 
-#### **2. LGA_Backdrop_System** (2 comandos)
-*Sistema completo LGA Backdrop:*
-- "Create LGA_Backdrop"
-- "Replace with LGA_Backdrop"
+El ini historico **no se borra ni se renombra nunca**: si alguien revierte a
+una version anterior del pack, ese codigo lo vuelve a leer y encuentra su
+configuracion.
 
-#### **3. Select_Nodes** (12 comandos)
-*Todas las funciones de selección de nodos:*
-- "Select Nodes - Left/Right/Top/Bottom" (4 comandos)
-- "Select Connected Nodes - Left/Right/Top/Bottom" (4 comandos)
-- "Select All Nodes - Left/Right/Top/Bottom" (4 comandos)
+**Limite conocido:** el rescate desde `<Pack>_backup` depende de que esa
+carpeta siga estando. El instalador la borra al empezar la instalacion
+siguiente, asi que dos instalaciones seguidas sin abrir Nuke en el medio se la
+llevan puesta. Los usuarios cubiertos por el ini de `.nuke` no dependen de
+esto.
 
-#### **4. Align_Nodes** (4 comandos)
-*Herramientas de alineación únicamente:*
-- "Align Nodes or Bdrps - Left/Right/Top/Bottom" (4 comandos)
+## Que pasa cuando algo falla
 
-#### **5. Distribute_Nodes** (2 comandos)
-*Herramientas de distribución únicamente:*
-- "Dist Nodes or Bdrps - Horizontal/Vertical" (2 comandos)
+- **Manifiesto ilegible o ausente:** se avisa por `nuke.warning`, el panel
+  muestra un error en vez de una grilla vacia y **se bloquea el guardado**. Sin
+  manifiesto todo pareceria igual al default y guardar dejaria el archivo del
+  usuario vacio, borrandole la configuracion justo cuando cree que la guarda.
+- **Archivo del usuario ilegible:** se avisa y se cae a los valores de fabrica.
+- **Sin carpeta de datos del sistema:** la config va a
+  `<.nuke>/LGA_Settings/ToolPack_Layout/Enabled.ini`. No se escribe sobre el ini
+  historico, que puede tener comentarios y claves de otros packs.
+- **El modulo de config no carga:** el menu se arma igual y con todo visible.
+  Es preferible mostrar de mas a dejar al usuario sin herramientas.
 
-#### **6. Arrange_Nodes** (1 comando)
-*Herramientas de organización:*
-- "Arrange Nodes" (LGA_arrangeNodes)
+## Referencias tecnicas
 
-#### **7. Scale_Nodes** (1 comando)
-*Herramientas de escalado:*
-- "Scale Nodes" (scale_widget)
+**`LGA_ToolPack-Layout/py/LGA_ToolPackLayout_Enabled.py`**
+- `get_user_path()` — resuelve el archivo del usuario, con fallback al `.nuke`.
+- `get_nuke_dir()` — el `.nuke` REAL donde quedo instalado el pack; el
+  instalador acepta rutas arbitrarias, asi que no se usa el home del usuario.
+- `read_defaults()` / `read_default_groups()` — manifiesto y su agrupacion
+  para el panel. Las claves salen siempre de `read_defaults()`.
+- `load_flags()` / `is_enabled(key)` — estado efectivo, cacheado.
+- `write_user_overrides(flags)` — escritura atomica de solo los overrides.
+- `ensure_user_ini()` — sembrado one-shot descrito arriba.
 
-#### **8. Push_Pull_Nodes** (8 comandos)
-*Herramientas de movimiento de nodos:*
-- "Push Nodes - Up/Down/Left/Right" (4 comandos)
-- "Pull Nodes - Up/Down/Left/Right" (4 comandos)
+**`LGA_ToolPack-Layout/py/LGA_ToolPackLayout_EnabledPanel.py`**
+- `EnabledPanel` — grilla de checkboxes agrupada como el menu.
+- `main()` — abre el panel y lo mantiene vivo.
 
-#### **9. Easy_Navigate** (5 comandos)
-*Sistema completo de navegación:*
-- "Easy Navigate/Show Panel" (Km_NodeGraph_Easy_Navigate)
-- "Easy Navigate/Settings | Help"
-- "Easy Navigate/Edit Bookmarks"
-- "Easy Navigate/Templates"
-- "Easy Navigate/Survive (Reset Bookmarks)"
+**`LGA_ToolPack-Layout/LGA_ToolPackLayout_menu.py`**
+- `is_enabled(key)` / `add_tool(...)` — registran cada tool solo si esta
+  habilitada, con import diferido.
+- El comando de menu `Enable Tools` **no** pasa por `is_enabled()`: si el
+  usuario apaga todo, es el unico camino de vuelta.
 
-## 📊 **Resumen Final:**
-
-**Total de herramientas configurables:** 14 configuraciones
-**Comandos totales controlados:** 38 comandos del menú
-
-## 🚀 Cómo Configurar
-
-### Paso 1: Localizar el Archivo
-1. Abre tu carpeta personal de Nuke: `~/.nuke/`
-2. Si no existe, crea el archivo: `_LGA_LayoutToolPack_Enabled.ini`
-
-### Paso 2: Copiar la Configuración Base
-Copia el contenido del archivo de defaults desde la carpeta del paquete:
-```
-LGA_ToolPack-Layout/_LGA_LayoutToolPack_Enabled.ini
-```
-
-### Paso 3: Personalizar
-Edita las líneas cambiando `True` por `False` para deshabilitar herramientas:
-
-```ini
-[Tools]
-; Deshabilitar herramientas que no uso
-Dots_After_System = False
-Select_Nodes = False
-
-; Mantener las que sí uso
-LGA_Backdrop_System = True
-Easy_Navigate = True
-```
-
-### Paso 4: Aplicar Cambios
-1. Guarda el archivo
-2. Reinicia Nuke
-3. Las herramientas deshabilitadas no aparecerán en el menú
-
-## 💡 Ventajas del Sistema
-
-### Para Usuarios Individuales
-- **Personalización**: Solo ver las herramientas que necesitas
-- **Performance**: Inicio más rápido de Nuke
-- **Limpieza**: Menú menos cluttered
-- **Flexibilidad**: Cambiar configuración sin reinstalar
-
-### Para Estudios/Equipos
-- **Consistencia**: Configuraciones estándar por rol
-- **Mantenimiento**: Fácil actualizar sin afectar usuarios
-- **Escalabilidad**: Nuevas herramientas se agregan automáticamente
-
-### Para Desarrolladores
-- **Modularidad**: Código más organizado
-- **Debugging**: Fácil identificar problemas de carga
-- **Mantenibilidad**: Cambios centralizados
-- **Compatibilidad**: Sistema backward-compatible
-
-## 🔧 Casos de Uso Comunes
-
-### Artista de Layout Básico
-```ini
-[Tools]
-; Solo herramientas básicas
-Add_Dots_Before = True
-LGA_Backdrop_System = True
-Align_Nodes = True
-
-; Deshabilitar avanzadas
-Select_Nodes = False
-Easy_Navigate = False
-```
-
-### Artista de Layout Avanzado
-```ini
-[Tools]
-; Todas las herramientas disponibles
-Dots_After_System = True
-Select_Nodes = True
-Push_Pull_Nodes = True
-Easy_Navigate = True
-```
-
-### Configuración Minimalista
-```ini
-[Tools]
-; Solo lo esencial
-LGA_Backdrop_System = True
-Align_Nodes = True
-Distribute_Nodes = True
-
-; Todo lo demás deshabilitado
-Dots_After_System = False
-Select_Nodes = False
-Easy_Navigate = False
-```
-
-## ⚠️ Notas Importantes
-
-### Compatibilidad
-- Si no existe el archivo .ini, **todas las herramientas se habilitan por defecto**
-- Valores no reconocidos se tratan como `True`
-- El sistema es completamente backward-compatible
-
-### Troubleshooting
-- **Herramienta no aparece**: Verificar que esté en `True` en el .ini
-- **Error al cargar**: Revisar sintaxis del archivo .ini
-- **Cambios no aplican**: Reiniciar Nuke completamente
-
-### Archivos de Configuración
-- **Usuario**: `~/.nuke/_LGA_LayoutToolPack_Enabled.ini` - **Pisa** la configuración del paquete
-- **Paquete**: `LGA_ToolPack-Layout/_LGA_LayoutToolPack_Enabled.ini` - Valores por defecto
-
-## 🔄 Actualizaciones y Nuevas Herramientas
-
-Cuando se actualiza el LGA Layout ToolPack:
-
-1. **Nuevas herramientas**: Se agregan automáticamente con `True` por defecto
-2. **Configuración existente**: Se mantiene sin cambios
-3. **Compatibilidad**: Nunca se pierden configuraciones personalizadas
-
-## 📞 Soporte
-
-Si tienes problemas con el sistema de configuración:
-
-1. Verifica la sintaxis del archivo .ini
-2. Asegúrate de que Nuke se reinició completamente
-3. Revisa la consola de Nuke por mensajes de warning
-4. Consulta esta documentación
-
----
-
-**Versión**: LGA Layout ToolPack v2.5
-**Última actualización**: $(date)
-**Autor**: Sistema de configuración automática
+**`Enabled.default.ini`** — manifiesto de tools del pack.

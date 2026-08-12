@@ -5,9 +5,9 @@
 </p>
 <br clear="left">
 
-## InstalaciÛn
+## Instalaci√≥n
 
-- Copiar la carpeta **LGA_ToolPack-Layout** que contiene todos los archivos del ToolPack a **%USERPROFILE%/.nuke**.<br> DeberÌa quedar asÌ:
+- Copiar la carpeta **LGA_ToolPack-Layout** que contiene todos los archivos del ToolPack a **%USERPROFILE%/.nuke**.<br> Deber√≠a quedar as√≠:
    ```
    .nuke/
    +- LGA_ToolPack-Layout/
@@ -16,33 +16,33 @@
       +- ...
   ```
 
-- Con un editor de texto, agregar esta lÌnea de cÛdigo al archivo **init.py** que est· dentro de la carpeta **.nuke**:
+- Con un editor de texto, agregar esta l√≠nea de c√≥digo al archivo **init.py** que est√° dentro de la carpeta **.nuke**:
 
   ```
   nuke.pluginAddPath('./LGA_ToolPack-Layout')
   ```
 
-- El ToolPack permite **activar/desactivar** herramientas editando el archivo **\_LGA_LayoutToolPack_Enabled.ini**<br>
-  Por defecto todas las herramientas est·n en **True**. Las que se cambian a **False**, se ocultan y evitan cargarse.<br>
-  Para conservar la configuraciÛn en futuras actualizaciones, se puede copiar el archivo **.ini** a la carpeta **\~/.nuke/**
+- El ToolPack permite **activar/desactivar** herramientas desde el men√∫ **TPL > Enable Tools**<br>
+  Las que se destildan se ocultan del men√∫ y evitan cargarse. Los cambios se aplican al reiniciar Nuke.<br>
+  La elecci√≥n se guarda **fuera del pack**, en **%APPDATA%\LGA\ToolPack_Layout\Enabled.ini** (Windows) o **~/Library/Application Support/LGA/ToolPack_Layout/Enabled.ini** (macOS), as√≠ que las actualizaciones no la pisan.
 
 <br><br><br>
 
 ## ![](Doc_Media/seccion_azul.png) Add Dots before (aka Dots) v5.1 | Alexey Kuchinski <font color="#8a8a8a">| Mod Lega v2.2</font>
 
 [https://www.nukepedia.com/python/nodegraph/dots](https://www.nukepedia.com/python/nodegraph/dots)<br>
-Agrega *Dots* antes del nodo seleccionado, generando lÌneas de conexiÛn
+Agrega *Dots* antes del nodo seleccionado, generando l√≠neas de conexi√≥n
 con los nodos previos a 90 grados.<br>
-Si el nodo seleccionado est· en la misma columna que el nodo conectado,
-los alinea. ⁄til para cuando se crea un nuevo nodo y no est· alineado al
+Si el nodo seleccionado est√° en la misma columna que el nodo conectado,
+los alinea. √ötil para cuando se crea un nuevo nodo y no est√° alineado al
 anterior.
 
 ![](Doc_Media/Dots_Before_A_v01.gif)
 ![](Doc_Media/Dots_Before_B_v01.gif)<br>
-*La mod del pack tiene varios fixes y suma la funciÛn de armar un ·rbol
-cuando varios nodos seleccionados est·n conectados al mismo nodo y
+*La mod del pack tiene varios fixes y suma la funci√≥n de armar un √°rbol
+cuando varios nodos seleccionados est√°n conectados al mismo nodo y
 permite agregar dots en cualquier input siempre y cuando el nodo
-conectado al input no est· en la misma fila o columna que el nodo
+conectado al input no est√° en la misma fila o columna que el nodo
 seleccionado.*<br><br>
 <img src="Doc_Media/add_dots_before_shortcut.svg" alt="Add Dots before shortcut" width="140" height="22"><br>
 <br><br>
@@ -50,7 +50,7 @@ seleccionado.*<br><br>
 ## ![](Doc_Media/seccion_azul.png) Add Dots after v1.6 | Lega
 
 Agrega un nodo Dot debajo del nodo seleccionado y luego otro Dot
-conectado a este hacia la derecha o hacia la izquierda seg˙n el
+conectado a este hacia la derecha o hacia la izquierda seg√∫n el
 shortcut.
 
 ![](Doc_Media/Dots_After_v01.gif)
@@ -98,7 +98,7 @@ extras.
 Reemplazo del autoBackdrop, con opciones extras:
 - Resize basado en un margen, tomando en cuenta los nodos dentro del backdrop.<br>
 - Z order automatico.<br>
-- Dos filas de colores random y predeterminados, la segunda es con menos saturaciÛn.
+- Dos filas de colores random y predeterminados, la segunda es con menos saturaci√≥n.
 
 ![](Doc_Media/BackDrop_v01.gif)
 
@@ -116,32 +116,32 @@ Permite cambiar el label de un nodo con una ventana emergente.
 
 ## ![](Doc_Media/seccion_amarilla.png) AutoStamps v0.70 | Lega
 
-Detecta conexiones "sucias" en el Node Graph y las reemplaza autom·ticamente
-por *Stamps* (sistema de Adrian Pueyo), dejando el ·rbol m·s limpio y legible.
+Detecta conexiones "sucias" en el Node Graph y las reemplaza autom√°ticamente
+por *Stamps* (sistema de Adrian Pueyo), dejando el √°rbol m√°s limpio y legible.
 Resuelve tres casos:<br>
 &bull; Conexiones muy largas entre dos nodos lejanos.<br>
-&bull; Un nodo que distribuye su salida a varios destinos a travÈs de Dots.<br>
-&bull; Nodos con *hidden input* (conexiÛn oculta a un origen lejano).<br>
+&bull; Un nodo que distribuye su salida a varios destinos a trav√©s de Dots.<br>
+&bull; Nodos con *hidden input* (conexi√≥n oculta a un origen lejano).<br>
 Antes de reemplazar cada grupo, muestra una ventana para confirmar y nombrar el
-Stamp, con zoom autom·tico al contexto (nodo origen y destinos). Cancelar revierte
-ese grupo y un solo *Ctrl+Z* deshace toda la operaciÛn.
+Stamp, con zoom autom√°tico al contexto (nodo origen y destinos). Cancelar revierte
+ese grupo y un solo *Ctrl+Z* deshace toda la operaci√≥n.
 <br><br>
 
 ## ![](Doc_Media/seccion_violeta.png) Select Nodes v1.3 | Lega
 
-A partir del nodo seleccionado selecciona nodos en la direcciÛn
+A partir del nodo seleccionado selecciona nodos en la direcci√≥n
 determinada por el shortcut.
 
-- <span style="color:#914dcb;font-weight:600;">Select Nodes</span> selecciona los nodos que est·n alineados con el nodo
-  seleccionado sin importar si est·n o no conectados entre sÌ.<br>
+- <span style="color:#914dcb;font-weight:600;">Select Nodes</span> selecciona los nodos que est√°n alineados con el nodo
+  seleccionado sin importar si est√°n o no conectados entre s√≠.<br>
   ![](Doc_Media/Select_Nodes.gif)<br>
   <img src="Doc_Media/select_nodes_shortcuts.svg" alt="Select Nodes shortcuts" width="290" height="105"><br><br>
 - <span style="color:#914dcb;font-weight:600;">Select connected Nodes</span> hace lo mismo que *Select Nodes*, pero solo
-  selecciona nodos que est·n conectados con el nodo seleccionado, y
-  recurrentemente con el nodo siguiente en la selecciÛn.<br>
+  selecciona nodos que est√°n conectados con el nodo seleccionado, y
+  recurrentemente con el nodo siguiente en la selecci√≥n.<br>
   ![](Doc_Media/Select_conected_nodes.gif)<br>
   <img src="Doc_Media/select_connected_nodes_shortcuts.svg" alt="Select connected Nodes shortcuts" width="345" height="123"><br><br>
-- <span style="color:#914dcb;font-weight:600;">Select all Nodes</span> selecciona todos los nodos en la direcciÛn
+- <span style="color:#914dcb;font-weight:600;">Select all Nodes</span> selecciona todos los nodos en la direcci√≥n
   determinada por el shortcut.<br>
   ![](Doc_Media/Select_all_nodes.gif)
 
@@ -149,8 +149,8 @@ determinada por el shortcut.
 
 ## ![](Doc_Media/seccion_verde.png) Align Nodes v1.2 | Lega
 
-Alinea los nodos seleccionados seg˙n el shortcut.\
-Si hay m·s de un backdrop seleccionado, en vez de alinear nodos, alinea
+Alinea los nodos seleccionados seg√∫n el shortcut.\
+Si hay m√°s de un backdrop seleccionado, en vez de alinear nodos, alinea
 backdrops.
 
 ![](Doc_Media/Align_v01.gif)
@@ -160,10 +160,10 @@ backdrops.
 
 ## ![](Doc_Media/seccion_verde.png) Distribute Nodes v1.1 | Lega
 
-Distribuye horizontalmente o verticalmente los nodos seleccionados seg˙n
+Distribuye horizontalmente o verticalmente los nodos seleccionados seg√∫n
 el shortcut. Cuando distribuye verticalmente tiene en cuenta la altura
 de cada nodo para dejar el mismo espacio libre entre todos los nodos.\
-Si hay m·s de un backdrop seleccionado, en vez de distribuir nodos,
+Si hay m√°s de un backdrop seleccionado, en vez de distribuir nodos,
 distribuye backdrops.
 
 ![](Doc_Media/Distribute_v01.gif)
@@ -173,8 +173,8 @@ distribuye backdrops.
 
 ## ![](Doc_Media/seccion_verde.png) Arrange Nodes v0.81 | Lega
 
-Alinea y distribuye los nodos seleccionados de m˙ltiples columnas
-tomando en cuenta las conexiones de los nodos entre sÌ.\
+Alinea y distribuye los nodos seleccionados de m√∫ltiples columnas
+tomando en cuenta las conexiones de los nodos entre s√≠.\
 ![](Doc_Media/Arrange_v01.gif)
 
 <img src="Doc_Media/arrange_nodes_shortcuts.svg" alt="Arrange Nodes shortcuts" width="470" height="83"><br>
@@ -182,21 +182,21 @@ tomando en cuenta las conexiones de los nodos entre sÌ.\
 
 ## ![](Doc_Media/seccion_verde.png) Scale Nodes v1.0 | Erwan Leroy
 
-Ajusta los espacios y la posiciÛn de los nodos seleccionados utilizando
+Ajusta los espacios y la posici√≥n de los nodos seleccionados utilizando
 un widget de escala.\
 ![](Doc_Media/Scale_v01.gif)
 
 <img src="Doc_Media/scale_nodes_shortcuts.svg" alt="Scale Nodes shortcuts" width="300" height="43"><br><br>
 
 
-## ![](Doc_Media/seccion_naranja.png) Push Nodes v1.0 | Mitja M¸ller-Jend
+## ![](Doc_Media/seccion_naranja.png) Push Nodes v1.0 | Mitja M√ºller-Jend
 
 [http://www.nukepedia.com/python/nodegraph/push_nodes](http://www.nukepedia.com/python/nodegraph/push_nodes)<br>
-Empuja nodos para crear espacio en la direcciÛn correspondiente al
-shortcut tomando como pivote la posiciÛn del puntero del mouse. Tiene en
+Empuja nodos para crear espacio en la direcci√≥n correspondiente al
+shortcut tomando como pivote la posici√≥n del puntero del mouse. Tiene en
 cuenta los backdrops para generar espacios dentro sin mover los nodos de
 otros backdrop, con lo cual es recomendable no dejar nodos sin un
-backdrops. ⁄til para hacer lugar cuando hay que agregar nuevos nodos en
+backdrops. √ötil para hacer lugar cuando hay que agregar nuevos nodos en
 un sector sin espacio.
 
 ![](Doc_Media/Push_v01.gif)
@@ -204,11 +204,11 @@ un sector sin espacio.
 <img src="Doc_Media/push_nodes_shortcuts.svg" alt="Push Nodes shortcuts" width="360" height="105"><br><br>
 
 
-## ![](Doc_Media/seccion_naranja.png) Pull Nodes v1.0 | Mitja M¸ller-Jend \| Mod Lega
+## ![](Doc_Media/seccion_naranja.png) Pull Nodes v1.0 | Mitja M√ºller-Jend \| Mod Lega
 
 [http://www.nukepedia.com/python/nodegraph/push_nodes](http://www.nukepedia.com/python/nodegraph/push_nodes)<br>
 Mod simple del *Push Nodes* para hacer exactamente lo contrario: Achicar
-el espacio en la direcciÛn correspondiente al shortcut tomando como
+el espacio en la direcci√≥n correspondiente al shortcut tomando como
 pivote el puntero del mouse.
 
 ![](Doc_Media/Pull_v01.gif)
@@ -219,8 +219,8 @@ pivote el puntero del mouse.
 ## ![](Doc_Media/seccion_rosa.png) Easy Navigate v2.3 | Hossein Karamian
 
 [https://www.nukepedia.com/python/nodegraph/km-nodegraph-easy-navigate/](https://www.nukepedia.com/python/nodegraph/km-nodegraph-easy-navigate/)<br>
-Crea bookmarks de los nodos seleccionados y permite saltar r·pidamente
-de uno a otro. ⁄til para scripts grandes.
+Crea bookmarks de los nodos seleccionados y permite saltar r√°pidamente
+de uno a otro. √ötil para scripts grandes.
 
 ![](Doc_Media/EasyNavigate.gif)
 
@@ -231,8 +231,8 @@ de uno a otro. ⁄til para scripts grandes.
 
 Alterna entre el zoom actual y un zoom que muestra todos los nodos en el
 Node Graph.<br>
-Permite volver al nivel de zoom anterior usando la posiciÛn del cursor
-como centro. Si pasan m·s de 9 segundos entre pulsaciones de la tecla H,
+Permite volver al nivel de zoom anterior usando la posici√≥n del cursor
+como centro. Si pasan m√°s de 9 segundos entre pulsaciones de la tecla H,
 se reinicia el ciclo.
 
 ![](Doc_Media/Toggle_Zoom.gif)

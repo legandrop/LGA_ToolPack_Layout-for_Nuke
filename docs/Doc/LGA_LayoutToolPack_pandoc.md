@@ -22,16 +22,14 @@
   -----------------------------------------------------------------
 
 - El ToolPack permite **activar/desactivar** herramientas sin tocar
-  código El ToolPack permite activar/desactivar herramientas sin tocar
-  código. Editando el archivo **\_LGA_ToolPackLayout_Enabled.ini**
-  (dentro de **LGA_ToolPack-Layout**/).\
-  Por defecto todas las herramientas están en **True**. Cambiar a
-  **False** las oculta y evita cargar su script.
+  código, desde el menú **TPL > Enable Tools**. Las que se destildan se
+  ocultan del menú y evitan cargar su script. Los cambios se ven al
+  reiniciar Nuke.
 
-> Para conservar la configuración en futuras actualizaciones, se puede
-> copiar el archivo a **\~/.nuke/\_LGA_ToolPackLayout_Enabled.ini**
->
-> Si existen ambos, tiene prioridad el de **\~/.nuke/.**
+> La elección se guarda fuera del pack, en
+> **%APPDATA%\LGA\ToolPack_Layout\Enabled.ini** (en macOS, bajo
+> **\~/Library/Application Support**), así que las actualizaciones no la
+> pisan.
 
 **Add Dots before (aka Dots) v5.1 - Alexey Kuchinski \| Mod Lega
 v2.2**![](media_tmp/media/image15.png){width="0.13in" height="7.0e-2in"}

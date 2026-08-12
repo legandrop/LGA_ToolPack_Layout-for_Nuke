@@ -13,7 +13,7 @@ import nukescripts
 import os
 
 # --- Config loader & helpers -------------------------------------------
-import configparser, importlib
+import importlib
 
 
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -38,87 +38,49 @@ PRODUCT_VERSION = _read_product_version()
 nuke.pluginAddPath(PY_DIR.replace("\\", "/"))
 
 
-def _ini_paths():
-    # user-level
-    home = os.path.expanduser("~")
-    user_ini = os.path.join(home, ".nuke", "_LGA_LayoutToolPack_Enabled.ini")
-    # package-level (junto a este archivo)
-    pkg_ini = os.path.join(ROOT_DIR, "_LGA_LayoutToolPack_Enabled.ini")
-    return user_ini, pkg_ini
-
-
-def _ensure_user_ini_keys(user_ini, keys):
-    """Asegura que existan claves en el INI del usuario sin borrar comentarios."""
+# El estado de las tools lo resuelve LGA_ToolPackLayout_Enabled, que lo lee de
+# la carpeta de datos del usuario y no de adentro del pack. Vive en py/ para que
+# el panel de Enable Tools use exactamente la misma logica que el menu.
+#
+# Aca vivia ademas una funcion que reescribia el ini de `.nuke` en CADA arranque
+# de Nuke para agregarle las claves nuevas. Se elimino: hacia una escritura sin
+# lock (dos Nukes a la vez duplicaban la clave y el ini quedaba invalido, con el
+# error silenciado) y ya no hace falta, porque las claves nuevas salen del
+# manifiesto del pack y el archivo del usuario solo guarda lo que difiere.
+#
+# `except Exception` y no `except ImportError`: un SyntaxError o un fallo de
+# encoding al importar no son ImportError, se propagarian y Nuke arrancaria sin
+# el menu entero, que es exactamente lo que se quiere evitar.
+try:
+    import LGA_ToolPackLayout_Enabled as _enabled_config
+except Exception as _enabled_error:
+    # Si el modulo falta, el menu tiene que armarse igual y con todo visible:
+    # es preferible mostrar de mas a dejar al usuario sin herramientas.
+    nuke.warning("No se pudo cargar LGA_ToolPackLayout_Enabled: %s" % _enabled_error)
+    _enabled_config = None
+else:
+    # Siembra la config del usuario la primera vez, rescatando lo que hubiera
+    # configurado antes de que esa ubicacion existiera. Va en su propio try
+    # por el mismo motivo: sembrar es una comodidad, no una condicion para
+    # que exista el menu.
     try:
-        if not os.path.isfile(user_ini):
-            with open(user_ini, "w", encoding="utf-8") as f:
-                f.write("[Tools]\n")
-                for key, val in keys.items():
-                    f.write(f"{key} = {val}\n")
-            return
-
-        content = ""
-        with open(user_ini, "r", encoding="utf-8") as f:
-            content = f.read()
-
-        if "[Tools]" not in content:
-            with open(user_ini, "a", encoding="utf-8") as f:
-                f.write("\n[Tools]\n")
-                for key, val in keys.items():
-                    f.write(f"{key} = {val}\n")
-            return
-
-        # Si hay [Tools], agregamos al final del archivo las claves faltantes.
-        for key, val in keys.items():
-            if key not in content:
-                with open(user_ini, "a", encoding="utf-8") as f:
-                    f.write(f"\n{key} = {val}\n")
-    except Exception:
-        pass
-
-
-_TOOL_FLAGS = None  # cache
+        _enabled_config.ensure_user_ini()
+    except Exception as _seed_error:
+        nuke.warning("No se pudo sembrar la config de LGA Layout ToolPack: %s" % _seed_error)
 
 
 def load_tool_flags():
-    """Lee el INI (user pisa a package). Si falta o hay error => todo True."""
-    global _TOOL_FLAGS
-    if _TOOL_FLAGS is not None:
-        return _TOOL_FLAGS
-
-    # Claves nuevas que deben existir en el INI del usuario
-    _ensure_user_ini_keys(_ini_paths()[0], {"Layout_Panel": "True"})
-
-    cfg = configparser.ConfigParser()
-    cfg.optionxform = str  # respeta mayúsculas en claves
-    user_ini, pkg_ini = _ini_paths()
-
-    read_ok = False
-    for path in [pkg_ini, user_ini]:
-        if os.path.isfile(path):
-            try:
-                cfg.read(path, encoding="utf-8")
-                read_ok = True
-            except Exception:
-                pass
-
-    flags = {}
-    if read_ok and cfg.has_section("Tools"):
-        for key, val in cfg.items("Tools"):
-            v = str(val).strip().lower()
-            flags[key] = v in ("1", "true", "yes", "on")
-    else:
-        # sin archivo/section => defaults vacíos (=> True por defecto)
-        flags = {}
-
-    _TOOL_FLAGS = flags
-    return _TOOL_FLAGS
+    """Estado efectivo de las tools. {} si el modulo de config no cargo."""
+    if _enabled_config is None:
+        return {}
+    return _enabled_config.load_flags()
 
 
 def is_enabled(key: str) -> bool:
-    """Si no está en INI => True (default)."""
-    flags = load_tool_flags()
-    return flags.get(key, True)
+    """Si no está en ninguna capa => True (default)."""
+    if _enabled_config is None:
+        return True
+    return _enabled_config.is_enabled(key)
 
 
 def add_tool(menu, label, key, module, attr, shortcut=None, icon=None, context=2):
@@ -710,6 +672,18 @@ n.addSeparator()
 
 import webbrowser
 import nuke
+
+
+def _enable_tools_runner():
+    import LGA_ToolPackLayout_EnabledPanel
+
+    LGA_ToolPackLayout_EnabledPanel.main()
+
+
+# A proposito NO pasa por is_enabled(): si el usuario apaga todo, este es el
+# unico camino de vuelta. Un panel que se puede desactivar a si mismo deja al
+# usuario sin forma de reactivar nada sin editar archivos a mano.
+n.addCommand("Enable Tools", _enable_tools_runner)
 
 n.addCommand(
     "Documentation v%s" % PRODUCT_VERSION,
