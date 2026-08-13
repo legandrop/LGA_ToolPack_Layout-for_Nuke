@@ -1,5 +1,16 @@
 """
-LGA_BD_knobs.py - Manejo modular de knobs para LGA_backdrop
+____________________________________________________________________
+
+  LGA_BD_knobs v1.00 | Lega
+
+  Manejo modular de knobs para LGA_backdrop.
+
+  v1.00: Los Link_Knob al knob nativo pasan a ser relativos al propio
+         nodo (setLink) en vez de absolutos (makeLink con el nombre).
+         El nombre embebido dejaba una dependencia de expresion hacia
+         otro nodo al copiar y pegar el backdrop. Se agrega ademas
+         normalize_link_knobs() para migrar los backdrops ya creados.
+____________________________________________________________________
 """
 
 import nuke
@@ -9,10 +20,78 @@ from LGA_QtAdapter_ToolPack_Layout import QtWidgets, QtGui, QtCore
 # Variable global para activar o desactivar los prints
 DEBUG = False
 
+# Link_Knobs propios de LGA_backdrop y el knob nativo al que apuntan.
+# El link se hace SIEMPRE relativo (solo el nombre del knob, sin el del
+# nodo): un link absoluto tipo "BackdropNode3.label" se serializa con el
+# nombre viejo y al pegar el backdrop Nuke deja una dependencia de
+# expresion colgada hacia el nodo original, que se dibuja como una linea
+# punteada en el Node Graph.
+NATIVE_LINK_TARGETS = {
+    "label_link": "label",
+    "note_font_link": "note_font",
+    "appearance_link": "appearance",
+    "border_width_link": "border_width",
+}
+
 
 def debug_print(*message):
     if DEBUG:
         print(*message)
+
+
+def link_to_native_knob(node, link_knob, target_knob_name):
+    """
+    Agrega el Link_Knob al nodo y lo apunta al knob nativo de forma relativa.
+
+    El orden importa: setLink solo resuelve el nombre corto cuando el knob
+    ya vive en el nodo.
+    """
+    if link_knob.name() not in node.knobs():
+        node.addKnob(link_knob)
+    link_knob.setLink(target_knob_name)
+
+
+def normalize_link_knobs(node):
+    """
+    Convierte a relativos los Link_Knob de LGA_backdrop que hayan quedado
+    con el nombre del nodo embebido.
+
+    Solo toca los links propios del pack y solo cuando el knob de destino es
+    el nativo esperado, para no romper links que el usuario haya hecho a mano.
+    Devuelve la cantidad de links normalizados.
+    """
+    try:
+        knobs = node.knobs()
+    except Exception:
+        return 0
+
+    normalised = 0
+    for knob_name, target in NATIVE_LINK_TARGETS.items():
+        link_knob = knobs.get(knob_name)
+        if not isinstance(link_knob, nuke.Link_Knob):
+            continue
+
+        try:
+            current = link_knob.getLink()
+        except Exception:
+            continue
+
+        # Ya es relativo: no hay nada que hacer.
+        if "." not in current:
+            continue
+
+        # Solo normalizar si apunta al knob nativo que esperamos.
+        if current.rsplit(".", 1)[-1] != target:
+            continue
+
+        try:
+            link_knob.setLink(target)
+            normalised += 1
+            debug_print(f"Normalized {knob_name}: '{current}' -> '{target}'")
+        except Exception as exc:
+            debug_print(f"No se pudo normalizar {knob_name}: {exc}")
+
+    return normalised
 
 
 class ColorSwatchWidget(QtWidgets.QWidget):
@@ -1040,6 +1119,8 @@ def add_all_knobs(node, text_label="", existing_margin_alignment="left"):
     # Verificar si ya tiene el tab Backdrop y los knobs principales
     if "backdrop" in node.knobs() and "label_link" in node.knobs():
         debug_print(f"Knobs already exist, skipping recreation")
+        # Migrar links absolutos de backdrops creados con versiones viejas
+        normalize_link_knobs(node)
         return
 
     # Crear tab backdrop solo si no existe
@@ -1051,8 +1132,7 @@ def add_all_knobs(node, text_label="", existing_margin_alignment="left"):
     # Crear link al label nativo solo si no existe (como en el ejemplo)
     if "label_link" not in node.knobs():
         label_link = nuke.Link_Knob("label_link", "Label")
-        label_link.makeLink(node.name(), "label")
-        node.addKnob(label_link)
+        link_to_native_knob(node, label_link, "label")
         debug_print(f"Created label_link to native label")
 
         # Si tenemos texto para asignar, hacerlo al label nativo
@@ -1081,9 +1161,10 @@ def add_all_knobs(node, text_label="", existing_margin_alignment="left"):
         font_section_knobs = create_font_section()
         for knob in font_section_knobs:
             if knob.name() not in node.knobs():
-                node.addKnob(knob)
                 if knob.name() == "note_font_link":
-                    knob.makeLink(node.name(), "note_font")
+                    link_to_native_knob(node, knob, "note_font")
+                else:
+                    node.addKnob(knob)
         debug_print(f"Created font section (label + dropdown)")
 
     # Agregar el resto de los knobs usando las funciones existentes si no existen
@@ -1120,12 +1201,11 @@ def add_remaining_knobs_if_missing(node, existing_margin_alignment):
     appearance_knobs = create_appearance_section()
     for knob in appearance_knobs:
         if knob.name() not in node.knobs():
-            node.addKnob(knob)
             # Hacer el link con los knobs nativos
             if knob.name() == "appearance_link":
-                knob.makeLink(node.name(), "appearance")
+                link_to_native_knob(node, knob, "appearance")
             elif knob.name() == "border_width_link":
-                knob.makeLink(node.name(), "border_width")
+                link_to_native_knob(node, knob, "border_width")
                 # INMEDIATAMENTE aplicar NO_ANIMATION al knob nativo border_width
                 if "border_width" in node.knobs():
                     border_width_knob = node["border_width"]
@@ -1134,6 +1214,8 @@ def add_remaining_knobs_if_missing(node, existing_margin_alignment):
                         debug_print(
                             f"Applied NO_ANIMATION to native border_width IMMEDIATELY after link"
                         )
+            else:
+                node.addKnob(knob)
 
     # Divider 3 (antes de la sección de z-order)
     if "divider_3" not in node.knobs():

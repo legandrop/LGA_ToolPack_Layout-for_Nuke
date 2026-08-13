@@ -1,6 +1,11 @@
 """
 LGA_BD_callbacks.py - Callbacks para LGA_backdrop
 
+v1.02 | 2026-08-12
+- Agrega un onCreate que normaliza los Link_Knob del backdrop al crearse.
+  Al pegar un backdrop viejo, sus links traian el nombre del nodo original
+  embebido y Nuke dejaba una dependencia de expresion colgada hacia el.
+
 v1.01 | 2026-07-09
 - Reemplaza el knobChanged embebido por nodo por un callback runtime global.
 - Limpia callbacks LGA legacy serializados en scripts viejos.
@@ -256,6 +261,29 @@ def handle_knob_changed(node=None, knob=None):
         _PROCESSING_NODES.discard(key)
 
 
+def handle_node_created():
+    """
+    Callback runtime de creacion de BackdropNode.
+
+    Corre tambien al pegar y al cargar un script. Normaliza los Link_Knob
+    del pack para que apunten al propio nodo: si el link llega con el nombre
+    del nodo original embebido, Nuke registra una dependencia de expresion
+    hacia ese nodo y la dibuja como linea punteada en el Node Graph.
+    Hacerlo aca, mientras el nodo se esta construyendo, borra esa dependencia
+    en el momento; despues del onCreate ya no alcanza con reapuntar el link.
+    """
+    try:
+        node = nuke.thisNode()
+    except Exception:
+        return
+
+    try:
+        with suppress_callbacks():
+            LGA_BD_knobs.normalize_link_knobs(node)
+    except Exception as exc:
+        debug_print(f"Error normalizando links en onCreate: {exc}")
+
+
 def add_knobs_to_existing_backdrops():
     """
     Asegura que los knobs personalizados se anadan a los BackdropNodes existentes.
@@ -351,6 +379,21 @@ def register_runtime_callbacks():
     nuke._LGA_BD_RUNTIME_CALLBACK = handle_knob_changed
 
 
+def register_create_callback():
+    """
+    Registra el onCreate runtime sin serializarlo dentro de cada BackdropNode.
+    """
+    old_callback = getattr(nuke, "_LGA_BD_ONCREATE_CALLBACK", None)
+    if old_callback is not None:
+        try:
+            nuke.removeOnCreate(old_callback, nodeClass="BackdropNode")
+        except Exception:
+            pass
+
+    nuke.addOnCreate(handle_node_created, nodeClass="BackdropNode")
+    nuke._LGA_BD_ONCREATE_CALLBACK = handle_node_created
+
+
 def register_script_load_callback():
     old_callback = getattr(nuke, "_LGA_BD_ONSCRIPTLOAD_CALLBACK", None)
     if old_callback is not None:
@@ -364,4 +407,5 @@ def register_script_load_callback():
 
 
 register_runtime_callbacks()
+register_create_callback()
 register_script_load_callback()
