@@ -2,6 +2,8 @@
 
 ## v2.63
 
+- El modulo de estilo suma `OK_BG`, `WARNING_BG` y `ERROR_BG`, para el fondo de una pastilla de estado con texto encima. Los tres semanticos que ya estaban sirven para una barra o una linea de texto, pero a esa intensidad detras de un texto se lo comen. No cambia nada de lo que ya se ve en este pack: entra para que las cuatro copias del modulo sigan siendo el mismo archivo. [ ToolPack Layout - Agregar los fondos de estado al modulo de estilo ]
+
 - El modulo de estilo deja de pisarle el campo interno a los `QSpinBox`. La hoja de formulario pinta los `QLineEdit`, y adentro de un spinbox el campo TAMBIEN es un `QLineEdit`: le caia un segundo borde y un segundo padding adentro de su propia caja, y el numero quedaba recortado contra las flechitas. El spinbox se deja nativo a proposito: en cuanto el QSS le define caja o flechas, Qt deja de dibujar los triangulos y la sub-control termina tapando el valor. [ ToolPack Layout - Corregir el spinbox en el modulo de estilo ]
 
 - El modulo de estilo suma `Color.ENTITY`, para destacar el nombre de una task o de un nodo en un mensaje. Antes esos nombres se pintaban con el color del prefijo comun de la paleta de paths, que se ve igual pero significa otra cosa: retocar la paleta de paths le habria cambiado el color a algo que no es un path. [ ToolPack Layout - Agregar Color.ENTITY al modulo de estilo ]
