@@ -1,9 +1,14 @@
 """
 ________________________________________________________________________________
 
-  LGA_scriptChecker v0.87 | Lega
+  LGA_scriptChecker v0.88 | Lega
   Script para verificar si los inputs de los nodos estan correctamente posicionados
   segun las reglas de posicion definidas.
+
+  v0.88: El look sale del modulo de estilo del pack. No aplicaba ninguna
+         hoja, asi que heredaba el tema de Nuke, y los dos botones iban
+         estirados a lo ancho con el de accion primero.
+  v0.87: Version anterior, sin changelog interno.
 ________________________________________________________________________________
 
 """
@@ -17,6 +22,7 @@ from LGA_QtAdapter_ToolPack_Layout import (
     Qt,
     QStyledItemDelegate,
 )
+from LGA_UI_Style_ToolPack_Layout import Metric, Style
 
 # Alias Qt classes desde la capa de compatibilidad para mantener el API original
 QWidget = QtWidgets.QWidget
@@ -352,7 +358,13 @@ class ScriptCheckerWindow(QWidget):
         self.setWindowTitle("Script Checker - Check This Nodes")
         # Asegura que la ventana permanezca en primer plano
         self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
+        # No aplicaba ninguna hoja: heredaba el tema de Nuke y era una de las
+        # ventanas del pack que menos se parecia a las demas.
+        self.setStyleSheet(Style.WINDOW)
+
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(*([Metric.WINDOW_MARGIN] * 4))
+        layout.setSpacing(Metric.SPACING)
 
         # Crear la tabla con 4 columnas
         self.table = QTableWidget(len(self.results), 4, self)
@@ -363,6 +375,11 @@ class ScriptCheckerWindow(QWidget):
         self.table.verticalHeader().setVisible(False)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setSelectionMode(QTableWidget.NoSelection)
+        # De la hoja de tabla lo que se aplica aca es la cabecera, el marco y
+        # la barra de scroll: el fondo de cada celda es el color del nodo en el
+        # Node Graph y lo pinta el delegado, que no llama a super() y por eso
+        # ninguna regla de QTableWidget::item le llega.
+        self.table.setStyleSheet(Style.TABLE)
 
         # Conectar la senal de clic de la celda al metodo go_to_node
         self.table.cellClicked.connect(self.go_to_node)
@@ -378,14 +395,24 @@ class ScriptCheckerWindow(QWidget):
 
         # Crear boton de cerrar
         button_layout = QHBoxLayout()
+        button_layout.setSpacing(8)
+        # Alineados a la derecha y con el de accion ultimo, como en el resto
+        # del pack. Estirados a lo ancho no se leian como botones.
+        button_layout.addStretch()
+
+        # Alto fijo en los dos: BTN_SECONDARY suma un borde de 1 px sobre el
+        # mismo padding que BTN_PRIMARY, asi que sin esto quedan desalineados.
         close_button = QPushButton("Close")
+        close_button.setStyleSheet(Style.BTN_SECONDARY)
+        close_button.setFixedHeight(Metric.BUTTON_HEIGHT)
         close_button.clicked.connect(self.close)
         button_layout.addWidget(close_button)
 
-        # Anadir boton de Refresh
-        refresh_button = QPushButton("Refresh")
-        refresh_button.clicked.connect(self.refresh_data)
-        button_layout.addWidget(refresh_button)
+        self.refresh_button = QPushButton("Refresh")
+        self.refresh_button.setStyleSheet(Style.BTN_PRIMARY)
+        self.refresh_button.setFixedHeight(Metric.BUTTON_HEIGHT)
+        self.refresh_button.clicked.connect(self.refresh_data)
+        button_layout.addWidget(self.refresh_button)
 
         layout.addLayout(button_layout)
         self.setLayout(layout)
@@ -472,18 +499,28 @@ class ScriptCheckerWindow(QWidget):
         # Ajustar las columnas al contenido
         self.table.resizeColumnsToContents()
 
-        # Calcular el ancho de la ventana
+        # Calcular el ancho de la ventana. Los margenes del layout y el marco
+        # de la tabla se suman aparte: sin ellos la ultima columna no entraba
+        # y aparecia un scrollbar horizontal.
         width = self.table.verticalHeader().width()
         for i in range(self.table.columnCount()):
             width += self.table.columnWidth(i) + 10
+        width += 2 * Metric.WINDOW_MARGIN + 2 * self.table.frameWidth()
 
-        # Calcular la altura de la tabla y anadir el espacio para el boton
-        table_height = self.table.horizontalHeader().height() + 4
+        # Calcular la altura de la tabla
+        table_height = self.table.horizontalHeader().height()
+        table_height += 2 * self.table.frameWidth()
         for i in range(self.table.rowCount()):
             table_height += self.table.rowHeight(i)
 
-        # Anadir un padding para que no este todo tan justo
-        height = table_height + 50
+        # El chrome de la ventana se MIDE, no se estima. El +50 fijo que habia
+        # antes alcanzaba cuando el layout no tenia margenes ni spacing; con
+        # ellos la ventana quedaba 30 px corta y escondia las ultimas filas,
+        # que es justo lo que esta tool existe para mostrar.
+        height = table_height
+        height += 2 * Metric.WINDOW_MARGIN
+        height += Metric.SPACING
+        height += self.refresh_button.sizeHint().height()
 
         # Limitar la altura maxima al 90% de la altura de la pantalla
         screen = QtWidgets.QApplication.primaryScreen()
