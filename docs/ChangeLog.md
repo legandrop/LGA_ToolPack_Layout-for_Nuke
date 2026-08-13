@@ -2,6 +2,8 @@
 
 ## v2.63
 
+- El modulo de estilo suma `Color.ENTITY`, para destacar el nombre de una task o de un nodo en un mensaje. Antes esos nombres se pintaban con el color del prefijo comun de la paleta de paths, que se ve igual pero significa otra cosa: retocar la paleta de paths le habria cambiado el color a algo que no es un path. [ ToolPack Layout - Agregar Color.ENTITY al modulo de estilo ]
+
 - Nuevo `py/LGA_UI_Style_ToolPack_Layout.py`: fuente unica de la paleta, las medidas y el QSS de las ventanas del pack. Es codigo identico al modulo de los otros dos packs a proposito: son repos independientes y un usuario puede tener instalado uno solo, asi que no pueden importarse entre si, pero un color cambiado tiene que cambiar en los tres. Trae ademas el coloreado de paths por nivel de directorio, con la misma paleta que usan las apps Qt/C++ de LGA. [ ToolPack Layout - Agregar el modulo de estilo unificado ]
 
 - Los titulos de grupo de `Enable Tools` con un `&` salian con el `&` comido y un espacio de mas: Qt lo lee como marca de mnemonico. Con el grupo sin marco pasaba desapercibido; ahora que el titulo va enmarcado se nota. Ademas, el CSS del tooltip lo aplicaba un helper que vive solo en el ToolPack, asi que este pack dependia de tener ese otro instalado para que sus tooltips se vieran bien: si falta, ahora los pinta con los mismos valores desde su propio modulo de estilo. [ ToolPack Layout - Corregir el & de los titulos y los tooltips sin el helper ]
