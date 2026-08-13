@@ -1,7 +1,7 @@
 """
 __________________________________________________________
 
-  LGA_AutoStamps v0.90 | Lega
+  LGA_AutoStamps v0.91 | Lega
   Encuentra conexiones "sucias" entre nodos y las reemplaza
   automaticamente por Stamps (Anchor + Wired) de Adrian Pueyo.
 
@@ -46,6 +46,11 @@ __________________________________________________________
     - Ventana inicial de opciones para elegir que pases correr antes del preview.
     - Dialog de confirmacion en ingles con acciones explicitas: Skip, Apply y Apply & Stop.
     - Padding configurable por ventana y sin mensaje final cuando no se aplican cambios.
+
+  v0.91:
+    - El look sale del modulo de estilo del pack: los dos dialogos tenian su propio bloque de QSS con seis hex sueltos y un unico estilo de boton para todos.
+    - El boton que ejecuta Enter va marcado en violeta. Antes los tres se veian igual, asi que el cartel no decia cual dispara Enter.
+    - "Apply & Stop" salia como "Apply  Stop": Qt se come un & suelto como marca de mnemonico.
 __________________________________________________________
 
 """
@@ -55,6 +60,7 @@ import sys
 import nuke
 
 from LGA_QtAdapter_ToolPack_Layout import QtWidgets, QtGui, QtCore
+from LGA_UI_Style_ToolPack_Layout import Color, Style
 
 # ----------------------------------------------------------------------
 # CONFIGURACION
@@ -310,22 +316,15 @@ OPTIONS_DIALOG_PADDING_Y = 14
 REPLACE_DIALOG_PADDING_X = 18
 REPLACE_DIALOG_PADDING_Y = 14
 
-DIALOG_BUTTON_STYLE = """
-    QPushButton {
-        background-color: #404040;
-        border: 1px solid #555555;
-        border-radius: 5px;
-        color: #CCCCCC;
-        font-size: 12px;
-        padding: 5px;
-    }
-    QPushButton:hover {
-        background-color: #505050;
-    }
-    QPushButton:pressed {
-        background-color: #303030;
-    }
-"""
+# Colores de las hojas de este archivo. Van por diccionario y no por
+# concatenacion porque las hojas son bloques largos con llaves de CSS.
+_C = {
+    "window": Color.WINDOW,
+    "border": Color.BORDER_STRONG,
+    "text": Color.TEXT,
+}
+
+DIALOG_BUTTON_STYLE = Style.BTN_SECONDARY
 
 
 ACTION_SKIP = "skip"
@@ -364,12 +363,13 @@ class AutoStampsOptionsDialog(QtWidgets.QDialog):
         self.main_frame.setStyleSheet(
             """
             QFrame {
-                background-color: #1f1f1f;
-                border: 1px solid #555555;
+                background-color: %(window)s;
+                border: 1px solid %(border)s;
                 border-radius: 10px;
-                color: #CCCCCC;
+                color: %(text)s;
             }
             """
+            % _C
         )
         shadow = QtWidgets.QGraphicsDropShadowEffect()
         shadow.setBlurRadius(DIALOG_SHADOW_BLUR)
@@ -386,8 +386,8 @@ class AutoStampsOptionsDialog(QtWidgets.QDialog):
         self.title_bar.setStyleSheet(
             """
             QLabel {
-                background-color: #1f1f1f;
-                color: #cccccc;
+                background-color: %(window)s;
+                color: %(text)s;
                 padding-left: 10px;
                 border-top-left-radius: 10px;
                 border-top-right-radius: 10px;
@@ -395,6 +395,7 @@ class AutoStampsOptionsDialog(QtWidgets.QDialog):
                 font-weight: bold;
             }
             """
+            % _C
         )
         self.title_bar.setAlignment(QtCore.Qt.AlignCenter)
         self.title_bar.mousePressEvent = self.start_move
@@ -406,7 +407,7 @@ class AutoStampsOptionsDialog(QtWidgets.QDialog):
         content_widget.setStyleSheet(
             """
             QWidget {
-                background-color: #1f1f1f;
+                background-color: %(window)s;
                 border: none;
                 border-bottom-left-radius: 10px;
                 border-bottom-right-radius: 10px;
@@ -414,7 +415,7 @@ class AutoStampsOptionsDialog(QtWidgets.QDialog):
             QCheckBox {
                 background: transparent;
                 border: none;
-                color: #CCCCCC;
+                color: %(text)s;
                 font-size: 12px;
                 spacing: 8px;
             }
@@ -423,6 +424,7 @@ class AutoStampsOptionsDialog(QtWidgets.QDialog):
                 height: 14px;
             }
             """
+            % _C
         )
         content_layout = QtWidgets.QVBoxLayout(content_widget)
         content_layout.setContentsMargins(
@@ -434,7 +436,8 @@ class AutoStampsOptionsDialog(QtWidgets.QDialog):
         search_label = QtWidgets.QLabel("Search for:")
         search_label.setStyleSheet(
             "QLabel { background: transparent; border: none; "
-            "color: #CCCCCC; font-size: 12px; }"
+            "color: %(text)s; font-size: 12px; }"
+            % _C
         )
         content_layout.addWidget(search_label)
 
@@ -467,7 +470,7 @@ class AutoStampsOptionsDialog(QtWidgets.QDialog):
         self.cancel_button.setStyleSheet(DIALOG_BUTTON_STYLE)
         self.start_button = QtWidgets.QPushButton("Start")
         self.start_button.setFixedHeight(30)
-        self.start_button.setStyleSheet(DIALOG_BUTTON_STYLE)
+        self.start_button.setStyleSheet(Style.BTN_PRIMARY)
         buttons_layout.addWidget(self.cancel_button)
         buttons_layout.addWidget(self.start_button)
         content_layout.addLayout(buttons_layout)
@@ -554,12 +557,13 @@ class ReplaceDialog(QtWidgets.QDialog):
         self.main_frame.setStyleSheet(
             """
             QFrame {
-                background-color: #1f1f1f;
-                border: 1px solid #555555;
+                background-color: %(window)s;
+                border: 1px solid %(border)s;
                 border-radius: 10px;
-                color: #CCCCCC;
+                color: %(text)s;
             }
             """
+            % _C
         )
         shadow = QtWidgets.QGraphicsDropShadowEffect()
         shadow.setBlurRadius(DIALOG_SHADOW_BLUR)
@@ -577,8 +581,8 @@ class ReplaceDialog(QtWidgets.QDialog):
         self.title_bar.setStyleSheet(
             """
             QLabel {
-                background-color: #1f1f1f;
-                color: #cccccc;
+                background-color: %(window)s;
+                color: %(text)s;
                 padding-left: 10px;
                 border-top-left-radius: 10px;
                 border-top-right-radius: 10px;
@@ -586,6 +590,7 @@ class ReplaceDialog(QtWidgets.QDialog):
                 font-weight: bold;
             }
             """
+            % _C
         )
         self.title_bar.setAlignment(QtCore.Qt.AlignCenter)
         self.title_bar.mousePressEvent = self.start_move
@@ -598,12 +603,13 @@ class ReplaceDialog(QtWidgets.QDialog):
         content_widget.setStyleSheet(
             """
             QWidget {
-                background-color: #1f1f1f;
+                background-color: %(window)s;
                 border: none;
                 border-bottom-left-radius: 10px;
                 border-bottom-right-radius: 10px;
             }
             """
+            % _C
         )
         content_layout = QtWidgets.QVBoxLayout(content_widget)
         content_layout.setContentsMargins(
@@ -621,7 +627,8 @@ class ReplaceDialog(QtWidgets.QDialog):
         info = QtWidgets.QLabel(info_text)
         info.setStyleSheet(
             "QLabel { background: transparent; border: none; "
-            "color: #CCCCCC; font-size: 12px; }"
+            "color: %(text)s; font-size: 12px; }"
+            % _C
         )
         content_layout.addWidget(info)
         content_layout.addSpacing(8)
@@ -629,7 +636,8 @@ class ReplaceDialog(QtWidgets.QDialog):
         name_label = QtWidgets.QLabel("Name:")
         name_label.setStyleSheet(
             "QLabel { background: transparent; border: none; "
-            "color: #CCCCCC; font-size: 12px; }"
+            "color: %(text)s; font-size: 12px; }"
+            % _C
         )
         content_layout.addWidget(name_label)
         content_layout.addSpacing(4)
@@ -638,20 +646,7 @@ class ReplaceDialog(QtWidgets.QDialog):
         self.name_edit.setText(suggested_name)
         self.name_edit.setMinimumWidth(280)
         self.name_edit.setFixedHeight(30)
-        self.name_edit.setStyleSheet(
-            """
-            QLineEdit {
-                background-color: #1e1e1e;
-                border: 1px solid #3D3D3D;
-                border-radius: 5px;
-                padding: 5px;
-                font-size: 12px;
-                color: #CCCCCC;
-                selection-background-color: #555555;
-                selection-color: #FFFFFF;
-            }
-            """
-        )
+        self.name_edit.setStyleSheet(Style.LINE_EDIT)
         content_layout.addWidget(self.name_edit)
         content_layout.addSpacing(10)
 
@@ -661,10 +656,15 @@ class ReplaceDialog(QtWidgets.QDialog):
         self.skip_button = QtWidgets.QPushButton("Skip")
         self.skip_button.setFixedHeight(30)
         self.skip_button.setStyleSheet(DIALOG_BUTTON_STYLE)
+        # Apply es lo que ejecuta Enter (ver keyPressEvent), asi que es el
+        # unico marcado. No va ultimo porque los tres botones tienen un orden
+        # de escalada propio, pero la marca no puede mentir sobre que hace Enter.
         self.apply_button = QtWidgets.QPushButton("Apply")
         self.apply_button.setFixedHeight(30)
-        self.apply_button.setStyleSheet(DIALOG_BUTTON_STYLE)
-        self.apply_stop_button = QtWidgets.QPushButton("Apply & Stop")
+        self.apply_button.setStyleSheet(Style.BTN_PRIMARY)
+        # El && es literal: Qt se come un & suelto como marca de mnemonico y
+        # el boton salia "Apply  Stop", con un hueco en el medio.
+        self.apply_stop_button = QtWidgets.QPushButton("Apply && Stop")
         self.apply_stop_button.setFixedHeight(30)
         self.apply_stop_button.setStyleSheet(DIALOG_BUTTON_STYLE)
         buttons_layout.addWidget(self.skip_button)
