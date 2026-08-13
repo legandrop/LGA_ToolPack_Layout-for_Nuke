@@ -2,6 +2,8 @@
 
 ## v2.63
 
+- El modulo de estilo deja de pisarle el campo interno a los `QSpinBox`. La hoja de formulario pinta los `QLineEdit`, y adentro de un spinbox el campo TAMBIEN es un `QLineEdit`: le caia un segundo borde y un segundo padding adentro de su propia caja, y el numero quedaba recortado contra las flechitas. El spinbox se deja nativo a proposito: en cuanto el QSS le define caja o flechas, Qt deja de dibujar los triangulos y la sub-control termina tapando el valor. [ ToolPack Layout - Corregir el spinbox en el modulo de estilo ]
+
 - El modulo de estilo suma `Color.ENTITY`, para destacar el nombre de una task o de un nodo en un mensaje. Antes esos nombres se pintaban con el color del prefijo comun de la paleta de paths, que se ve igual pero significa otra cosa: retocar la paleta de paths le habria cambiado el color a algo que no es un path. [ ToolPack Layout - Agregar Color.ENTITY al modulo de estilo ]
 
 - Nuevo `py/LGA_UI_Style_ToolPack_Layout.py`: fuente unica de la paleta, las medidas y el QSS de las ventanas del pack. Es codigo identico al modulo de los otros dos packs a proposito: son repos independientes y un usuario puede tener instalado uno solo, asi que no pueden importarse entre si, pero un color cambiado tiene que cambiar en los tres. Trae ademas el coloreado de paths por nivel de directorio, con la misma paleta que usan las apps Qt/C++ de LGA. [ ToolPack Layout - Agregar el modulo de estilo unificado ]
