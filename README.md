@@ -26,6 +26,8 @@
 
 <br>
 
+
+
 ## Enable Tools v1.05 | Lega
 
 Para elegir qué herramientas del pack aparecen en el menú.<br>
@@ -37,7 +39,7 @@ La elección se guarda **fuera del pack**, en **%APPDATA%\LGA\ToolPack_Layout\En
 
 <br>
 
-<br><br><br>
+
 
 ## ![](Doc_Media/seccion_azul.png) Add Dots before (aka Dots) v5.1 | Alexey Kuchinski <font color="#8a8a8a">| Mod Lega v2.2</font>
 
@@ -54,9 +56,13 @@ anterior.
 cuando varios nodos seleccionados están conectados al mismo nodo y
 permite agregar dots en cualquier input siempre y cuando el nodo
 conectado al input no está en la misma fila o columna que el nodo
-seleccionado.*<br><br>
-<img src="Doc_Media/add_dots_before_shortcut.svg" alt="Add Dots before shortcut" width="140" height="22"><br>
+seleccionado.*
 <br><br>
+<img src="Doc_Media/add_dots_before_shortcut.svg" alt="Add Dots before shortcut" width="140" height="22">
+
+<br>
+
+
 
 ## ![](Doc_Media/seccion_azul.png) Add Dots after v1.6 | Lega
 
@@ -67,8 +73,11 @@ shortcut.
 ![](Doc_Media/Dots_After_v01.gif)
 
 
-<img src="Doc_Media/add_dots_after_shortcuts.svg" alt="Add Dots after shortcuts" width="700" height="107"><br>
+<img src="Doc_Media/add_dots_after_shortcuts.svg" alt="Add Dots after shortcuts" width="700" height="107">
+
 <br>
+
+
 
 ## ![](Doc_Media/seccion_amarilla.png) Script Checker v0.87 | Lega
 
@@ -89,10 +98,12 @@ De esta forma se puede corregir el problema rapidamente. El boton Refresh vuelve
 ![](Doc_Media/ScriptChecker_v02.gif)
 
 ![](Doc_Media/Script_checker.png)
+<br><br>
+<img src="Doc_Media/script_checker_shortcut.svg" alt="Script Checker shortcut" width="450" height="43">
 
-
-<img src="Doc_Media/script_checker_shortcut.svg" alt="Script Checker shortcut" width="450" height="43"><br>
 <br>
+
+
 
 ## ![](Doc_Media/seccion_amarilla.png) StickyNote v1.0 | Lega
 
@@ -100,9 +111,12 @@ Permite crear o editar un StickyNote seleccionado con algunas opciones
 extras.
 
 ![](Doc_Media/Stickynote_v01.gif)
+<br><br>
+<img src="Doc_Media/stickynote_shortcut.svg" alt="StickyNote shortcut" width="490" height="43">
 
-<img src="Doc_Media/stickynote_shortcut.svg" alt="StickyNote shortcut" width="490" height="43"><br>
 <br>
+
+
 
 ## ![](Doc_Media/seccion_amarilla.png) Create LGA_Backdrop v1.0 | Lega
 
@@ -113,17 +127,23 @@ Reemplazo del autoBackdrop, con opciones extras:
 
 ![](Doc_Media/BackDrop_v01.gif)
 
-<img src="Doc_Media/create_lga_backdrop_shortcuts.svg" alt="Create LGA Backdrop shortcuts" width="520" height="63"><br>
+<img src="Doc_Media/create_lga_backdrop_shortcuts.svg" alt="Create LGA Backdrop shortcuts" width="520" height="63">
+
 <br>
+
+
 
 ## ![](Doc_Media/seccion_amarilla.png) Label Node v1.0 | Lega
 
 Permite cambiar el label de un nodo con una ventana emergente.
 
 ![](Doc_Media/LabelNode_v01.gif)
+<br><br>
+<img src="Doc_Media/label_node_shortcut.svg" alt="Label Node shortcut" width="130" height="43">
 
-<img src="Doc_Media/label_node_shortcut.svg" alt="Label Node shortcut" width="130" height="43"><br>
 <br>
+
+
 
 ## ![](Doc_Media/seccion_amarilla.png) AutoStamps v0.70 | Lega
 
@@ -136,7 +156,10 @@ Resuelve tres casos:<br>
 Antes de reemplazar cada grupo, muestra una ventana para confirmar y nombrar el
 Stamp, con zoom automático al contexto (nodo origen y destinos). Cancelar revierte
 ese grupo y un solo *Ctrl+Z* deshace toda la operación.
-<br><br>
+
+<br>
+
+
 
 ## ![](Doc_Media/seccion_violeta.png) Select Nodes v1.3 | Lega
 
@@ -158,6 +181,8 @@ determinada por el shortcut.
 
 <br>
 
+
+
 ## ![](Doc_Media/seccion_verde.png) Align Nodes v1.2 | Lega
 
 Alinea los nodos seleccionados según el shortcut.\
@@ -166,8 +191,11 @@ backdrops.
 
 ![](Doc_Media/Align_v01.gif)
 
-<img src="Doc_Media/align_nodes_shortcuts.svg" alt="Align Nodes shortcuts" width="300" height="105"><br>
+<img src="Doc_Media/align_nodes_shortcuts.svg" alt="Align Nodes shortcuts" width="300" height="105">
+
 <br>
+
+
 
 ## ![](Doc_Media/seccion_verde.png) Distribute Nodes v1.1 | Lega
 
@@ -179,8 +207,11 @@ distribuye backdrops.
 
 ![](Doc_Media/Distribute_v01.gif)
 
-<img src="Doc_Media/distribute_nodes_shortcuts.svg" alt="Distribute Nodes shortcuts" width="520" height="62"><br>
+<img src="Doc_Media/distribute_nodes_shortcuts.svg" alt="Distribute Nodes shortcuts" width="520" height="62">
+
 <br>
+
+
 
 ## ![](Doc_Media/seccion_verde.png) Arrange Nodes v0.81 | Lega
 
@@ -188,8 +219,11 @@ Alinea y distribuye los nodos seleccionados de múltiples columnas
 tomando en cuenta las conexiones de los nodos entre sí.\
 ![](Doc_Media/Arrange_v01.gif)
 
-<img src="Doc_Media/arrange_nodes_shortcuts.svg" alt="Arrange Nodes shortcuts" width="470" height="83"><br>
+<img src="Doc_Media/arrange_nodes_shortcuts.svg" alt="Arrange Nodes shortcuts" width="470" height="83">
+
 <br>
+
+
 
 ## ![](Doc_Media/seccion_verde.png) Scale Nodes v1.0 | Erwan Leroy
 
@@ -197,7 +231,10 @@ Ajusta los espacios y la posición de los nodos seleccionados utilizando
 un widget de escala.\
 ![](Doc_Media/Scale_v01.gif)
 
-<img src="Doc_Media/scale_nodes_shortcuts.svg" alt="Scale Nodes shortcuts" width="300" height="43"><br><br>
+<img src="Doc_Media/scale_nodes_shortcuts.svg" alt="Scale Nodes shortcuts" width="300" height="43">
+
+<br>
+
 
 
 ## ![](Doc_Media/seccion_naranja.png) Push Nodes v1.0 | Mitja Müller-Jend
@@ -212,7 +249,10 @@ un sector sin espacio.
 
 ![](Doc_Media/Push_v01.gif)
 
-<img src="Doc_Media/push_nodes_shortcuts.svg" alt="Push Nodes shortcuts" width="360" height="105"><br><br>
+<img src="Doc_Media/push_nodes_shortcuts.svg" alt="Push Nodes shortcuts" width="360" height="105">
+
+<br>
+
 
 
 ## ![](Doc_Media/seccion_naranja.png) Pull Nodes v1.0 | Mitja Müller-Jend \| Mod Lega
@@ -224,7 +264,10 @@ pivote el puntero del mouse.
 
 ![](Doc_Media/Pull_v01.gif)
 
-<img src="Doc_Media/pull_nodes_shortcuts.svg" alt="Pull Nodes shortcuts" width="420" height="105"><br><br>
+<img src="Doc_Media/pull_nodes_shortcuts.svg" alt="Pull Nodes shortcuts" width="420" height="105">
+
+<br>
+
 
 
 ## ![](Doc_Media/seccion_rosa.png) Easy Navigate v2.3 | Hossein Karamian
@@ -235,7 +278,10 @@ de uno a otro. Útil para scripts grandes.
 
 ![](Doc_Media/EasyNavigate.gif)
 
-<img src="Doc_Media/easy_navigate_shortcuts.svg" alt="Easy Navigate shortcuts" width="235" height="42"><br><br>
+<img src="Doc_Media/easy_navigate_shortcuts.svg" alt="Easy Navigate shortcuts" width="235" height="42">
+
+<br>
+
 
 
 ## ![](Doc_Media/seccion_rosa.png) Toggle Zoom v1.1 | Lega
@@ -248,5 +294,6 @@ se reinicia el ciclo.
 
 ![](Doc_Media/Toggle_Zoom.gif)
 
-<img src="Doc_Media/toggle_zoom_shortcuts.svg" alt="Toggle Zoom shortcuts" width="160" height="60"><br><br>
+<img src="Doc_Media/toggle_zoom_shortcuts.svg" alt="Toggle Zoom shortcuts" width="160" height="60">
 
+<br>
