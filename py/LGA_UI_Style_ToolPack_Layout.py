@@ -1,7 +1,7 @@
 """
 ____________________________________________________________________
 
-  LGA_UI_Style_ToolPack_Layout v1.07 | Lega
+  LGA_UI_Style_ToolPack_Layout v1.08 | Lega
 
   Punto UNICO de ajuste del look de las ventanas del ToolPack Layout. Todo lo
   visual sale de aca: colores, fondos, bordes, esquinas, espaciados y
@@ -28,6 +28,14 @@ ____________________________________________________________________
       button.setStyleSheet(Style.BTN_PRIMARY)
       label.setText("Saving to:<br>%s" % colorize_path(destination))
 
+  v1.08: Las fuentes del pack -Inter, que viaja adentro de py/fonts- y
+         apply_ui_font, que se la pone a la ventana Y a cada uno de sus
+         hijos. La herencia del QFont no alcanza cuando hay hoja de
+         estilo: al aplicarla, QStyleSheetStyle le fija a cada hijo la
+         fuente que resuelve para el y esa queda marcada como propia.
+         Suma tambien FORM_FONT_SIZE, FORM_PATH_FONT_SIZE y el aire
+         entre el checkbox y su etiqueta, por la propiedad `lgaLabeled`
+         porque QSS no sabe si un checkbox tiene texto.
   v1.07: El checkbox deshabilitado se distingue del habilitado, y
          Style.WINDOW tambien lo lleva: era la hoja de casi todas
          las ventanas que quedaban con el checkbox del host.
@@ -201,6 +209,19 @@ class Metric(object):
 
     RADIUS = 5  # esquinas de botones y cajas
     RADIUS_SMALL = 3  # esquinas de controles chicos
+
+    # Aire entre el cuadrito del checkbox y su etiqueta. Solo para los que
+    # tienen texto: pegado al cuadrito, el nombre de la tool parece parte del
+    # control en vez de su etiqueta.
+    CHECKBOX_LABEL_GAP = 8
+
+    # --- tamano de letra de las VENTANAS DE FORMULARIO -----------------------
+    # Las ventanas que no llaman a apply_ui_font heredan la fuente del host, y
+    # la de Nuke en macOS es varios puntos mas chica que la del prototipo: al
+    # lado de un indicador de checkbox de 16 px el texto se lee diminuto.
+    FORM_FONT_SIZE = 14
+    # El path del pie va un escalon abajo: es dato de referencia, no contenido.
+    FORM_PATH_FONT_SIZE = 12
 
     ROW_HEIGHT = 24  # alto de fila de tabla
     # Alto de un boton de una fila de acciones. Va fijo en los dos roles porque
@@ -469,6 +490,11 @@ QCheckBox {
     background: transparent;
     border: none;
 }
+/* El aire entre el cuadrito y el texto va por propiedad y no por default:
+   un QCheckBox("") sin texto reserva esa separacion igual, asi que mide mas
+   que su indicador y queda corrido al centrarlo en una columna de tabla.
+       checkbox.setProperty("lgaLabeled", True)   # antes del primer polish */
+QCheckBox[lgaLabeled="true"] { spacing: %(gap)dpx; }
 QCheckBox::indicator {
     width: 16px;
     height: 16px;
@@ -490,6 +516,7 @@ QCheckBox::indicator:disabled {
 QCheckBox::indicator:checked:disabled { image: url(%(checkmark_off)s); }
 """ % {
         "text": Color.TEXT,
+        "gap": Metric.CHECKBOX_LABEL_GAP,
         "off": Color.CHECKBOX_OFF,
         "off_hover": Color.CHECKBOX_OFF_HOVER,
         "on": Color.CHECKBOX_ON,
@@ -692,6 +719,243 @@ QTextEdit {
         "text": Color.TEXT,
         "radius": Metric.RADIUS_SMALL,
     }
+
+
+# ---------------------------------------------------------------------------
+#                                  Fuentes
+# ---------------------------------------------------------------------------
+# Las fuentes viajan adentro del pack en vez de usar la del sistema: en macOS
+# la del sistema es SF Pro y en Windows Segoe UI, o sea que la misma ventana se
+# ve distinta en cada maquina y cualquier ancho ajustado en una se corre en la
+# otra.
+#
+# Son TTF y no woff2 a proposito: QFontDatabase.addApplicationFont carga TTF y
+# OTF, y no soporta woff2.
+#
+# OJO CON LA FAMILIA DEL SEMIBOLD. Las tres caras de Inter NO forman una sola
+# familia para Qt:
+#
+#     Inter-400.ttf -> familia "Inter",          subfamilia Regular
+#     Inter-700.ttf -> familia "Inter",          subfamilia Bold
+#     Inter-600.ttf -> familia "Inter SemiBold", subfamilia Regular   <-- APARTE
+#
+# Es el naming RIBBI clasico: una familia solo puede tener Regular, Bold,
+# Italic y Bold-Italic, asi que cualquier peso intermedio se publica como una
+# familia propia. Consecuencia: pedir `font-weight: 600` sobre "Inter" no
+# devuelve la SemiBold —no esta en esa familia— sino la cara mas cercana que
+# SI esta, o sea la Bold de 700. Por eso hay que nombrar la familia del
+# semibold explicitamente, y para eso estan semibold_family() y semibold_css().
+# Lo mismo pasa con la Medium de JetBrains Mono, que hoy no se usa.
+_FONT_DIR = os.path.join(_ICON_DIR, "fonts")
+_UI_FONT_REGULAR = "Inter-400.ttf"
+_UI_FONT_SEMIBOLD = "Inter-600.ttf"
+_UI_FONT_BOLD = "Inter-700.ttf"
+# La mono -JetBrains Mono- no viaja en este pack: la usa SOLO el campo de ruta
+# editable del Media Manager, que vive en el ToolPack. Si alguna vez hace falta
+# aca, se copia el archivo y se agrega su _register en load_fonts.
+
+_families = None
+# La familia del peso 600, que es OTRA que la de la regular. Vive aparte de
+# _families para no cambiarle la forma al valor que devuelve load_fonts().
+_semibold_family = ""
+
+
+def _register(archivo):
+    """
+    Registra UN archivo y devuelve la familia que Qt le asigno, o "".
+
+    De a un archivo y no de a un grupo: cada cara puede caer en una familia
+    distinta -la SemiBold de Inter cae en "Inter SemiBold"- y registrandolas
+    juntas se perdia cual era cual.
+
+    Se devuelve el nombre que INFORMA Qt y no la string "Inter": si el archivo
+    no cargo hay que caer a la fuente del host, no pedir una familia que no
+    existe, que deja la ventana con la fuente por default de Qt.
+    """
+    try:
+        from LGA_QtAdapter_ToolPack_Layout import QtGui
+    except Exception:
+        return ""
+
+    ruta = os.path.join(_FONT_DIR, archivo)
+    if not os.path.exists(ruta):
+        return ""
+    try:
+        ident = QtGui.QFontDatabase.addApplicationFont(ruta)
+    except Exception:
+        return ""
+    if ident == -1:
+        return ""
+    try:
+        nombres = list(QtGui.QFontDatabase.applicationFontFamilies(ident))
+    except Exception:
+        return ""
+    return nombres[0] if nombres else ""
+
+
+def load_fonts():
+    """
+    Registra las fuentes del pack UNA sola vez por sesion de Nuke.
+
+    Devuelve (familia_ui, ""). El segundo lugar es la mono, que en este pack
+    no viaja: se deja en la tupla para que la firma sea la misma que en el
+    ToolPack, de donde sale este modulo. La familia de interfaz puede venir
+    vacia: sin fuente propia se usa la del host, que es feo pero funciona.
+    La familia del semibold se guarda aparte y se pide con semibold_family().
+    """
+    global _families, _semibold_family
+    if _families is not None:
+        return _families
+    ui = _register(_UI_FONT_REGULAR)
+    # La SemiBold cae en su propia familia y hay que quedarse con SU nombre.
+    semibold = _register(_UI_FONT_SEMIBOLD)
+    # La Bold entra en la misma familia que la regular, asi que su nombre no
+    # se usa; se registra igual para que `font-weight: bold` tenga cara real.
+    _register(_UI_FONT_BOLD)
+    mono = ""
+
+    familias = (ui, mono)
+    # Se cachea SOLO si cargo algo. addApplicationFont devuelve -1 mientras no
+    # exista QApplication, asi que cachear el fracaso dejaba al pack sin sus
+    # fuentes para el resto de la sesion de Nuke aunque la GUI ya estuviera
+    # levantada.
+    if ui or mono:
+        _families = familias
+        _semibold_family = semibold
+    return familias
+
+
+def font_family():
+    """La familia de interfaz, o "" si no se pudo cargar."""
+    return load_fonts()[0]
+
+
+def mono_family():
+    """Siempre "" en este pack: la mono no viaja aca. Ver load_fonts()."""
+    return load_fonts()[1]
+
+
+def semibold_family():
+    """
+    La familia del peso 600, que NO es la misma que la de la regular.
+
+    Devuelve "" si no cargo, y ahi quien llama tiene que caer a pedir el peso
+    por numero, que da la Bold pero es lo unico que queda.
+    """
+    load_fonts()
+    return _semibold_family
+
+
+def semibold_css():
+    """
+    Como se pide el peso 600 en una hoja de estilo.
+
+    NO alcanza con `font-weight: 600`: la SemiBold de Inter vive en su propia
+    familia, asi que ese pedido sobre "Inter" devuelve la Bold de 700. Hay que
+    nombrar la familia. Se usa en TODO lo que el disenio pone en semibold:
+
+        boton.setStyleSheet("QPushButton { %s }" % UIStyle.semibold_css())
+    """
+    familia = semibold_family()
+    if not familia:
+        return "font-weight: 600;"
+    # El peso va en normal a proposito: la familia tiene UNA sola cara, la de
+    # 600, y pedirle 600 ademas la haria candidata a que Qt le sintetice
+    # negrita encima.
+    return "font-family: '%s'; font-weight: normal;" % familia
+
+
+def apply_ui_font(widget, size=None):
+    """
+    Le pone al widget -y a todo lo que cuelgue de el- la familia del pack.
+
+    ESTO HAY QUE LLAMARLO. Registrar las fuentes no alcanza: mientras nadie se
+    las ponga a una ventana, la ventana se dibuja con la del host, y ahi el
+    `font-weight` de las hojas no encuentra una cara real para el peso pedido.
+    En macOS Qt entonces SINTETIZA la negrita engrosando el trazo, asi que todo
+    lo que el disenio pide en 600 sale con el peso -y el ancho, un 8 a 20% mas-
+    de una 700 falsa, y la ventana entera se lee mas pesada que el prototipo.
+    Con Inter puesta, 600 es Inter SemiBold y 700 es Inter Bold, que son caras
+    reales del archivo.
+
+    Va por QFont y no por `font-family` en la hoja: Qt lo propaga a los hijos,
+    asi que las hojas de cada control siguen pudiendo pedir tamano y peso sin
+    repetir la familia en cada una. Se llama DESPUES de armar la ventana, para
+    que alcance tambien a los hijos que ya existen.
+
+    Devuelve False si las fuentes no cargaron: sin fuente propia se usa la del
+    host, que es feo pero funciona. El TAMANO se aplica igual en ese caso: es
+    justamente donde mas hace falta, porque la fuente del host viene con SU
+    tamano y ese es el que dejaba el texto diminuto al lado de los controles.
+
+    LA HERENCIA NO ALCANZA CUANDO LA VENTANA TIENE HOJA DE ESTILO. La teoria
+    es que un QFont puesto en el padre baja solo a los hijos, y asi era antes
+    de las hojas; pero al aplicar un QSS, QStyleSheetStyle le fija a CADA hijo
+    la fuente que resuelve para el -la de la app si la hoja no dice nada- y esa
+    fuente queda marcada como propia, o sea que ya no hereda nada del padre.
+    Medido en el panel de Enable Tools: la ventana quedaba en Inter 13 px y sus
+    checkboxes en la Sans Serif de 9 pt del host. Por eso se recorren los hijos
+    uno por uno. Lo que la hoja SI declara -un font-size en una regla- le sigue
+    ganando a esto, que es lo que se quiere: la hoja es la excepcion explicita.
+    """
+    familia = font_family()
+    if not familia and not size:
+        return False
+
+    def poner(objetivo):
+        fuente = objetivo.font()
+        if familia:
+            fuente.setFamily(familia)
+        if size:
+            fuente.setPixelSize(size)
+        objetivo.setFont(fuente)
+
+    poner(widget)
+    try:
+        from LGA_QtAdapter_ToolPack_Layout import QtWidgets
+    except Exception:
+        return bool(familia)
+    for hijo in widget.findChildren(QtWidgets.QWidget):
+        poner(hijo)
+    return bool(familia)
+
+
+def semibold(fuente):
+    """
+    Deja un QFont en el peso 600. Para lo que se dibuja a mano.
+
+    Lo primero es la FAMILIA: la SemiBold de Inter vive en "Inter SemiBold",
+    asi que subirle el peso a un QFont de la familia "Inter" no la encuentra
+    -no esta ahi- y Qt devuelve la Bold de 700. Nombrando la familia, el peso
+    sale solo, porque esa familia tiene una sola cara y es la de 600.
+
+    Sin las fuentes del pack queda el camino viejo: pedir el peso por enum.
+    `QFont.DemiBold` no esta garantizado -en PySide6 con enums estrictos hay
+    que ir por `QFont.Weight.DemiBold`- y el fallback natural, `setBold(True)`,
+    pide 700, que es un escalon de mas.
+    """
+    familia = semibold_family()
+    if familia:
+        fuente.setFamily(familia)
+        fuente.setBold(False)
+        return fuente
+
+    try:
+        from LGA_QtAdapter_ToolPack_Layout import QtGui
+    except Exception:
+        return fuente
+    QFont = QtGui.QFont
+    peso = getattr(getattr(QFont, "Weight", None), "DemiBold", None)
+    if peso is None:
+        peso = getattr(QFont, "DemiBold", None)
+    if peso is not None:
+        try:
+            fuente.setWeight(peso)
+            return fuente
+        except (TypeError, OverflowError):
+            pass
+    fuente.setBold(True)
+    return fuente
 
 
 # ---------------------------------------------------------------------------
