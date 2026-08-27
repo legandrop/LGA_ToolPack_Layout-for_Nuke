@@ -1,7 +1,7 @@
 """
 __________________________________________________________
 
-  LGA_AutoStamps v0.91 | Lega
+  LGA_AutoStamps v0.92 | Lega
   Encuentra conexiones "sucias" entre nodos y las reemplaza
   automaticamente por Stamps (Anchor + Wired) de Adrian Pueyo.
 
@@ -51,6 +51,9 @@ __________________________________________________________
     - El look sale del modulo de estilo del pack: los dos dialogos tenian su propio bloque de QSS con seis hex sueltos y un unico estilo de boton para todos.
     - El boton que ejecuta Enter va marcado en violeta. Antes los tres se veian igual, asi que el cartel no decia cual dispara Enter.
     - "Apply & Stop" salia como "Apply  Stop": Qt se come un & suelto como marca de mnemonico.
+
+  v0.92:
+    - find_dag_widget() deja de barrer QApplication.allWidgets() a pelo. Esa lista trae wrappers de widgets que Qt ya destruyo del lado C++, y leerles el objectName lee memoria liberada. Ahora usa iter_live_widgets() y safe_widget_call().
 __________________________________________________________
 
 """
@@ -59,7 +62,13 @@ import os
 import sys
 import nuke
 
-from LGA_QtAdapter_ToolPack_Layout import QtWidgets, QtGui, QtCore
+from LGA_QtAdapter_ToolPack_Layout import (
+    QtWidgets,
+    QtGui,
+    QtCore,
+    iter_live_widgets,
+    safe_widget_call,
+)
 from LGA_UI_Style_ToolPack_Layout import Color, Style
 
 # ----------------------------------------------------------------------
@@ -265,9 +274,14 @@ def existing_anchor_for_source(stamps, source):
 def find_dag_widget():
     """Devuelve el widget del Node Graph (DAG) mas grande y visible."""
     try:
+        # iter_live_widgets saltea los wrappers de widgets ya destruidos en
+        # C++: leerles el objectName lee memoria liberada.
         candidates = [
-            w for w in QtWidgets.QApplication.allWidgets()
-            if w.objectName().startswith("DAG") and w.isVisible() and w.width() > 0
+            w
+            for w in iter_live_widgets()
+            if (safe_widget_call(w, "objectName", "") or "").startswith("DAG")
+            and safe_widget_call(w, "isVisible", False)
+            and safe_widget_call(w, "width", 0) > 0
         ]
         if candidates:
             return max(candidates, key=lambda w: w.width() * w.height())

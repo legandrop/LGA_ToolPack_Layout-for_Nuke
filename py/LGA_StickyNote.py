@@ -1,8 +1,13 @@
 """
 _______________________________________________
 
-  LGA_StickyNote v1.92 | Lega
+  LGA_StickyNote v1.93 | Lega
   Editor en tiempo real para StickyNotes en el Node Graph
+
+  v1.93: Se deja de barrer QApplication.allWidgets() a pelo. Esa lista trae
+         wrappers de widgets que Qt ya destruyo del lado C++, y tocarlos
+         hacia crashear a Nuke. Ahora se itera con iter_live_widgets() y se
+         leen los metodos con safe_widget_call().
 _______________________________________________
 
 """
@@ -11,7 +16,13 @@ import nuke
 import os
 import gc
 import weakref
-from LGA_QtAdapter_ToolPack_Layout import QtWidgets, QtGui, QtCore
+from LGA_QtAdapter_ToolPack_Layout import (
+    QtWidgets,
+    QtGui,
+    QtCore,
+    iter_live_widgets,
+    safe_widget_call,
+)
 from LGA_StickyNote_Utils import (
     StickyNoteStateManager,
     extract_clean_text_and_margins,
@@ -1892,8 +1903,11 @@ class StickyNoteEditor(QtWidgets.QDialog):
 
             # Encontrar widget DAG
             dag_widget = None
-            for widget in QtWidgets.QApplication.allWidgets():
-                if "DAG" in widget.objectName():
+            # iter_live_widgets saltea los wrappers de widgets que Qt ya
+            # destruyo del lado C++: leerles el objectName lee memoria
+            # liberada y tumba el proceso.
+            for widget in iter_live_widgets():
+                if "DAG" in (safe_widget_call(widget, "objectName", "") or ""):
                     dag_widget = widget
                     break
 
@@ -2043,9 +2057,12 @@ def run_sticky_note_editor():
     if app_instance:
         # Buscar widgets existentes que puedan causar conflictos
         conflicting_widgets = []
-        for widget in app_instance.allWidgets():
+        # iter_live_widgets saltea los wrappers de widgets ya destruidos en C++.
+        for widget in iter_live_widgets():
             widget_name = widget.__class__.__name__
-            if widget_name in ["ScaleWidget", "NodeLabelEditor"] and widget.isVisible():
+            if widget_name in ["ScaleWidget", "NodeLabelEditor"] and safe_widget_call(
+                widget, "isVisible", False
+            ):
                 conflicting_widgets.append(widget_name)
 
         if conflicting_widgets:
@@ -2053,10 +2070,9 @@ def run_sticky_note_editor():
                 f"Advertencia: Se detectaron widgets que pueden causar conflictos: {conflicting_widgets}"
             )
             debug_print("Cerrando widgets conflictivos...")
-            for widget in app_instance.allWidgets():
-                if (
-                    widget.__class__.__name__ in conflicting_widgets
-                    and widget.isVisible()
+            for widget in iter_live_widgets():
+                if widget.__class__.__name__ in conflicting_widgets and (
+                    safe_widget_call(widget, "isVisible", False)
                 ):
                     try:
                         widget.close()

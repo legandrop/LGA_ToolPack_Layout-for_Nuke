@@ -1,7 +1,13 @@
 import nuke
 import re
 from collections import namedtuple
-from LGA_QtAdapter_ToolPack_Layout import QtCore, QtGui, QtWidgets
+from LGA_QtAdapter_ToolPack_Layout import (
+    QtCore,
+    QtGui,
+    QtWidgets,
+    iter_live_widgets,
+    safe_widget_call,
+)
 
 DAG_TITLE = "Node Graph"
 DAG_OBJECT_NAME = "DAG"
@@ -122,10 +128,11 @@ def get_dag_widgets(visible=True):
         list[QtWidgets.QWidget]
     """
     dags = []
-    all_widgets = QtWidgets.QApplication.instance().allWidgets()
-    for widget in all_widgets:
-        if DAG_OBJECT_NAME in widget.objectName():
-            if not visible or (visible and widget.isVisible()):
+    # iter_live_widgets saltea los wrappers de widgets que Qt ya destruyo del
+    # lado C++: leerles el objectName lee memoria liberada y tumba el proceso.
+    for widget in iter_live_widgets():
+        if DAG_OBJECT_NAME in (safe_widget_call(widget, "objectName", "") or ""):
+            if not visible or safe_widget_call(widget, "isVisible", False):
                 dags.append(widget)
     return dags
 

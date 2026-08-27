@@ -2,6 +2,10 @@
 
 ## v2.63
 
+- **Cinco tools barrian `QApplication.allWidgets()` para encontrar el DAG.** Esa llamada materializa un wrapper de PySide por cada widget del proceso de una sola vez, y si Nuke esta creando o destruyendo widgets en ese momento corrompe el heap: el proceso muere con `0xc0000374`, o mas tarde con un access violation adentro de `QWidget::~QWidget` durante un garbage collect. Pasa igual en Nuke 15 con Qt5 y en 16/17 con Qt6.
+
+  El adapter suma cuatro helpers —`is_widget_alive`, `safe_widget_call`, `iter_live_widgets` e `iter_live_children`—. `iter_live_widgets` reemplaza a `allWidgets()` bajando desde `topLevelWidgets()`, que cubre el mismo conjunto sin la llamada que rompe. Pasan a usarlo las busquedas del DAG de `StickyNote`, `NodeLabel`, `AutoStamps`, `Toggle Zoom` y `scale_widget`, y la deteccion de ventanas en conflicto de `StickyNote`. [ ToolPack Layout - Dejar de llamar allWidgets al buscar el DAG ]
+
 - **El README se empareja al formato del ToolPack-B, que quedó como referencia de aire.** El andamiaje de espaciado se reescribió entero con una pasada mecánica que deja el contenido palabra por palabra como estaba: título, línea en blanco, descripción, `<br><br>`, placa del shortcut, línea en blanco, `<br>` de cierre y tres líneas en blanco hasta la sección siguiente; y `<br><br>` arriba de cada banner de sección.
 
   Lo que estaba desparejo eran los casos de borde, que se habían escrito a mano uno por uno: placas pegadas a un gif sin ningún `<br>` en el medio, otras con tres saltos porque la línea anterior ya terminaba en `<br>`, placas con un `<br>` colgando atrás, y secciones que terminaban en imagen dejando el título siguiente encima de esa imagen. Medido sobre el render de GitHub, ahora todas las placas quedan a 27 px del texto —24 cuando lo de arriba es una imagen, que es la misma construcción con la línea base del gif— contra los 3 a 59 px que había antes según la sección. [ ToolPack Layout - Emparejar el aire del README ]

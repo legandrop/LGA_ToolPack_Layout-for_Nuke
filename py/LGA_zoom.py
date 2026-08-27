@@ -1,20 +1,30 @@
 """
 _____________________________________________________________________________
 
-  LGA_zoom v2.22 | 2025 | Lega
+  LGA_zoom v2.23 | 2025 | Lega
 
   Alterna entre el zoom actual y un zoom que muestra todo el DAG.
   Permite volver al nivel de zoom anterior usando la posición del cursor
   como centro. Si pasan más de 5 segundos entre pulsaciones de la tecla H,
   se reinicia el ciclo.
   Se puede usar el botón del medio del mouse para alternar el zoom.
+
+  v2.23: find_dag_widget() deja de barrer QApplication.allWidgets() a pelo.
+         Esa lista trae wrappers de widgets que Qt ya destruyo del lado C++,
+         y leerles el objectName hacia crashear a Nuke.
 _____________________________________________________________________________
 
 """
 
 import nuke
 import time
-from LGA_QtAdapter_ToolPack_Layout import QtWidgets, QtGui, QtCore
+from LGA_QtAdapter_ToolPack_Layout import (
+    QtWidgets,
+    QtGui,
+    QtCore,
+    iter_live_widgets,
+    safe_widget_call,
+)
 
 # Aliases para mantener compatibilidad con el código original
 QCursor = QtGui.QCursor
@@ -45,8 +55,10 @@ _interceptor = None  # Mantenemos una referencia global al interceptor
 
 def find_dag_widget():
     """Encuentra el widget del DAG"""
-    for widget in QApplication.allWidgets():
-        if widget.objectName() == "DAG.1":
+    # iter_live_widgets saltea los wrappers de widgets que Qt ya destruyo del
+    # lado C++: leerles el objectName lee memoria liberada y tumba el proceso.
+    for widget in iter_live_widgets():
+        if safe_widget_call(widget, "objectName") == "DAG.1":
             return widget
     return None
 

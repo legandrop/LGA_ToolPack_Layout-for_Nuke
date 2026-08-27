@@ -1,8 +1,13 @@
 """
 _______________________________________________
 
-  LGA_NodeLabel v0.83 | Lega
+  LGA_NodeLabel v0.84 | Lega
   Editor de labels para nodos en el Node Graph
+
+  v0.84: La busqueda del DAG deja de barrer QApplication.allWidgets() a
+         pelo. Esa lista trae wrappers de widgets que Qt ya destruyo del
+         lado C++, y leerles el objectName hacia crashear a Nuke. Ahora usa
+         iter_live_widgets() y safe_widget_call().
 _______________________________________________
 
 """
@@ -11,7 +16,13 @@ import nuke
 import os
 import gc
 import weakref
-from LGA_QtAdapter_ToolPack_Layout import QtWidgets, QtGui, QtCore
+from LGA_QtAdapter_ToolPack_Layout import (
+    QtWidgets,
+    QtGui,
+    QtCore,
+    iter_live_widgets,
+    safe_widget_call,
+)
 
 # ===== CONTROL DE RECURSOS Y GESTIÓN DE MEMORIA =====
 # Namespace único para evitar conflictos con otros scripts
@@ -477,8 +488,11 @@ class NodeLabelEditor(QtWidgets.QDialog):
 
             # Encontrar widget DAG
             dag_widget = None
-            for widget in QtWidgets.QApplication.allWidgets():
-                if "DAG" in widget.objectName():
+            # iter_live_widgets saltea los wrappers de widgets que Qt ya
+            # destruyo del lado C++: leerles el objectName lee memoria
+            # liberada y tumba el proceso.
+            for widget in iter_live_widgets():
+                if "DAG" in (safe_widget_call(widget, "objectName", "") or ""):
                     dag_widget = widget
                     break
 
