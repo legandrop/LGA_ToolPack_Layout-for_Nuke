@@ -56,7 +56,7 @@ _interceptor = None  # Mantenemos una referencia global al interceptor
 def find_dag_widget():
     """Encuentra el widget del DAG"""
     # iter_live_widgets saltea los wrappers de widgets que Qt ya destruyo del
-    # lado C++: leerles el objectName lee memoria liberada y tumba el proceso.
+    # lado C++, y evita la llamada a allWidgets() que tumbaba el proceso.
     for widget in iter_live_widgets():
         if safe_widget_call(widget, "objectName") == "DAG.1":
             return widget

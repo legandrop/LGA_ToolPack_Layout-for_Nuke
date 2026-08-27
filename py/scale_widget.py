@@ -129,7 +129,7 @@ def get_dag_widgets(visible=True):
     """
     dags = []
     # iter_live_widgets saltea los wrappers de widgets que Qt ya destruyo del
-    # lado C++: leerles el objectName lee memoria liberada y tumba el proceso.
+    # lado C++, y evita la llamada a allWidgets() que tumbaba el proceso.
     for widget in iter_live_widgets():
         if DAG_OBJECT_NAME in (safe_widget_call(widget, "objectName", "") or ""):
             if not visible or safe_widget_call(widget, "isVisible", False):

@@ -2,6 +2,8 @@
 
 ## v2.63
 
+- **La explicacion del fix anterior estaba mal.** Los comentarios decian que leerle `objectName()` a un widget ya destruido lee memoria liberada. Se verifico contra la PySide6 de Nuke 17 que no: shiboken invalida el wrapper y levanta `RuntimeError`, que cualquier `try/except` atrapa. Lo que corrompe el heap es la llamada a `allWidgets()` en si. Se corrigen los comentarios de las cinco tools y del adapter, que ademas suma `widget_property()` para mantener el bloque identico en los tres packs. [ ToolPack Layout - Corregir la explicacion del fix de allWidgets ]
+
 - **Cinco tools barrian `QApplication.allWidgets()` para encontrar el DAG.** Esa llamada materializa un wrapper de PySide por cada widget del proceso de una sola vez, y si Nuke esta creando o destruyendo widgets en ese momento corrompe el heap: el proceso muere con `0xc0000374`, o mas tarde con un access violation adentro de `QWidget::~QWidget` durante un garbage collect. Pasa igual en Nuke 15 con Qt5 y en 16/17 con Qt6.
 
   El adapter suma cuatro helpers —`is_widget_alive`, `safe_widget_call`, `iter_live_widgets` e `iter_live_children`—. `iter_live_widgets` reemplaza a `allWidgets()` bajando desde `topLevelWidgets()`, que cubre el mismo conjunto sin la llamada que rompe. Pasan a usarlo las busquedas del DAG de `StickyNote`, `NodeLabel`, `AutoStamps`, `Toggle Zoom` y `scale_widget`, y la deteccion de ventanas en conflicto de `StickyNote`. [ ToolPack Layout - Dejar de llamar allWidgets al buscar el DAG ]

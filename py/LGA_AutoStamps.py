@@ -53,7 +53,7 @@ __________________________________________________________
     - "Apply & Stop" salia como "Apply  Stop": Qt se come un & suelto como marca de mnemonico.
 
   v0.92:
-    - find_dag_widget() deja de barrer QApplication.allWidgets() a pelo. Esa lista trae wrappers de widgets que Qt ya destruyo del lado C++, y leerles el objectName lee memoria liberada. Ahora usa iter_live_widgets() y safe_widget_call().
+    - find_dag_widget() deja de barrer QApplication.allWidgets() a pelo. Esa llamada materializa un wrapper de PySide por cada widget del proceso y corrompe el heap si Qt esta creando o destruyendo widgets. Ahora usa iter_live_widgets() y safe_widget_call().
 __________________________________________________________
 
 """
@@ -275,7 +275,7 @@ def find_dag_widget():
     """Devuelve el widget del Node Graph (DAG) mas grande y visible."""
     try:
         # iter_live_widgets saltea los wrappers de widgets ya destruidos en
-        # C++: leerles el objectName lee memoria liberada.
+        # C++, y evita la llamada a allWidgets() que corrompia el heap.
         candidates = [
             w
             for w in iter_live_widgets()
