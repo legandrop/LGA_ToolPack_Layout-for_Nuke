@@ -1,7 +1,7 @@
 """
 __________________________________________________________
 
-  LGA_AutoStamps v0.93 | Lega
+  LGA_AutoStamps v0.94 | Lega
   Encuentra conexiones "sucias" entre nodos y las reemplaza
   automaticamente por Stamps (Anchor + Wired) de Adrian Pueyo.
 
@@ -57,6 +57,9 @@ __________________________________________________________
 
   v0.93:
     - Los avisos salen por el helper de carteles del pack (error el de stamps no importable, info el de "elegi una opcion"), con fallback a nuke.message si el helper no esta.
+
+  v0.94:
+    - Los checkboxes del dialogo de opciones usan Style.CHECKBOX del modulo: la hoja local no traia las reglas del indicador y el check quedaba flotante con el cuadrito del host. Ademas llevan lgaLabeled para separar el texto del cuadrito.
 __________________________________________________________
 
 """
@@ -434,6 +437,10 @@ class AutoStampsOptionsDialog(QtWidgets.QDialog):
         frame_layout.addWidget(self.title_bar)
 
         content_widget = QtWidgets.QWidget()
+        # El bloque QCheckBox local no traia las reglas del indicador y el
+        # check quedaba "flotante", con el cuadrito del palette del host.
+        # Se suma Style.CHECKBOX del modulo (caja del pack); el aire entre
+        # cuadrito y texto lo da lgaLabeled en cada checkbox.
         content_widget.setStyleSheet(
             """
             QWidget {
@@ -442,19 +449,9 @@ class AutoStampsOptionsDialog(QtWidgets.QDialog):
                 border-bottom-left-radius: 10px;
                 border-bottom-right-radius: 10px;
             }
-            QCheckBox {
-                background: transparent;
-                border: none;
-                color: %(text)s;
-                font-size: 12px;
-                spacing: 8px;
-            }
-            QCheckBox::indicator {
-                width: 14px;
-                height: 14px;
-            }
             """
             % _C
+            + Style.CHECKBOX
         )
         content_layout = QtWidgets.QVBoxLayout(content_widget)
         content_layout.setContentsMargins(
@@ -472,6 +469,7 @@ class AutoStampsOptionsDialog(QtWidgets.QDialog):
         content_layout.addWidget(search_label)
 
         self.hidden_inputs_check = QtWidgets.QCheckBox("Search hidden inputs")
+        self.hidden_inputs_check.setProperty("lgaLabeled", True)
         self.hidden_inputs_check.setToolTip(
             "Find nodes with hidden input connections and replace them with stamps."
         )
@@ -479,6 +477,7 @@ class AutoStampsOptionsDialog(QtWidgets.QDialog):
         content_layout.addWidget(self.hidden_inputs_check)
 
         self.dot_distributions_check = QtWidgets.QCheckBox("Search dot distributions")
+        self.dot_distributions_check.setProperty("lgaLabeled", True)
         self.dot_distributions_check.setToolTip(
             "Find Dot trees that distribute one source to multiple destinations."
         )
@@ -486,6 +485,7 @@ class AutoStampsOptionsDialog(QtWidgets.QDialog):
         content_layout.addWidget(self.dot_distributions_check)
 
         self.long_connections_check = QtWidgets.QCheckBox("Search long connections")
+        self.long_connections_check.setProperty("lgaLabeled", True)
         self.long_connections_check.setToolTip(
             "Find direct connections longer than the distance threshold."
         )
