@@ -1,7 +1,7 @@
 """
 ____________________________________________________________________
 
-  LGA_UI_Style_ToolPack_Layout v1.21 | Lega
+  LGA_UI_Style_ToolPack_Layout v1.22 | Lega
 
   Punto UNICO de ajuste del look de las ventanas del ToolPack Layout. Todo lo
   visual sale de aca: colores, fondos, bordes, esquinas, espaciados y
@@ -38,6 +38,9 @@ ____________________________________________________________________
   entra en el medio -temas, semibold_css, tokens nuevos, la paleta
   reordenada- se puede leer en el changelog de abajo.
 
+  v1.22: colorize_path se ancla en el shotname: si un segmento es un
+         nombre de shot, lo anterior va todo en el color de parte comun
+         y la paleta arranca en el shot.
   v1.21: Style.TABLE incluye el bloque del checkbox: un checkbox de
          celda perdia la regla QCheckBox de la hoja de la ventana
          (la hoja propia de la tabla corta esa herencia) y el fondo
@@ -163,6 +166,7 @@ ____________________________________________________________________
 """
 
 import os
+import re
 
 
 # ---------------------------------------------------------------------------
@@ -1739,13 +1743,33 @@ def _split_path(path):
     return (path or "").replace("\\", "/").split("/")
 
 
+# Nombre de shot tipo PROYECTO_SEQ_SHOT_VENDOR. Deteccion liviana para la
+# regla "el color de un path se ancla en el shotname" (Docu_UI_Style.md);
+# la deteccion completa, validada contra PipeSync, vive en HieroTools
+# (LGA_NKS_Flow_NamingUtils) y no se importa desde aca para no acoplar.
+_SHOT_SEGMENT_RE = re.compile(r"^[A-Za-z0-9]+_\d{3,4}_\d{3,4}_[A-Za-z0-9]{2,4}$")
+
+
+def _shot_segment_index(segments):
+    """Indice del primer segmento que es un nombre de shot, o None."""
+    for index, segment in enumerate(segments):
+        if _SHOT_SEGMENT_RE.match(segment or ""):
+            return index
+    return None
+
+
 def colorize_path(path):
     """
-    Colorea un path recorriendo la paleta por nivel de directorio.
+    Colorea un path anclado en el shotname.
 
-    Arranca por el lavanda —el mismo color con el que arranca la parte comun
-    de un par— asi un path solo y un par se leen con el mismo lenguaje de
-    color. Devuelve HTML: el label tiene que estar en modo rich text.
+    Si algun segmento es un nombre de shot, TODO lo anterior va en un solo
+    color (el de parte comun) y la paleta por nivel arranca recien en el
+    shot: lo que identifica al path es el shot y su cola, no la raiz.
+    Sin shot detectable se recorre la paleta por nivel desde la raiz,
+    arrancando por el lavanda —el mismo color con el que arranca la parte
+    comun de un par— asi un path solo y un par se leen con el mismo
+    lenguaje de color. Devuelve HTML: el label tiene que estar en modo
+    rich text.
     """
     segments = _split_path(path)
     if not segments:
@@ -1756,6 +1780,7 @@ def colorize_path(path):
         _ZERO_WIDTH_SPACE,
     )
 
+    shot_index = _shot_segment_index(segments)
     colors = (Color.PATH_COMMON,) + PATH_PALETTE
     painted = []
     for index, segment in enumerate(segments):
@@ -1763,7 +1788,12 @@ def colorize_path(path):
             # El primer segmento vacio es la barra inicial de un path unix.
             painted.append("")
             continue
-        color = colors[index % len(colors)]
+        if shot_index is None:
+            color = colors[index % len(colors)]
+        elif index < shot_index:
+            color = Color.PATH_COMMON
+        else:
+            color = PATH_PALETTE[(index - shot_index) % len(PATH_PALETTE)]
         painted.append("<span style='color:%s'>%s</span>" % (color, _escape(segment)))
 
     return separator.join(painted)
