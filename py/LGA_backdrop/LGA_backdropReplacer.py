@@ -1,9 +1,13 @@
 """
 ___________________________________________________________________________________________
 
-  LGA_backdropReplacer v1.1 | Lega
+  LGA_backdropReplacer v1.11 | Lega
   Replace the selected backdrop with an LGA_backdrop
   or all backdrops if none are selected, and calling LGA_backdropZorder in the end
+
+  v1.11
+  - El aviso de "no hay backdrops" sale por el helper de carteles del
+    pack, con fallback a nuke.message si el helper no esta.
 
   v1.1 | 2026-07-09
   - Preserva label formateado, font, margin, nombre y estilo al actualizar backdrops.
@@ -17,6 +21,15 @@ import nuke
 import nukescripts
 import os
 import sys
+
+# Carteles con el estilo del pack; si el helper no esta, cae al nuke.message pelado.
+try:
+    from LGA_UI_MessageBox_ToolPack_Layout import show_info
+except ImportError:
+
+    def show_info(parent, title, text):
+        nuke.message(text)
+
 
 # Variable global para activar o desactivar los debug_prints
 DEBUG = False
@@ -194,7 +207,7 @@ def replace_with_lga_backdrop():
         )
 
     if not nodes_to_replace:
-        nuke.message("No hay backdrops para reemplazar.")
+        show_info(None, "Backdrop Replacer", "No hay backdrops para reemplazar.")
         return
 
     replaced_count = 0

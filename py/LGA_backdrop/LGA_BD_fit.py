@@ -1,6 +1,10 @@
 """
 LGA_BD_fit.py - Funcionalidad de fit para LGA_backdrop
 
+v1.02
+- El aviso de autofit sin nodos sale por el helper de carteles del pack,
+  con fallback a nuke.message si el helper no esta.
+
 v1.01 | 2026-07-09
 - Agrega modo silencioso para autofit automatico desde el callback runtime.
 - Usa el adapter Qt para medir texto de forma compatible con Nuke 15/16.
@@ -10,6 +14,14 @@ import re
 
 import nuke
 from LGA_QtAdapter_ToolPack_Layout import QtGui, horizontal_advance
+
+# Carteles con el estilo del pack; si el helper no esta, cae al nuke.message pelado.
+try:
+    from LGA_UI_MessageBox_ToolPack_Layout import show_info
+except ImportError:
+
+    def show_info(parent, title, text):
+        nuke.message(text)
 
 DEBUG = False
 
@@ -168,7 +180,11 @@ def fit_to_selected_nodes(backdrop_node=None, show_message=True):
 
         if not selNodes:
             if show_message:
-                nuke.message("No hay nodos dentro del backdrop para hacer autofit")
+                show_info(
+                    None,
+                    "LGA Backdrop",
+                    "No hay nodos dentro del backdrop para hacer autofit",
+                )
             return
 
         debug_print(

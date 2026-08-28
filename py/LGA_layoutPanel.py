@@ -1,7 +1,16 @@
 """
 __________________________________________
-LGA_layoutPanel v1.00 | Lega Pugliese
-Numpad style panel for layout toolpack
+
+  LGA_layoutPanel v1.01 | Lega Pugliese
+  Numpad style panel for layout toolpack
+
+  v1.01: Los grises del panel salen del modulo de estilo del pack:
+         fondo (WINDOW), texto de los botones (TEXT), estado apagado
+         (TEXT_DIM), el estado activo violeta (ACCENT/ACCENT_HOVER/
+         TEXT_ON_ACCENT) y el fondo del modo cambiado (SURFACE).
+         COLOR_ACTIVE, COLOR_MODE, COLOR_HOVER y el borde #929292 se
+         quedan como hex propios: no hay token con ese rol exacto.
+  v1.00: Version inicial.
 __________________________________________
 """
 
@@ -24,6 +33,7 @@ from LGA_QtAdapter_ToolPack_Layout import (
     Qt,
     primary_screen_geometry,
 )
+from LGA_UI_Style_ToolPack_Layout import Color
 
 try:
     from PySide6 import QtSvg
@@ -138,9 +148,16 @@ FONT_SIZE = max(12, int(round(12 * FONT_SCALE)))
 FONT_WEIGHT = 600 if LAYOUT_SCALE >= 1.1 else 500
 FUNC_FONT_WEIGHT = 500
 ARROW_STROKE = 10
-COLOR_BASE = "#a9a9a9"
+# Estados de los botones del panel. BASE y DIMMED tienen rol exacto en el
+# modulo de estilo (texto de cuerpo / texto apagado) y salen de ahi.
+COLOR_BASE = Color.TEXT
+COLOR_DIMMED = Color.TEXT_DIM
+# Estos tres se QUEDAN como hex propios, a proposito:
+# - COLOR_ACTIVE es un gris apenas mas claro que el cuerpo para la linea de
+#   funcion; TEXT_STRONG (el token mas cercano) rompe esa jerarquia sutil.
+# - COLOR_MODE/COLOR_HOVER son el acento del modo usado como TEXTO y BORDE;
+#   Color.ACCENT esta calibrado para relleno y a ese valor no se lee.
 COLOR_ACTIVE = "#adadad"
-COLOR_DIMMED = "#5a5959"
 COLOR_MODE = "#8455e2"
 COLOR_HOVER = "#b48cff"
 ARROW_ACTIVE_SCALE = 0.8
@@ -681,30 +698,34 @@ class LayoutPanel(QtWidgets.QDialog):
         self._apply_style()
 
     def _apply_style(self) -> None:
+        # Los colores salen de las constantes del modulo (que a su vez salen
+        # del modulo de estilo donde el rol coincide). El borde #929292 de los
+        # botones queda como hex propio: es el trazo claro distintivo del
+        # numpad y no hay token de borde con ese rol.
         style = """
             #panel {
-                background-color: #161616;
-                border: 0px solid #a9a9a9;
+                background-color: __BG__;
+                border: 0px solid __BASE__;
                 border-radius: 12px;
             }
             #mods {
-                background-color: #161616;
-                border: 0px solid #a9a9a9;
+                background-color: __BG__;
+                border: 0px solid __BASE__;
                 border-radius: 12px;
             }
             #func {
-                background-color: #161616;
-                border: 0px solid #a9a9a9;
+                background-color: __BG__;
+                border: 0px solid __BASE__;
                 border-radius: 12px;
             }
             #topbar {
-                background-color: #161616;
-                border: 0px solid #a9a9a9;
+                background-color: __BG__;
+                border: 0px solid __BASE__;
                 border-radius: 10px;
             }
             QToolButton {
-                background-color: #161616;
-                color: #a9a9a9;
+                background-color: __BG__;
+                color: __BASE__;
                 border: 2px solid #929292;
                 border-radius: 10px;
                 font: __FONT_WEIGHT__ __FONT_SIZE__px "Segoe UI";
@@ -715,37 +736,46 @@ class LayoutPanel(QtWidgets.QDialog):
                 text-transform: none;
             }
             QToolButton[active="true"] {
-                background-color: #4f377e;
-                color: #cccccc;
-                border: 2px solid #774dcb;
+                background-color: __ACCENT__;
+                color: __ON_ACCENT__;
+                border: 2px solid __ACCENT_HOVER__;
             }
             QToolButton[dimmed="true"] {
-                color: #5a5959;
-                border: 2px solid #5a5959;
+                color: __DIMMED__;
+                border: 2px solid __DIMMED__;
             }
             QToolButton[modeChanged="true"] {
-                background-color: #1d1d1d;
-                color: #8455e2;
-                border: 2px solid #8455e2;
+                background-color: __SURFACE__;
+                color: __MODE__;
+                border: 2px solid __MODE__;
             }
             QToolButton[modeChanged="true"]:hover {
-                color: #b48cff;
-                border: 2px solid #b48cff;
+                color: __MODE_HOVER__;
+                border: 2px solid __MODE_HOVER__;
             }
             QToolButton[closeButton="true"] {
                 background-color: transparent;
                 border: 0px solid transparent;
-                color: #a9a9a9;
+                color: __BASE__;
                 text-transform: none;
             }
             QToolButton[closeButton="true"]:hover {
-                color: #b48cff;
+                color: __MODE_HOVER__;
             }
             """
         style = (
             style.replace("__FONT_SIZE__", str(FONT_SIZE))
             .replace("__FONT_WEIGHT__", str(FONT_WEIGHT))
             .replace("__FUNC_FONT_WEIGHT__", str(FUNC_FONT_WEIGHT))
+            .replace("__BG__", Color.WINDOW)
+            .replace("__SURFACE__", Color.SURFACE)
+            .replace("__BASE__", COLOR_BASE)
+            .replace("__DIMMED__", COLOR_DIMMED)
+            .replace("__ACCENT_HOVER__", Color.ACCENT_HOVER)
+            .replace("__ACCENT__", Color.ACCENT)
+            .replace("__ON_ACCENT__", Color.TEXT_ON_ACCENT)
+            .replace("__MODE_HOVER__", COLOR_HOVER)
+            .replace("__MODE__", COLOR_MODE)
         )
         self.setStyleSheet(style)
 

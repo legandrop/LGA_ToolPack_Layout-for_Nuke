@@ -1,10 +1,13 @@
 """
 ____________________________________________________________________
 
-  LGA_BD_knobs v1.00 | Lega
+  LGA_BD_knobs v1.01 | Lega
 
   Manejo modular de knobs para LGA_backdrop.
 
+  v1.01: Los carteles de guardado de defaults salen por el helper de
+         carteles del pack (info el de exito, error los de fallo), con
+         fallback a nuke.message si el helper no esta.
   v1.00: Los Link_Knob al knob nativo pasan a ser relativos al propio
          nodo (setLink) en vez de absolutos (makeLink con el nombre).
          El nombre embebido dejaba una dependencia de expresion hacia
@@ -16,6 +19,17 @@ ____________________________________________________________________
 import nuke
 import os
 from LGA_QtAdapter_ToolPack_Layout import QtWidgets, QtGui, QtCore
+
+# Carteles con el estilo del pack; si el helper no esta, cae al nuke.message pelado.
+try:
+    from LGA_UI_MessageBox_ToolPack_Layout import show_info, show_error
+except ImportError:
+
+    def show_info(parent, title, text):
+        nuke.message(text)
+
+    def show_error(parent, title, text):
+        nuke.message(text)
 
 # Variable global para activar o desactivar los prints
 DEBUG = False
@@ -867,32 +881,28 @@ class LGA_SaveDefaultsWidget(QtWidgets.QWidget):
 
             if success:
                 debug_print("Backdrop defaults saved successfully")
-                # Mostrar mensaje de confirmación usando nuke.message
+                # Mostrar mensaje de confirmacion con el cartel del pack
                 try:
-                    import nuke
-
-                    nuke.message("Backdrop defaults saved successfully!")
+                    show_info(None, "LGA Backdrop", "Backdrop defaults saved successfully!")
                 except:
-                    debug_print("Could not show nuke.message")
+                    debug_print("Could not show message")
             else:
                 debug_print("Failed to save backdrop defaults")
                 try:
-                    import nuke
-
-                    nuke.message(
-                        "Failed to save backdrop defaults. Check console for details."
+                    show_error(
+                        None,
+                        "LGA Backdrop",
+                        "Failed to save backdrop defaults. Check console for details.",
                     )
                 except:
-                    debug_print("Could not show nuke.message")
+                    debug_print("Could not show message")
 
         except Exception as e:
             debug_print(f"Error saving backdrop defaults: {e}")
             try:
-                import nuke
-
-                nuke.message(f"Error saving backdrop defaults: {e}")
+                show_error(None, "LGA Backdrop", f"Error saving backdrop defaults: {e}")
             except:
-                debug_print("Could not show nuke.message")
+                debug_print("Could not show message")
 
     def makeUI(self):
         return self

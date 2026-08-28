@@ -1,14 +1,25 @@
 """
 __________________________________________________________________________________________________
 
-  LGA_selectNodes v1.3 | 2024 | Lega
+  LGA_selectNodes v1.31 | 2024 | Lega
   Select connected or unconnected nodes in any direction with a tolerance of 30px, ignoring flow
   Or select all nodee in one direction
+
+  v1.31: Los avisos de seleccion salen por el helper de carteles del
+         pack, con fallback a nuke.message.
 __________________________________________________________________________________________________
 
 """
 
 import nuke
+
+# Carteles con el estilo del pack; si el helper no esta, cae al nuke.message pelado.
+try:
+    from LGA_UI_MessageBox_ToolPack_Layout import show_info
+except ImportError:
+
+    def show_info(parent, title, text):
+        nuke.message(text)
 
 def selectNodes(direction):
     pos_tolerance = 30  # Tolerancia para la posicion en X y Y
@@ -16,7 +27,7 @@ def selectNodes(direction):
     # Comenzar con el nodo seleccionado actualmente
     selected_nodes = nuke.selectedNodes()
     if not selected_nodes:
-        nuke.message('Please select at least one node to proceed.')
+        show_info(None, "Select Nodes", 'Please select at least one node to proceed.')
         return
 
     # Obtener el nodo seleccionado actualmente
@@ -24,7 +35,7 @@ def selectNodes(direction):
 
     # Asegurarse de que el nodo actual no sea el nodo raiz ni un BackdropNode
     if current_node.Class() == 'Root' or current_node.Class() == 'BackdropNode':
-        nuke.message('The operation cannot be performed on the root node or a backdrop node. Please select a different node.')
+        show_info(None, "Select Nodes", 'The operation cannot be performed on the root node or a backdrop node. Please select a different node.')
         return
 
     # Calcular el centro del nodo actual

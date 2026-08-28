@@ -1,13 +1,30 @@
 """
 ___________________________________________________________________________________________
 
-  LGA_backdropToggleAppearance v1.0 | Lega
+  LGA_backdropToggleAppearance v1.01 | Lega
   Toggle all backdrops between Fill and Border using the first backdrop as master
+
+  v1.01: Los avisos salen por el helper de carteles del pack (info el de
+         "no hay backdrops", warning el de appearance ilegible), con
+         fallback a nuke.message si el helper no esta.
+  v1.0: Version inicial.
 ___________________________________________________________________________________________
 
 """
 
 import nuke
+
+# Carteles con el estilo del pack; si el helper no esta, cae al nuke.message pelado.
+try:
+    from LGA_UI_MessageBox_ToolPack_Layout import show_info, show_warning
+except ImportError:
+
+    def show_info(parent, title, text):
+        nuke.message(text)
+
+    def show_warning(parent, title, text):
+        nuke.message(text)
+
 
 DEBUG = False
 
@@ -80,7 +97,7 @@ def _set_appearance(node, target):
 def toggle_backdrop_fill_border():
     backdrops = _get_backdrops()
     if not backdrops:
-        nuke.message("No hay backdrops para alternar.")
+        show_info(None, "Backdrop Appearance", "No hay backdrops para alternar.")
         return
 
     master_appearance = None
@@ -90,7 +107,11 @@ def toggle_backdrop_fill_border():
             break
 
     if not master_appearance:
-        nuke.message("No se pudo leer el appearance del primer backdrop.")
+        show_warning(
+            None,
+            "Backdrop Appearance",
+            "No se pudo leer el appearance del primer backdrop.",
+        )
         return
 
     master_lower = master_appearance.strip().lower()

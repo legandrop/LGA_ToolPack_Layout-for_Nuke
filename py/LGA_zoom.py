@@ -1,7 +1,7 @@
 """
 _____________________________________________________________________________
 
-  LGA_zoom v2.23 | 2025 | Lega
+  LGA_zoom v2.24 | 2025 | Lega
 
   Alterna entre el zoom actual y un zoom que muestra todo el DAG.
   Permite volver al nivel de zoom anterior usando la posición del cursor
@@ -9,6 +9,9 @@ _____________________________________________________________________________
   se reinicia el ciclo.
   Se puede usar el botón del medio del mouse para alternar el zoom.
 
+  v2.24: Los colores del mensaje flotante salen del modulo de estilo del
+         pack: texto TEXT_STRONG y fondo SURFACE_RAISED en vez de
+         #FFFFFF/#282828 propios.
   v2.23: find_dag_widget() deja de barrer QApplication.allWidgets() a pelo.
          Esa lista trae wrappers de widgets que Qt ya destruyo del lado C++,
          y leerles el objectName hacia crashear a Nuke.
@@ -25,6 +28,13 @@ from LGA_QtAdapter_ToolPack_Layout import (
     iter_live_widgets,
     safe_widget_call,
 )
+from LGA_UI_Style_ToolPack_Layout import Color
+
+
+def _rgb(hex_color):
+    """'#RRGGBB' -> 'r, g, b', para poder animar la opacidad con rgba()."""
+    h = hex_color.lstrip("#")
+    return "%d, %d, %d" % (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
 
 # Aliases para mantener compatibilidad con el código original
 QCursor = QtGui.QCursor
@@ -78,14 +88,18 @@ class FloatingMessage(QWidget):
         self.label.setStyleSheet(
             """
             QLabel {
-                color: #FFFFFF;
-                background-color: #282828;
+                color: %(text_strong)s;
+                background-color: %(raised)s;
                 padding: 5px 10px;
                 border-radius: 4px;
                 font-family: Verdana;
                 font-size: 12px;
             }
         """
+            % {
+                "text_strong": Color.TEXT_STRONG,
+                "raised": Color.SURFACE_RAISED,
+            }
         )
         layout.addWidget(self.label)
 
@@ -126,8 +140,8 @@ class FloatingMessage(QWidget):
         self.label.setStyleSheet(
             f"""
             QLabel {{
-                color: rgba(255, 255, 255, {value});
-                background-color: rgba(40, 40, 40, {value});
+                color: rgba({_rgb(Color.TEXT_STRONG)}, {value});
+                background-color: rgba({_rgb(Color.SURFACE_RAISED)}, {value});
                 padding: 5px 10px;
                 border-radius: 4px;
                 font-family: Verdana;

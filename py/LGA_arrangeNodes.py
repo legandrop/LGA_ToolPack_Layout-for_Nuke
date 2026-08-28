@@ -1,9 +1,13 @@
 """
 ______________________________________________________________
 
-  LGA_arrangeNodes v2.0 | 2026 | Lega
+  LGA_arrangeNodes v2.01 | 2026 | Lega
 
   Align and distribute multiple columns based on connections
+
+  v2.01: Los avisos de seleccion salen por el helper de carteles del
+         pack, con fallback a nuke.message si el helper no esta.
+  v2.0: Full rewrite sobre el core de layout validado.
 ______________________________________________________________
 
 Notes:
@@ -13,6 +17,16 @@ Notes:
 """
 
 import nuke
+
+# Carteles con el estilo del pack; si el helper no esta, cae al nuke.message pelado.
+try:
+    from LGA_UI_MessageBox_ToolPack_Layout import show_info
+except ImportError:
+
+    def show_info(parent, title, text):
+        nuke.message(text)
+
+
 from dataclasses import dataclass, field
 from typing import Dict, List, Tuple, Optional, Set
 import logging
@@ -2145,12 +2159,12 @@ def main() -> None:
     debug_print("=== Arrange Nodes v2 START ===")
     selected_nodes = nuke.selectedNodes()
     if len(selected_nodes) < 2:
-        nuke.message("Select at least 2 nodes to arrange")
+        show_info(None, "Arrange Nodes", "Select at least 2 nodes to arrange")
         return
 
     regular_nodes = [n for n in selected_nodes if n.Class() not in IGNORED_CLASSES]
     if len(regular_nodes) < 2:
-        nuke.message("Select at least 2 non-backdrop nodes")
+        show_info(None, "Arrange Nodes", "Select at least 2 non-backdrop nodes")
         return
 
     debug_print(f"Seleccionados: {len(selected_nodes)} | regulares: {len(regular_nodes)}")

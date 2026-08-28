@@ -1,10 +1,13 @@
 """
 ________________________________________________________________________________
 
-  LGA_scriptChecker v0.88 | Lega
+  LGA_scriptChecker v0.89 | Lega
   Script para verificar si los inputs de los nodos estan correctamente posicionados
   segun las reglas de posicion definidas.
 
+  v0.89: Los avisos salen por el helper de carteles del pack (warning el
+         de nodo no encontrado, info los de "sin resultados"), con
+         fallback a nuke.message si el helper no esta.
   v0.88: El look sale del modulo de estilo del pack. No aplicaba ninguna
          hoja, asi que heredaba el tema de Nuke, y los dos botones iban
          estirados a lo ancho con el de accion primero.
@@ -23,6 +26,17 @@ from LGA_QtAdapter_ToolPack_Layout import (
     QStyledItemDelegate,
 )
 from LGA_UI_Style_ToolPack_Layout import Metric, Style
+
+# Carteles con el estilo del pack; si el helper no esta, cae al nuke.message pelado.
+try:
+    from LGA_UI_MessageBox_ToolPack_Layout import show_info, show_warning
+except ImportError:
+
+    def show_info(parent, title, text):
+        nuke.message(text)
+
+    def show_warning(parent, title, text):
+        nuke.message(text)
 
 # Alias Qt classes desde la capa de compatibilidad para mantener el API original
 QWidget = QtWidgets.QWidget
@@ -652,7 +666,9 @@ class ScriptCheckerWindow(QWidget):
                 debug_print(
                     f"[{time.time() - start_time:.4f}s] El nodo {node_name} no existe en Nuke."
                 )
-                nuke.message(f"El nodo '{node_name}' no se encontró en Nuke.")
+                show_warning(
+                    None, "Script Checker", f"El nodo '{node_name}' no se encontró en Nuke."
+                )
 
     def refresh_data(self):
         debug_print("Refreshing data...")
@@ -664,8 +680,10 @@ class ScriptCheckerWindow(QWidget):
         self.results = self._get_checked_nodes()
 
         if not self.results:
-            nuke.message(
-                "No se encontraron nodos con inputs para verificar despues del refresco."
+            show_info(
+                None,
+                "Script Checker",
+                "No se encontraron nodos con inputs para verificar despues del refresco.",
             )
             self.close()  # Cerrar la ventana si no hay resultados para mostrar
             return
@@ -713,8 +731,10 @@ def main():
     initial_results = temp_checker._get_checked_nodes()
 
     if not initial_results:
-        nuke.message(
-            "No se encontraron nodos con inputs para verificar o todos estan correctos."
+        show_info(
+            None,
+            "Script Checker",
+            "No se encontraron nodos con inputs para verificar o todos estan correctos.",
         )
         return
 

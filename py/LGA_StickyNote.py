@@ -1,9 +1,14 @@
 """
 _______________________________________________
 
-  LGA_StickyNote v1.93 | Lega
+  LGA_StickyNote v1.94 | Lega
   Editor en tiempo real para StickyNotes en el Node Graph
 
+  v1.94: El look del editor sale del modulo de estilo del pack: marco,
+         titulo, campo de texto, sliders, tooltips y botones van con
+         tokens de Color/Metric en vez de hexes propios, y OK pasa a ser
+         el boton de accion en violeta. La paleta de colores de las
+         notas (swatches y gradientes) es DATA del usuario y no se toca.
   v1.93: Se deja de barrer QApplication.allWidgets() a pelo. Esa lista trae
          wrappers de widgets que Qt ya destruyo del lado C++, y tocarlos
          hacia crashear a Nuke. Ahora se itera con iter_live_widgets() y se
@@ -28,6 +33,7 @@ from LGA_StickyNote_Utils import (
     extract_clean_text_and_margins,
     format_text_with_margins,
 )
+from LGA_UI_Style_ToolPack_Layout import Color, Metric, Style
 
 # ===== CONTROL DE RECURSOS Y GESTIÓN DE MEMORIA =====
 # Namespace único para evitar conflictos con otros scripts
@@ -86,9 +92,10 @@ def debug_print(*message):
         print("[STICKY DEBUG]", *message)
 
 
-# Colores para el gradiente
-BLUE_COLOR = "#9370DB"
-VIOLET_COLOR = "#4169E1"
+# Relleno de los sliders: el acento de la marca, del lleno al hover.
+# Es estilo del editor (no un color de nota), por eso sale del modulo.
+BLUE_COLOR = Color.ACCENT
+VIOLET_COLOR = Color.ACCENT_HOVER
 HANDLE_SIZE = 12  # Tamaño del handle del slider
 LINE_HEIGHT = 25  # Altura de cada linea de control
 
@@ -598,12 +605,17 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.main_frame.setStyleSheet(
             """
             QFrame {
-                background-color: #1f1f1f;
-                border: 1px solid #555555;
+                background-color: %(window)s;
+                border: 1px solid %(border)s;
                 border-radius: 10px;
-                color: #CCCCCC;
+                color: %(text)s;
             }
         """
+            % {
+                "window": Color.WINDOW,
+                "border": Color.BORDER_STRONG,
+                "text": Color.TEXT,
+            }
         )
 
         # Aplicar sombra al frame principal
@@ -624,8 +636,8 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.title_bar.setStyleSheet(
             """
             QLabel {
-                background-color: #1f1f1f; 
-                color: #cccccc; 
+                background-color: %(window)s;
+                color: %(text_strong)s;
                 padding-left: 10px;
                 border-top-left-radius: 10px;
                 border-top-right-radius: 10px;
@@ -635,6 +647,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
                 font-weight: bold;
             }
         """
+            % {"window": Color.WINDOW, "text_strong": Color.TEXT_STRONG}
         )
         self.title_bar.setAlignment(QtCore.Qt.AlignCenter)
 
@@ -650,12 +663,13 @@ class StickyNoteEditor(QtWidgets.QDialog):
         content_widget.setStyleSheet(
             """
             QWidget {
-                background-color: #1f1f1f;
+                background-color: %(window)s;
                 border: none;
                 border-bottom-left-radius: 10px;
                 border-bottom-right-radius: 10px;
             }
         """
+            % {"window": Color.WINDOW}
         )
         content_layout = QtWidgets.QVBoxLayout(content_widget)
         content_layout.setContentsMargins(10, 10, 10, 10)
@@ -665,21 +679,51 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.text_edit.setStyleSheet(
             """
             QTextEdit {
-                background-color: #1e1e1e;
-                border: 1px solid #3D3D3D;
-                border-radius: 5px;
+                background-color: %(surface)s;
+                border: 1px solid %(border)s;
+                border-radius: %(radius)dpx;
                 padding: 5px;
                 font-size: 12px;
             }
         """
+            % {
+                "surface": Color.SURFACE,
+                "border": Color.BORDER_STRONG,
+                "radius": Metric.RADIUS,
+            }
         )
         self.text_edit.setMaximumHeight(100)
+
+        # Estilos compartidos de las tres filas de sliders, armados con los
+        # tokens del modulo: antes cada slider repetia su propio bloque con
+        # hexes sueltos (#545454, #AAAAAA, #555555).
+        line_label_css = "color: %s; font-size: 12px; border: none;" % Color.TEXT
+        slider_css = f"""
+            QSlider::groove:horizontal {{
+                border: none;
+                height: 2px;
+                background: {Color.BORDER_HOVER};
+                border-radius: 4px;
+            }}
+            QSlider::sub-page:horizontal {{
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 {BLUE_COLOR}, stop:1 {VIOLET_COLOR});
+                border-radius: 4px;
+            }}
+            QSlider::handle:horizontal {{
+                background: {Color.TEXT};
+                border: 1px solid {Color.BORDER_HOVER};
+                width: {HANDLE_SIZE}px;
+                height: {HANDLE_SIZE}px;
+                margin: -6px 0; /* Centrar el handle verticalmente */
+                border-radius: 7px;
+            }}
+        """
 
         # Slider de font size
         font_size_layout = QtWidgets.QHBoxLayout()
         font_size_layout.insertSpacing(0, 5)  # Añadir espacio a la izquierda del label
         font_size_label = QtWidgets.QLabel("Font Size")
-        font_size_label.setStyleSheet("color: #AAAAAA; font-size: 12px; border: none;")
+        font_size_label.setStyleSheet(line_label_css)
         font_size_label.setFixedHeight(LINE_HEIGHT)  # Asegurar altura de la etiqueta
         font_size_label.setSizePolicy(
             QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
@@ -692,33 +736,10 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.font_size_slider.setSizePolicy(
             QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed
         )  # El slider puede expandirse horizontalmente, pero la altura es fija
-        self.font_size_slider.setStyleSheet(
-            f"""
-            QSlider::groove:horizontal {{
-                border: 0px solid #555555;
-                height: 2px;
-                background: #545454;
-                border-radius: 4px;
-            }}
-            QSlider::sub-page:horizontal {{
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 {BLUE_COLOR}, stop:1 {VIOLET_COLOR});
-                border-radius: 4px;
-            }}
-            QSlider::handle:horizontal {{
-                background: #AAAAAA;
-                border: 1px solid #555555;
-                width: {HANDLE_SIZE}px;
-                height: {HANDLE_SIZE}px;
-                margin: -6px 0; /* Centrar el handle verticalmente */
-                border-radius: 7px;
-            }}
-        """
-        )
+        self.font_size_slider.setStyleSheet(slider_css)
 
         self.font_size_value = QtWidgets.QLabel("20")
-        self.font_size_value.setStyleSheet(
-            "color: #AAAAAA; font-size: 12px; border: none;"
-        )
+        self.font_size_value.setStyleSheet(line_label_css)
         self.font_size_value.setFixedHeight(
             LINE_HEIGHT
         )  # Asegurar altura de la etiqueta de valor
@@ -735,7 +756,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
         margin_x_layout = QtWidgets.QHBoxLayout()
         margin_x_layout.insertSpacing(0, 5)  # Añadir espacio a la izquierda del label
         margin_x_label = QtWidgets.QLabel("Margin X")
-        margin_x_label.setStyleSheet("color: #AAAAAA; font-size: 12px; border: none;")
+        margin_x_label.setStyleSheet(line_label_css)
         margin_x_label.setFixedHeight(LINE_HEIGHT)  # Asegurar altura de la etiqueta
         margin_x_label.setSizePolicy(
             QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
@@ -748,33 +769,10 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.margin_slider.setSizePolicy(
             QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed
         )  # El slider puede expandirse horizontalmente, pero la altura es fija
-        self.margin_slider.setStyleSheet(
-            f"""
-            QSlider::groove:horizontal {{
-                border: 0px solid #555555;
-                height: 2px;
-                background: #545454;
-                border-radius: 4px;
-            }}
-            QSlider::sub-page:horizontal {{
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 {BLUE_COLOR}, stop:1 {VIOLET_COLOR});
-                border-radius: 4px;
-            }}
-            QSlider::handle:horizontal {{
-                background: #AAAAAA;
-                border: 1px solid #555555;
-                width: {HANDLE_SIZE}px;
-                height: {HANDLE_SIZE}px;
-                margin: -6px 0;
-                border-radius: 7px;
-            }}
-        """
-        )
+        self.margin_slider.setStyleSheet(slider_css)
 
         self.margin_value = QtWidgets.QLabel("0")
-        self.margin_value.setStyleSheet(
-            "color: #AAAAAA; font-size: 12px; border: none;"
-        )
+        self.margin_value.setStyleSheet(line_label_css)
         self.margin_value.setFixedHeight(
             LINE_HEIGHT
         )  # Asegurar altura de la etiqueta de valor
@@ -791,7 +789,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
         margin_y_layout = QtWidgets.QHBoxLayout()
         margin_y_layout.insertSpacing(0, 5)  # Añadir espacio a la izquierda del label
         margin_y_label = QtWidgets.QLabel("Margin Y")
-        margin_y_label.setStyleSheet("color: #AAAAAA; font-size: 12px; border: none;")
+        margin_y_label.setStyleSheet(line_label_css)
         margin_y_label.setFixedHeight(LINE_HEIGHT)  # Asegurar altura de la etiqueta
         margin_y_label.setSizePolicy(
             QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
@@ -804,33 +802,10 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.margin_y_slider.setSizePolicy(
             QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed
         )  # El slider puede expandirse horizontalmente, pero la altura es fija
-        self.margin_y_slider.setStyleSheet(
-            f"""
-            QSlider::groove:horizontal {{
-                border: 0px solid #555555;
-                height: 2px;
-                background: #545454;
-                border-radius: 4px;
-            }}
-            QSlider::sub-page:horizontal {{
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 {BLUE_COLOR}, stop:1 {VIOLET_COLOR});
-                border-radius: 4px;
-            }}
-            QSlider::handle:horizontal {{
-                background: #AAAAAA;
-                border: 1px solid #555555;
-                width: {HANDLE_SIZE}px;
-                height: {HANDLE_SIZE}px;
-                margin: -6px 0;
-                border-radius: 7px;
-            }}
-        """
-        )
+        self.margin_y_slider.setStyleSheet(slider_css)
 
         self.margin_y_value = QtWidgets.QLabel("0")
-        self.margin_y_value.setStyleSheet(
-            "color: #AAAAAA; font-size: 12px; border: none;"
-        )
+        self.margin_y_value.setStyleSheet(line_label_css)
         self.margin_y_value.setFixedHeight(
             LINE_HEIGHT
         )  # Asegurar altura de la etiqueta de valor
@@ -847,11 +822,31 @@ class StickyNoteEditor(QtWidgets.QDialog):
         arrows_layout = QtWidgets.QHBoxLayout()
         arrows_layout.insertSpacing(0, 5)  # Añadir espacio a la izquierda del label
         arrows_label = QtWidgets.QLabel("Arrows:")
-        arrows_label.setStyleSheet("color: #AAAAAA; font-size: 12px; border: none;")
+        arrows_label.setStyleSheet(line_label_css)
         arrows_label.setFixedHeight(LINE_HEIGHT)  # Asegurar altura de la etiqueta
         arrows_label.setSizePolicy(
             QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
         )  # Asegurar que la altura sea fija
+
+        # Estilo compartido de los cuatro botones de flecha: fondo de la
+        # ventana en todos los estados (el feedback lo da el icono hover).
+        arrow_btn_css = (
+            """
+            QPushButton {
+                background-color: %(window)s;
+                border: none;
+                padding: 0px;
+                border-radius: 8px;
+            }
+            QPushButton:hover {
+                background-color: %(window)s;
+            }
+            QPushButton:pressed {
+                background-color: %(window)s;
+            }
+        """
+            % {"window": Color.WINDOW}
+        )
 
         # Botón de flecha izquierda
         self.left_arrow_button = QtWidgets.QPushButton()
@@ -882,22 +877,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
             self.left_arrow_button.setIconSize(QtCore.QSize(20, 20))
 
         # Aplicar estilo CSS al botón
-        self.left_arrow_button.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #1f1f1f;
-                border: none;
-                padding: 0px;
-                border-radius: 8px;
-            }
-            QPushButton:hover {
-                background-color: #1f1f1f;
-            }
-            QPushButton:pressed {
-                background-color: #1f1f1f;
-            }
-        """
-        )
+        self.left_arrow_button.setStyleSheet(arrow_btn_css)
 
         # Conectar eventos del botón
         self.left_arrow_button.clicked.connect(self.on_left_arrow_clicked)
@@ -926,22 +906,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
             self.right_arrow_button.setIconSize(QtCore.QSize(20, 20))
 
         # Aplicar estilo CSS al botón
-        self.right_arrow_button.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #1f1f1f;
-                border: none;
-                padding: 0px;
-                border-radius: 8px;
-            }
-            QPushButton:hover {
-                background-color: #1f1f1f;
-            }
-            QPushButton:pressed {
-                background-color: #1f1f1f;
-            }
-        """
-        )
+        self.right_arrow_button.setStyleSheet(arrow_btn_css)
 
         # Conectar eventos del botón
         self.right_arrow_button.clicked.connect(self.on_right_arrow_clicked)
@@ -979,22 +944,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
             self.up_arrow_button.setIconSize(QtCore.QSize(20, 20))
 
         # Aplicar estilo CSS al botón
-        self.up_arrow_button.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #1f1f1f;
-                border: none;
-                padding: 0px;
-                border-radius: 8px;
-            }
-            QPushButton:hover {
-                background-color: #1f1f1f;
-            }
-            QPushButton:pressed {
-                background-color: #1f1f1f;
-            }
-        """
-        )
+        self.up_arrow_button.setStyleSheet(arrow_btn_css)
 
         # Conectar eventos del botón
         self.up_arrow_button.clicked.connect(self.on_up_arrow_clicked)
@@ -1032,22 +982,7 @@ class StickyNoteEditor(QtWidgets.QDialog):
             self.down_arrow_button.setIconSize(QtCore.QSize(20, 20))
 
         # Aplicar estilo CSS al botón
-        self.down_arrow_button.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #1f1f1f;
-                border: none;
-                padding: 0px;
-                border-radius: 8px;
-            }
-            QPushButton:hover {
-                background-color: #1f1f1f;
-            }
-            QPushButton:pressed {
-                background-color: #1f1f1f;
-            }
-        """
-        )
+        self.down_arrow_button.setStyleSheet(arrow_btn_css)
 
         # Conectar eventos del botón
         self.down_arrow_button.clicked.connect(self.on_down_arrow_clicked)
@@ -1077,31 +1012,15 @@ class StickyNoteEditor(QtWidgets.QDialog):
         buttons_layout = QtWidgets.QHBoxLayout()
         buttons_layout.setSpacing(10)  # Espacio entre botones
 
-        # Estilo común para ambos botones (grises)
-        button_style = """
-            QPushButton {
-                background-color: #404040;
-                border: 1px solid #555555;
-                border-radius: 5px;
-                color: #CCCCCC;
-                font-size: 12px;
-                padding: 5px;
-            }
-            QPushButton:hover {
-                background-color: #505050;
-            }
-            QPushButton:pressed {
-                background-color: #303030;
-            }
-        """
-
+        # Botones del pack: Cancel secundario y OK como unica accion violeta,
+        # ultimo a la derecha, como en el resto de las ventanas.
         self.cancel_button = QtWidgets.QPushButton("Cancel")
-        self.cancel_button.setFixedHeight(30)
-        self.cancel_button.setStyleSheet(button_style)
+        self.cancel_button.setFixedHeight(Metric.BUTTON_HEIGHT)
+        self.cancel_button.setStyleSheet(Style.BTN_SECONDARY)
 
         self.ok_button = QtWidgets.QPushButton("OK")
-        self.ok_button.setFixedHeight(30)
-        self.ok_button.setStyleSheet(button_style)
+        self.ok_button.setFixedHeight(Metric.BUTTON_HEIGHT)
+        self.ok_button.setStyleSheet(Style.BTN_PRIMARY)
 
         # Crear tooltips personalizados
         self.tooltip_label = None
@@ -1986,14 +1905,20 @@ class StickyNoteEditor(QtWidgets.QDialog):
         self.tooltip_label.setStyleSheet(
             """
             QLabel {
-                background-color: #2a2a2a;
-                color: #cccccc;
-                border: 1px solid #555555;
-                border-radius: 3px;
+                background-color: %(raised)s;
+                color: %(text)s;
+                border: 1px solid %(border)s;
+                border-radius: %(radius)dpx;
                 padding: 4px 8px;
                 font-size: 11px;
             }
         """
+            % {
+                "raised": Color.SURFACE_RAISED,
+                "text": Color.TEXT,
+                "border": Color.BORDER_HOVER,
+                "radius": Metric.RADIUS_SMALL,
+            }
         )
 
         # Posicionar el tooltip centrado encima del botón

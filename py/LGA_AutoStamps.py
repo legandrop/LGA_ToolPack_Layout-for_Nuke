@@ -1,7 +1,7 @@
 """
 __________________________________________________________
 
-  LGA_AutoStamps v0.92 | Lega
+  LGA_AutoStamps v0.93 | Lega
   Encuentra conexiones "sucias" entre nodos y las reemplaza
   automaticamente por Stamps (Anchor + Wired) de Adrian Pueyo.
 
@@ -54,6 +54,9 @@ __________________________________________________________
 
   v0.92:
     - find_dag_widget() deja de barrer QApplication.allWidgets() a pelo. Esa llamada materializa un wrapper de PySide por cada widget del proceso y corrompe el heap si Qt esta creando o destruyendo widgets. Ahora usa iter_live_widgets() y safe_widget_call().
+
+  v0.93:
+    - Los avisos salen por el helper de carteles del pack (error el de stamps no importable, info el de "elegi una opcion"), con fallback a nuke.message si el helper no esta.
 __________________________________________________________
 
 """
@@ -70,6 +73,17 @@ from LGA_QtAdapter_ToolPack_Layout import (
     safe_widget_call,
 )
 from LGA_UI_Style_ToolPack_Layout import Color, Style
+
+# Carteles con el estilo del pack; si el helper no esta, cae al nuke.message pelado.
+try:
+    from LGA_UI_MessageBox_ToolPack_Layout import show_info, show_error
+except ImportError:
+
+    def show_info(parent, title, text):
+        nuke.message(text)
+
+    def show_error(parent, title, text):
+        nuke.message(text)
 
 # ----------------------------------------------------------------------
 # CONFIGURACION
@@ -131,9 +145,11 @@ def _import_stamps():
         import stamps
         return stamps
     except ImportError:
-        nuke.message(
+        show_error(
+            None,
+            "AutoStamps",
             "LGA_AutoStamps: no se pudo importar el modulo 'stamps'.\n"
-            "Verifica que la tool Stamps de Adrian Pueyo este instalada."
+            "Verifica que la tool Stamps de Adrian Pueyo este instalada.",
         )
         return None
 
@@ -510,7 +526,7 @@ class AutoStampsOptionsDialog(QtWidgets.QDialog):
 
     def _start(self):
         if not self.selected_passes():
-            nuke.message("Select at least one search option.")
+            show_info(None, "AutoStamps", "Select at least one search option.")
             return
         self.accept()
 

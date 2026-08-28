@@ -1,4 +1,24 @@
+"""
+__________________________________________________________
+
+  Dots v1.00 | Lega
+  Agrega Dots antes de los nodos seleccionados (Add Dots Before).
+
+  v1.00: Primer header versionado. El cartel de error sale por el
+         helper de carteles del pack, con fallback a nuke.message.
+__________________________________________________________
+
+"""
+
 import nuke
+
+# Carteles con el estilo del pack; si el helper no esta, cae al nuke.message pelado.
+try:
+    from LGA_UI_MessageBox_ToolPack_Layout import show_error
+except ImportError:
+
+    def show_error(parent, title, text):
+        nuke.message(text)
 
 
 tolerance_x = 60  # Tolerance value in X
@@ -275,7 +295,7 @@ def Dots():
             return
 
     except Exception as e:
-        nuke.message(f"An error occurred: {e}")
+        show_error(None, "Add Dots Before", f"An error occurred: {e}")
 
     finally:
         # debug_print_A('\nEnd undo')

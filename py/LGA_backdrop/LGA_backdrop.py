@@ -1,8 +1,15 @@
 """
 __________________________________________
 
-  LGA_backdrop v0.82 | Lega Pugliese
+  LGA_backdrop v0.83 | Lega Pugliese
   Backdrop personalizado con knobs modulares
+
+  v0.83
+  - El look del dialogo de nombre sale del modulo de estilo del pack:
+    marco, titulo, campo de texto, tooltip y botones van con tokens de
+    Color/Metric en vez de hexes propios, y OK pasa a ser el boton de
+    accion en violeta. Los colores de los backdrops (tile_color) son
+    data del usuario y no se tocan.
 
   v0.82 | 2026-07-09
   - Usa callbacks runtime portables y suprime callbacks durante creacion interna.
@@ -19,6 +26,7 @@ import weakref
 import os
 import sys
 from LGA_QtAdapter_ToolPack_Layout import QtWidgets, QtGui, QtCore, QGuiApplication
+from LGA_UI_Style_ToolPack_Layout import Color, Metric, Style
 QFrame = QtWidgets.QFrame
 QFontMetrics = QtGui.QFontMetrics
 QFont = QtGui.QFont
@@ -121,12 +129,17 @@ class BackdropNameDialog(QtWidgets.QDialog):
         self.main_frame.setStyleSheet(
             """
             QFrame {
-                background-color: #1f1f1f;
-                border: 1px solid #555555;
+                background-color: %(window)s;
+                border: 1px solid %(border)s;
                 border-radius: 10px;
-                color: #CCCCCC;
+                color: %(text)s;
             }
         """
+            % {
+                "window": Color.WINDOW,
+                "border": Color.BORDER_STRONG,
+                "text": Color.TEXT,
+            }
         )
 
         # Aplicar sombra al frame principal
@@ -147,8 +160,8 @@ class BackdropNameDialog(QtWidgets.QDialog):
         self.title_bar.setStyleSheet(
             """
             QLabel {
-                background-color: #1f1f1f; 
-                color: #cccccc; 
+                background-color: %(window)s;
+                color: %(text_strong)s;
                 padding-left: 10px;
                 border-top-left-radius: 10px;
                 border-top-right-radius: 10px;
@@ -158,6 +171,7 @@ class BackdropNameDialog(QtWidgets.QDialog):
                 font-weight: bold;
             }
         """
+            % {"window": Color.WINDOW, "text_strong": Color.TEXT_STRONG}
         )
         self.title_bar.setAlignment(QtCore.Qt.AlignCenter)
 
@@ -173,12 +187,13 @@ class BackdropNameDialog(QtWidgets.QDialog):
         content_widget.setStyleSheet(
             """
             QWidget {
-                background-color: #1f1f1f;
+                background-color: %(window)s;
                 border: none;
                 border-bottom-left-radius: 10px;
                 border-bottom-right-radius: 10px;
             }
         """
+            % {"window": Color.WINDOW}
         )
         content_layout = QtWidgets.QVBoxLayout(content_widget)
         content_layout.setContentsMargins(10, 10, 10, 10)
@@ -188,15 +203,22 @@ class BackdropNameDialog(QtWidgets.QDialog):
         self.text_edit.setStyleSheet(
             """
             QTextEdit {
-                background-color: #1e1e1e;
-                border: 1px solid #3D3D3D;
-                border-radius: 5px;
+                background-color: %(surface)s;
+                border: 1px solid %(border)s;
+                border-radius: %(radius)dpx;
                 padding: 5px;
                 font-size: 12px;
-                selection-background-color: #555555;
-                selection-color: #FFFFFF;
+                selection-background-color: %(accent)s;
+                selection-color: %(text_strong)s;
             }
         """
+            % {
+                "surface": Color.SURFACE,
+                "border": Color.BORDER_STRONG,
+                "radius": Metric.RADIUS,
+                "accent": Color.ACCENT,
+                "text_strong": Color.TEXT_STRONG,
+            }
         )
         # Configurar para 4 líneas de texto
         font_metrics = QtGui.QFontMetrics(self.text_edit.font())
@@ -207,31 +229,15 @@ class BackdropNameDialog(QtWidgets.QDialog):
         buttons_layout = QtWidgets.QHBoxLayout()
         buttons_layout.setSpacing(10)  # Espacio entre botones
 
-        # Estilo común para ambos botones (grises)
-        button_style = """
-            QPushButton {
-                background-color: #404040;
-                border: 1px solid #555555;
-                border-radius: 5px;
-                color: #CCCCCC;
-                font-size: 12px;
-                padding: 5px;
-            }
-            QPushButton:hover {
-                background-color: #505050;
-            }
-            QPushButton:pressed {
-                background-color: #303030;
-            }
-        """
-
+        # Botones del pack: Cancel secundario y OK como unica accion violeta,
+        # ultimo a la derecha, como en el resto de las ventanas.
         self.cancel_button = QtWidgets.QPushButton("Cancel")
-        self.cancel_button.setFixedHeight(30)
-        self.cancel_button.setStyleSheet(button_style)
+        self.cancel_button.setFixedHeight(Metric.BUTTON_HEIGHT)
+        self.cancel_button.setStyleSheet(Style.BTN_SECONDARY)
 
         self.ok_button = QtWidgets.QPushButton("OK")
-        self.ok_button.setFixedHeight(30)
-        self.ok_button.setStyleSheet(button_style)
+        self.ok_button.setFixedHeight(Metric.BUTTON_HEIGHT)
+        self.ok_button.setStyleSheet(Style.BTN_PRIMARY)
 
         # Crear tooltips personalizados - UNIQUE NAMES FOR BACKDROP
         self.tooltip_label = None
@@ -305,14 +311,20 @@ class BackdropNameDialog(QtWidgets.QDialog):
         self.tooltip_label.setStyleSheet(
             """
             QLabel {
-                background-color: #2a2a2a;
-                color: #cccccc;
-                border: 1px solid #555555;
-                border-radius: 3px;
+                background-color: %(raised)s;
+                color: %(text)s;
+                border: 1px solid %(border)s;
+                border-radius: %(radius)dpx;
                 padding: 4px 8px;
                 font-size: 11px;
             }
         """
+            % {
+                "raised": Color.SURFACE_RAISED,
+                "text": Color.TEXT,
+                "border": Color.BORDER_HOVER,
+                "radius": Metric.RADIUS_SMALL,
+            }
         )
 
         # Posicionar el tooltip centrado encima del botón
