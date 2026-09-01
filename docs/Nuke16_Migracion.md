@@ -46,7 +46,7 @@
 4) Para ancho de texto usar `LGA_QtAdapter_ToolPack_Layout.horizontal_advance(metrics, text)` (compatible Qt5/Qt6 automáticamente).
 5) Para márgenes de layout usar `LGA_QtAdapter_ToolPack_Layout.set_layout_margin(layout, margin)` (compatible Qt5/Qt6 automáticamente).
 6) Sustituir `QtOpenGL.QGLWidget` en `scale_widget.py`; si no se usa GL real, eliminar dependencia y usar DAG como QWidget.
-7) Asegurar `QAction` se importe desde `QtGui` en PySide6 (ya manejado por LGA_QtAdapter_ToolPack_Layout).
+7) Asegurar `QAction` y `QShortcut` se importen desde `QtGui` en PySide6 (ya manejado por LGA_QtAdapter_ToolPack_Layout).
 8) Si aparece audio con `QSound`, migrar a `QMediaPlayer + QAudioOutput`.
 9) Probar manualmente en Nuke 15 y 16 apertura de paneles, backdrops, zoom middle-click, selectNodes, Km NodeGraph, captura/render de DAG.
 
