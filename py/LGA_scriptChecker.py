@@ -23,7 +23,6 @@ from LGA_QtAdapter_ToolPack_Layout import (
     QtGui,
     QtCore,
     Qt,
-    QStyledItemDelegate,
 )
 from LGA_UI_Style_ToolPack_Layout import Metric, Style
 
@@ -46,6 +45,7 @@ QTableWidget = QtWidgets.QTableWidget
 QHeaderView = QtWidgets.QHeaderView
 QTableWidgetItem = QtWidgets.QTableWidgetItem
 QPushButton = QtWidgets.QPushButton
+QStyledItemDelegate = QtWidgets.QStyledItemDelegate
 
 QColor = QtGui.QColor
 QBrush = QtGui.QBrush
