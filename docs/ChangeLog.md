@@ -2,6 +2,8 @@
 
 ## v2.63
 
+- **`LGA_UI_Style_ToolPack_Layout v1.29`: la cápsula PILL hundida queda sincronizada.** `PILL_CONTAINER_SUNKEN` usa `#161616` para separar un switch del fondo idéntico de su ventana sin modificar el toggle Studio/Client. [ ToolPack Layout - Sincronizar cápsula PILL hundida ]
+
 - **`LGA_UI_Style_ToolPack_Layout v1.28`: el switch pill compartido queda sincronizado.** Incorpora las hojas de contenedor, segmento activo e inactivo que preservan la geometría y los estados de Studio/Client en los cuatro packs, sin que cada diálogo copie QSS propio. [ ToolPack Layout - Sincronizar switch pill ]
 
 - **`LGA_UI_Style_ToolPack_Layout v1.27`: `FRAME_RANGE_GRADIENT`, los colores del rango de frames de una secuencia.** El Media Manager de LGA_ToolPack pasa a pintar el `[1001-1129]` de una secuencia con el gradiente violeta-fucsia del browser de FileManager S3, y los dos colores entran al módulo de estilo para que una secuencia se lea igual en Nuke que en la app. Es un cambio de paridad: las cuatro copias del módulo se mueven juntas y en este pack todavía no lo consume nadie. Sin cambios de código ejecutable. [ ToolPack Layout - FRAME_RANGE_GRADIENT en el modulo de estilo ]
