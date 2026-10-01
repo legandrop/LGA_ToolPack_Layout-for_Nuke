@@ -2,6 +2,8 @@
 
 ## v2.63
 
+- **El README que muestra GitHub pasa a ser el inglés.** La página del repo mostraba el README en castellano y el inglés quedaba escondido en `README_EN.md`. Ahora `README.md` es el inglés y el castellano pasa a `README_ES.md` (antes `README.md`), renombrados con historia. Los dos arrancan con un selector de idioma que enlaza al otro, así que mantienen el mismo esqueleto línea por línea; el resto del contenido no cambia. [ ToolPack Layout - El README de GitHub pasa a estar en ingles ]
+
 - **`LGA_UI_Style_ToolPack_Layout v1.29`: la cápsula PILL hundida queda sincronizada.** `PILL_CONTAINER_SUNKEN` usa `#161616` para separar un switch del fondo idéntico de su ventana sin modificar el toggle Studio/Client. [ ToolPack Layout - Sincronizar cápsula PILL hundida ]
 
 - **`LGA_UI_Style_ToolPack_Layout v1.28`: el switch pill compartido queda sincronizado.** Incorpora las hojas de contenedor, segmento activo e inactivo que preservan la geometría y los estados de Studio/Client en los cuatro packs, sin que cada diálogo copie QSS propio. [ ToolPack Layout - Sincronizar switch pill ]
