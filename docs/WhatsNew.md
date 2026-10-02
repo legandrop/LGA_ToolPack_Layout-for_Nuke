@@ -11,6 +11,7 @@ platforms: [win, mac]
 ## Unreleased
 
 ## v2.63
+- [fixed] Add Dots after no longer adds dots to a node left selected inside a gizmo when nothing is selected in the Node Graph.
 - [fixed] StickyNote, Label Nodes, AutoStamps and Toggle Zoom no longer risk crashing Nuke when they look for the Node Graph.
 - [improved] Enable Tools has a new look: larger text, rounded checkboxes, a clickable config path that opens your default file manager, and a window that opens at the height it needs.
 - [improved] Script Checker and AutoStamps dialogs have a unified look, with the action button highlighted, and Script Checker no longer hides its last rows.

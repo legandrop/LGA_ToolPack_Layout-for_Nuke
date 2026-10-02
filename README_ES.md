@@ -68,7 +68,7 @@ seleccionado.*
 
 
 
-## ![](Doc_Media/seccion_azul.png) Add Dots after v1.6 | Lega
+## ![](Doc_Media/seccion_azul.png) Add Dots after v1.62 | Lega
 
 Agrega un nodo Dot debajo del nodo seleccionado y luego otro Dot
 conectado a este hacia la derecha o hacia la izquierda según el

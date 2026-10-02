@@ -1,10 +1,13 @@
 """
 __________________________________________________________
 
-  LGA_dotsAfter v1.61 | 2024 | Lega
+  LGA_dotsAfter v1.62 | 2024 | Lega
   Generates a dot below the selected node and
   another dot to the left/right of that dot as specified
 
+  v1.62: Sin nada seleccionado en el Node Graph avisa en vez de agregar
+         los dots a un nodo seleccionado adentro de un grupo o gizmo, que
+         nuke.selectedNode() devolvia (LGA_ToolPack_Layout_Selection).
   v1.61: El aviso de "no hay nodo seleccionado" sale por el helper de
          carteles del pack, con fallback a nuke.message.
 __________________________________________________________
@@ -12,6 +15,7 @@ __________________________________________________________
 """
 
 import nuke
+from LGA_ToolPack_Layout_Selection import selected_node as graph_selected_node
 
 # Carteles con el estilo del pack; si el helper no esta, cae al nuke.message pelado.
 try:
@@ -49,7 +53,7 @@ def dotsAfter(direction='l'):
 
     # Obtener el nodo seleccionado
     try:
-        selected_node = nuke.selectedNode()
+        selected_node = graph_selected_node()
     except ValueError:
         show_info(None, "Add Dots After", "No node selected.")
         debug_print("No node selected.")
