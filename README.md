@@ -7,6 +7,8 @@
 </p>
 <br clear="left">
 
+**What's new:** [Releases](https://github.com/legandrop/LGA_ToolPack_Layout-for_Nuke/releases)
+
 ## Installation
 
 - Copy the **LGA_ToolPack-Layout** folder, which contains all the ToolPack files, to **%USERPROFILE%/.nuke**.<br> It should look like this:
@@ -25,8 +27,6 @@
   ```
 
 - The pack lets you **turn tools on and off** from the **TPL > Enable Tools** menu, explained below.
-
-- **TPL > What's new** shows what changed in each version of the pack.
 
 <br>
 
