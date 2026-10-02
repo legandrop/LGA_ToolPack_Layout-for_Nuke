@@ -2,6 +2,8 @@
 
 ## v2.63
 
+- **El menú TPL suma What's new, con las notas para el usuario de cada versión.** El pack no tenía dónde mostrar qué cambió: el release decía sólo el número. La entrada nueva, junto a Documentation, abre una ventana que lee `whats_new.json` de la raíz del pack —lo genera el script de release y viaja en el zip— y lista las versiones de la más nueva a la más vieja, agrupadas en New / Improved / Fixed y sin los ítems de la otra plataforma. Sin archivo, con el JSON roto o con un `schemaVersion` desconocido muestra un aviso en lugar de notas, sin excepción hacia Nuke. El JSON se lee al abrir la ventana, nunca al arrancar. Los dos README lo mencionan. `LGA_ToolPackLayout_WhatsNew v1.00`. [ ToolPack Layout - Entrada What's new en el menu TPL ]
+
 - **El README que muestra GitHub pasa a ser el inglés.** La página del repo mostraba el README en castellano y el inglés quedaba escondido en `README_EN.md`. Ahora `README.md` es el inglés y el castellano pasa a `README_ES.md` (antes `README.md`), renombrados con historia. Los dos arrancan con un selector de idioma que enlaza al otro, así que mantienen el mismo esqueleto línea por línea; el resto del contenido no cambia. [ ToolPack Layout - El README de GitHub pasa a estar en ingles ]
 
 - **`LGA_UI_Style_ToolPack_Layout v1.29`: la cápsula PILL hundida queda sincronizada.** `PILL_CONTAINER_SUNKEN` usa `#161616` para separar un switch del fondo idéntico de su ventana sin modificar el toggle Studio/Client. [ ToolPack Layout - Sincronizar cápsula PILL hundida ]

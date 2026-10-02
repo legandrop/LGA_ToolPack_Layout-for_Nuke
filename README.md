@@ -26,6 +26,8 @@
 
 - The pack lets you **turn tools on and off** from the **TPL > Enable Tools** menu, explained below.
 
+- **TPL > What's new** shows what changed in each version of the pack.
+
 <br>
 
 

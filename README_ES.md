@@ -26,6 +26,8 @@
 
 - El pack permite **activar/desactivar** herramientas desde el menú **TPL > Enable Tools**, que se explica acá abajo.
 
+- **TPL > What's new** muestra qué cambió en cada versión del pack.
+
 <br>
 
 
