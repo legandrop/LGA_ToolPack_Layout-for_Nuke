@@ -2,6 +2,8 @@
 
 ## v2.63
 
+- **Los botones violetas escribian en blanco.** Sobre el violeta el texto va en gris claro y el blanco es solo del hover, pero `Style.BTN_PRIMARY` usaba `TEXT_ON_ACCENT` (`#FFFFFF`) en los dos estados y el hover no tenia a donde subir. `TEXT_ON_ACCENT` pasa a `#D0D0D0` en los seis temas, `TEXT_ON_ACCENT_HOVER` es el blanco del hover y `TEXT_ON_COLOR` conserva el blanco para texto sobre colores que no son el violeta (datos, la cruz roja). Regla escrita en `Docu_UI_Style.md` y en `AGENTS.md`. `LGA_UI_Style_*` v1.30, igual en las cuatro copias. [ UI - Texto gris sobre el violeta ]
+
 - **Add Dots after agregaba los dots a un nodo de adentro de un gizmo.** `nuke.selectedNode()` devuelve también un nodo que quedó seleccionado adentro de un grupo o gizmo, aunque el Node Graph no tenga selección: en vez de avisar que no había nodo seleccionado, Add Dots after colgaba los dots de ese nodo interno. El módulo nuevo `LGA_ToolPack_Layout_Selection` (copia del de ToolPack) solo acepta un nodo que esté en `selectedNodes()`. [ DotsAfter - Ignorar la seleccion de adentro de un gizmo ]
 
 - **La ventana What's new del menú TPL se retira.** Las notas para el usuario no se muestran dentro de Nuke: están en las notas del release en GitHub y, antes de actualizar, en el card de PipeSync. Se borran `LGA_ToolPackLayout_WhatsNew.py` y la entrada del menú, sin más cambios; `docs/WhatsNew.md` pierde el ítem que la anunciaba y los dos README cambian la mención del menú por un link a Releases. El release sigue copiando `whats_new.json` y `WHATS_NEW.md` a la raíz del pack, sin consumidor dentro de Nuke. [ ToolPack Layout - Se retira la ventana What's new; las notas van a GitHub ]
